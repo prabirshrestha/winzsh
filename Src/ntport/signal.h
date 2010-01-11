@@ -1,41 +1,34 @@
+/*-
+ * Copyright (c) 1980, 1991 The Regents of the University of California.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. Neither the name of the University nor the names of its contributors
+ *    may be used to endorse or promote products derived from this software
+ *    without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ * OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ * SUCH DAMAGE.
+ */
+// signal.h: signal emulation things
+// -amol
 //
-// Copyright(c) 1997 Amol Deshpande
-// amold@microsoft.com
-// Redistribution in source or binary form is permitted as long as you 
-// retain this notice in the distribution
-//
-// The memory allocator herein is part of the tcsh shell distribution. 
-// The original tcsh code is under its own copyright. Get the source from
-// ftp.deshaw.com/pub to figure it out.
-//
-// 
-// The fork() implementation borrows heavily from the cygnus gnu-win32
-// project's implementation. Check out www.cygnus.com for more information.
-// 
-//
-// There is one restriction that I impose on any users of this code. If you
-// use it in your own application, your application *must* be freely 
-// redistributable in source form also.
-// (I suppose borrowing ideas from the cygnus code makes this a requirement,
-// since that code is GPL'd. However, I want to explicitly make it clear that 
-// this is FREE software).
-//
-// You are specifically prohibited from enhancing or fixing bugs in this 
-// implementation and selling the resultant product. If you make any changes
-// that fix bugs in or enhance this code, you *must* send me a copy.
-//
-// I retain all rights to this software, except for the tcsh code.
-//
-// Amol Deshpande and the Zsh Development Group specifically disclaim any
-// warranties, including, but not limited to, the implied warranties of
-// merchantability and fitness for a particular purpose.  The software
-// provided hereunder is on an "as is" basis, and Amol Deshpande and the
-// Zsh Development Group have no obligation to provide maintenance,
-// support, updates, enhancements, or modifications.
-//
-//
-// And finally,
-// Microsoft Corporation has nothing to do with this code. 
 #ifndef SIGNAL_H
 #define SIGNAL_H
 
