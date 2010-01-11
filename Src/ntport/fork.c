@@ -448,7 +448,7 @@ void * sbrk(int delta) {
  * This is designed for use in a program that uses vast quantities of memory,
  * but bombs when it runs out.
  */
-* Copyright (c) 1980, 1991 The Regents of the University of California.
+/* Copyright (c) 1980, 1991 The Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

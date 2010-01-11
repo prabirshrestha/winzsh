@@ -56,17 +56,15 @@ CFLAGS = $(CFLAGS) -DDBG -Od -DZSH_HASH_DEBUG
 
 INCLUDES = -I.. -I. -I$(srcdir) -Intport -Id:\mstools\include
 
-NTRES =BSDLOGO
+NTRES =ZSHLOGO
 NT_SRC = ntport\support.c ntport\bogus.c ntport\dirent.c \
 	 ntport\io.c ntport\fork.c ntport\globals.c ntport\ntb1.c \
 	 ntport\ntb2.c ntport\signal.c ntport\termcap.c ntport\tparam.c \
 	 ntport\console.c ntport\tparse.c ntport\stdio.c ntport\zsh_nt.c\
 	 ntport\ntbin.c ntport\ps.c
-#	 ntport\except.c
 
 NT_OBJ = support.o bogus.o dirent.o io.o fork.o globals.o signal.o \
 	termcap.o tparam.o console.o tparse.o stdio.o zsh_nt.o ntbin.o ps.o
-#except.o
 NT_BOOKEND1 = ntb1.o
 NT_BOOKEND2 = ntb2.o
 NT_HDRS = ntport\ntport.h ntport\signal.h
@@ -77,8 +75,8 @@ LINK    = $(LINK) $(LDFLAGS) -out:$@
 #INSTALL         = /usr/bin/ginstall -c
 #INSTALL_PROGRAM = $(INSTALL)
 
-AWK = gawk
-SED = sed
+AWK = mawk
+SED = sed --text
 
 RM = -del
 
@@ -145,7 +143,6 @@ zsh.exe: $(PROTO) $(OBJS) $(NT_BOOKEND1) $(NT_BOOKEND2) ntport/$(NTRES).res
 	$(LINK) $(NT_BOOKEND1) $(OBJS) $(NT_BOOKEND2) \
 	$(LIBS) ntport/$(NTRES).res \
 	-section:.fusrdata,rw -map:zsh.map
-#	-section:.fork_data,rw 
 
 symbols:zsh.exe
 	@echo finding image base
@@ -170,6 +167,7 @@ $(OBJS): $(HDRS)
 $(PROTO): makepro.sed
 
 # ========= DEPENDENCIES FOR NT ==========
+
 support.o: ntport\support.c
 	$(COMPILE) -Fo$*.o ntport\$*.c
 bogus.o: ntport\bogus.c
@@ -206,8 +204,7 @@ ntb2.o: ntport\ntb2.c
 	$(COMPILE) -Fo$*.o ntport\$*.c
 ntport/$(NTRES).res: ntport/$(NTRES).rc
 	rc -v -r ntport/$(NTRES).rc
-#except.o: ntport\except.c
-#	$(COMPILE) -Fo$*.o ntport\$*.c
+
 # ========== DEPENDENCIES FOR INSTALLING ==========
 
 install: install.bin
