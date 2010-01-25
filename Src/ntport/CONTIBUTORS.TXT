@@ -1,0 +1,25 @@
+People who have contributed to WinZsh with bugfixes, functionality, and 
+other useful pieces of code. If you have been left out, please let us 
+know. 
+
+Amol Deshpande (amol.vinayak.deshpande@gmail.com)
+Martin Oberhuber & Wind River Systems, Inc. 
+  (martin.oberhuber@windriver.com, http://www.windriver.com) 
+Tim Ayres (timothy.j.ayres@gmail.com) 
+
+WinZsh also includes code from the Windows port of tcsh. Below is a 
+list of contributors from the file win32/Contributors, as of 
+tcsh-6.17.00 
+
+Tom Kludy (tom.kludy@citrix.com)
+Yarek Kowalik (Yarek.Kowalik@Sitraka.com)
+Edward Lam
+Matt Landau
+Avner Lottem (avner.lottem@intel.com)
+blucas (?) (blucas@broadcom.com)
+Chun-Pong Yu (bol.pacific.net.sg)
+TAGA nayuta (nayuta@is.s.u-tokyo.ac.jp)
+Mike Thomas (miketh@brisbane.paradigmgeo.com)
+Mark Tucker (mtucker@fiji.sidefx.com) 
+
+

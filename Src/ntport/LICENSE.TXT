@@ -1,20 +1,103 @@
-The Windows port of zsh (the code in this directory) was originally 
-written by Amol Deshpande in 1997. He maintained the project until 2001, 
-at which time it was abandoned. In December 2009, Amol agreed to 
-relicense his code to the 3-clause BSD license. Amol continues to 
-maintain the Windows port of tcsh, which shares a large amount of common 
-code with this port and is also licensed under the 3-clause BSD license. 
+WinZsh (the code in this directory) is licensed under the 3-clause BSD
+license as follows. Please see the file CONTIBUTORS.TXT for a list of
+contributors to WinZsh.
 
-fork.c contains a memory allocator derived from tc.alloc.c from the tcsh 
-distribution. When first incorporated in 1997, this code was under the 
-4-clause BSD license, however as of tcsh release 6.12.00, tc.alloc.c and 
-the rest of tcsh is under the 3-clause BSD license. 
+  Copyright (c) 1997-2002, 2010, Amol Deshpande and contributors
+  All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions
+  are met:
+
+      * Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+      * Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+  documentation and/or other materials provided with the distribution.
+      * Neither the name of the author nor the names of the contributors
+  may be used to endorse or promote products derived from this software
+  without specific prior written permission.
+
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+  IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+  TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+  PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+  HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED
+  TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+  PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+  LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+  NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+WinZsh includes a memory allocator derived from tc.alloc.c from the
+tcsh distribution. As of tcsh release 6.12.00, tc.alloc.c and the rest of
+tcsh is under the 3-clause BSD license as follows.
+
+ Copyright (c) 1980, 1991 The Regents of the University of California.
+ All rights reserved.
+
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions
+ are met:
+ 1. Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+ 2. Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
+ 3. Neither the name of the University nor the names of its contributors
+    may be used to endorse or promote products derived from this software
+    without specific prior written permission.
+
+ THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS'' AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ ARE DISCLAIMED.  IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE
+ FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+ OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+ OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+ SUCH DAMAGE.
 
 GNU termcap (termcap.c, tparam.c & termcap.h) is licensed under the GNU 
-GPL. 
+GPL as follows. See the file GPL for more details.
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 2, or (at your option)
+   any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
 
 The zsh source is covered under it's own copyrights, an OSI-Approved 
-Open Source MIT-like license. 
+Open Source MIT-like license, as follows. 
+
+ Copyright (c) 1992-1996 Paul Falstad
+ All rights reserved.
+
+ Permission is hereby granted, without written agreement and without
+ license or royalty fees, to use, copy, modify, and distribute this
+ software and to distribute modified versions of this software for any
+ purpose, provided that the above copyright notice and the following
+ two paragraphs appear in all copies of this software.
+
+ In no event shall Paul Falstad or the Zsh Development Group be liable
+ to any party for direct, indirect, special, incidental, or consequential
+ damages arising out of the use of this software and its documentation,
+ even if Paul Falstad and the Zsh Development Group have been advised of
+ the possibility of such damage.
+
+ Paul Falstad and the Zsh Development Group specifically disclaim any
+ warranties, including, but not limited to, the implied warranties of
+ merchantability and fitness for a particular purpose.  The software
+ provided hereunder is on an "as is" basis, and Paul Falstad and the
+ Zsh Development Group have no obligation to provide maintenance,
+ support, updates, enhancements, or modifications.
 
 In all cases, see the individual source files for specific license 
 terms.
