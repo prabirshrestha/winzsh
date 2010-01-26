@@ -1,1 +1,1 @@
-#define ZSH_VERSION "3.0.5-nt-beta-0.75"
+#define ZSH_VERSION "3.0.5-NT-0.77"

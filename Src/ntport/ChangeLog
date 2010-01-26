@@ -1,3 +1,16 @@
+0.77
+Mon Jan 25 20:30:28 2010 <timothy.j.ayres@gmail.com>
+	* Development restarted and hosted at 
+	  http://sourceforge.net/projects/zsh-nt/
+	* Changed license terms to the 3-clause BSD license with approval
+	  of Amol Deshpande.
+	* Use zsh.ico file from the zsh distribution.
+	* Removed unused files:
+      - except.c
+      - support.c.orig
+      - support.c.works
+	  - BSD icon files and RC files.
+	This release is functionally equivalent to 3.0.5-nt-beta-0.76.
 beta 0.76
 Sat Jan 27 19:01:40 2001    <amold@AMOLDHOME>
 	* last release. Change icon to new icon supplied by Mark Robinson

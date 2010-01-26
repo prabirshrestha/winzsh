@@ -30,7 +30,7 @@ contributors to WinZsh.
   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
   SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-WinZsh includes a memory allocator derived from tc.alloc.c from the
+WinZsh includes the (modified) memory allocator tc.alloc.c from the
 tcsh distribution. As of tcsh release 6.12.00, tc.alloc.c and the rest of
 tcsh is under the 3-clause BSD license as follows.
 

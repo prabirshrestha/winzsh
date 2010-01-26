@@ -65,6 +65,8 @@ Compiling:
 	  "vcvars32.bat" from your Visual C++ installation.
 
     - type "nmake -f ntport\Makefile.msvc6"
+	
+	- to include debugging support, type "nmake -f ntport\Makefile.msvc6 DBG=1"
 
 6. ZSHROOT:
 ----------
