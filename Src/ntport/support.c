@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <Lmcons.h>     /* for UNLEN max. user name len */
 #include <errno.h>
 #include <fcntl.h>
 #include "ntport.h"
@@ -186,7 +187,17 @@ int gettimeofday(struct timeval *tv, struct timezone *tz) {
 	return 0;
 }
 char *getlogin(void) {
-	return "bogus";
+	static char  userNameBuffer[UNLEN+1];
+	static DWORD userNameBufSize = UNLEN+1;
+	static int  gotUser=0;
+	if(!gotUser) {
+		BOOL rc = GetUserName(userNameBuffer, &userNameBufSize);
+		if(!rc) {
+			strcpy(userNameBuffer, "bogus");
+		}
+		gotUser=1;
+	}
+	return userNameBuffer;
 }
 void make_err_str(unsigned int error,char *buf,int size) {
 
@@ -221,16 +232,15 @@ void nt_execve_wrapped(char *prog, char**args, char**envir ) {
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 	BOOL bRet;
-    DWORD type=0;
+	DWORD type=0;
 	char *argv0;
 	char **savedargs = args;
 	unsigned int cmdsize,cmdlen;
 	char *cmdstr ,*cmdend;
-	char *p2;
 	int rc=0,retries=0;
 	int is_winnt;
 	int hasdot=0;
-
+	char myself[512];
 
 	memset(&si,0,sizeof(si));
 
@@ -238,26 +248,27 @@ void nt_execve_wrapped(char *prog, char**args, char**envir ) {
 	 * This memory is not freed because we are exec()ed and will
 	 * not be alive long.
 	 */
+
+	/* This version avoids realloc in concat_args_and_quote, so it should be a little bit safer */
+	/* cmdsize = 65500;
+	 * cmdstr= heap_alloc(cmdsize);
+	 */
+	cmdsize = MAX_PATH << 2;
 	cmdstr= heap_alloc(MAX_PATH<<2);
 
 	is_winnt = (gdwPlatform != VER_PLATFORM_WIN32_WINDOWS);
 
-	cmdsize = MAX_PATH << 2;
-
-	p2 = cmdstr;
-
-	cmdlen = 0;
-
-	cmdlen += copy_quote_and_fix_slashes(prog,cmdstr,&hasdot);
-
-	p2 += cmdlen;
-
-	if (*cmdstr != '"') {// copy_quote leaves a leading space
-		*cmdstr = 'A';
-		cmdstr++;
+	/* replace /bin/sh with myself to be executed */
+	if( strcmp(prog, "/bin/sh") == 0 ) {
+		if (GetModuleFileName(GetModuleHandle(NULL),myself,512) <= 512) {
+			prog = myself;
+		}
 	}
-	*p2 = 0;
-	cmdend = p2;
+
+	cmdlen = copy_quote_and_fix_slashes(prog,cmdstr,&hasdot);
+
+	cmdend = cmdstr + cmdlen;
+	*cmdend = 0;
 
 	if (!is_winnt){
 		argv0 = NULL;
@@ -321,24 +332,10 @@ retry:
 		goto retry;
 	}
 	else if (bRet && retries > 0) { //re-fix argv0
-		cmdsize = MAX_PATH << 2;
+		cmdlen = copy_quote_and_fix_slashes(argv0,cmdstr,&hasdot);
 
-		cmdstr--; //back to allocated pointer
-
-		p2 = cmdstr;
-
-		cmdlen = 0;
-
-		cmdlen += copy_quote_and_fix_slashes(argv0,cmdstr,&hasdot);
-
-		p2 += cmdlen;
-
-		if (*cmdstr != '"') {// copy_quote leaves a leading space
-			*cmdstr = 'A';
-			cmdstr++;
-		}
-		*p2 = 0;
-		cmdend = p2;
+		cmdend = cmdstr + cmdlen;
+		*cmdend = 0;
 	}
 
 win95_directly_here:
@@ -581,39 +578,50 @@ void fix_path_for_child(void){
  */
 int copy_quote_and_fix_slashes(char *source,char *target, int *hasdot ) {
 
-	int len ;
-	int hasspace;
-	char *save;
+	int len  = 0;
+	int hasspace = 0;
+	int foundslash = 0;
 	char *ptr;
 
-	save = target; /* leave space for quote */
-	len = 1;
-
-	target++;
-
-	hasspace = 0;
+	/* first find out if spaces are there */
 	while(*source) {
-		if (*source == '/')
+		if (*source == '/') {
 			*source = '\\';
-		else if (*source == ' ')
+		}
+		else if (*source == ' ' && !hasspace) {
 			hasspace = 1;
-
-		*target++ = *source;
-
+			/* add 2 characters for quotes in front and at end */
+			len += 2;
+		}
 		source++;
 		len++;
 	}
-	ptr  = target;//source;
-	while( (ptr > save ) && (*ptr != '/')) {
-		if (*ptr == '.')
-			*hasdot = 1;
-		ptr--;
+
+	ptr = target + len;
+	*ptr-- = 0;
+	source--;
+
+	/* add trailing quote if necessary */
+	if(hasspace) {
+		*ptr-- = '"';
 	}
 
+	/* copy source to target, backwards, thereby remembering dot */
+	while( ptr > target ) {
+		register char c = *ptr-- = *source--;
+		if(c == '\\') {
+			foundslash = 1;
+		}
+		else if(c == '.' && !foundslash) {
+			*hasdot = 1;
+		}
+	}
+
+	/* finally, insert the starting quote or copy the first character. */
 	if (hasspace) {
-		*save = '"';
-		*target = '"';
-		len++;
+		*ptr = '"';
+	} else {
+		*ptr = *source;
 	}
 	return len;
 }
@@ -628,9 +636,9 @@ void concat_args_and_quote(char **args, char **cstr, unsigned int *clen,
 
 	unsigned int argcount, arglen, cmdlen;
 	char *tempptr, *cmdend ,*cmdstr;
-	short quotespace = 0;
-	short quotequote = 0;
-	char tempquotedbuf[256];
+	short quotespace;
+	short quotequote;
+	short n_quotequote;
 
 	/* 
 		quotespace hack needed since execv() would have separated args, but
@@ -644,73 +652,83 @@ void concat_args_and_quote(char **args, char **cstr, unsigned int *clen,
 	argcount = 0;
 	while (*args && (cmdlen < 65500) ) {
 
+		argcount++;
+		arglen = 0;
+
+		/* first, count the current argument and check if we need to quote. */
+		quotespace = quotequote = n_quotequote = 0;
+		tempptr = *args;
+
+		if(!*tempptr) {
+			/* check for empty argument, will be replaced by "" */
+			quotespace = 1;
+		}
+		else {
+			/* count spaces, tabs and quotes. */
+			while(*tempptr) {
+				if (*tempptr == ' ' || *tempptr == '\t') 
+					quotespace = 1;
+				else if (*tempptr == '"') {
+					quotequote = 1;
+					n_quotequote++;
+				} else if (*tempptr == '\\') {
+					n_quotequote++;
+				}
+				tempptr++;
+				arglen++;
+			}
+		}
+		
+		/* Next, realloc target string if necessary */
+		while (cmdlen + 2 + arglen + 2*quotespace + quotequote * n_quotequote > *cmdsize) {
+			tempptr = cmdstr;
+			dprintf("Heap realloc before 0x%08x\n",cmdstr);
+			cmdstr = heap_realloc(cmdstr,*cmdsize<<1);
+			if (tempptr != cmdstr) {
+				cmdend = cmdstr + (cmdend-tempptr);
+			}
+			dprintf("Heap realloc after 0x%08x\n",cmdstr);
+			*cmdsize <<=1;
+		}
+
+		/* add space before next argument */
 		*cmdend++ = ' ';
 		cmdlen++;
 
-		tempptr = *args;
-
-		arglen = 0;
-		argcount++;
-
-		if (!*tempptr) {
+		if (quotespace) {
+			/* we need to quote, so output a quote. */
 			*cmdend++ = '"';
-			*cmdend++ = '"';
+			cmdlen++;
 		}
-		while(*tempptr) {
-			if (*tempptr == ' ' || *tempptr == '\t') 
-				quotespace = 1;
-			else if (*tempptr == '"')
-				quotequote = 1;
-			tempptr++;
-			arglen++;
+
+		if (!isset(WINNTNOQUOTEPROTECT) && n_quotequote > 0){
+			/* quote quotes and copy into the destination */
+			*cmdend=0;
+			quoteProtect(cmdend,*args);
+			while(*cmdend) {
+				cmdend++;
+				cmdlen++;
+			}
 		}
-        if (arglen + cmdlen +4 > *cmdsize) { // +4 is if we have to quote
-            tempptr = cmdstr-1;
-			dprintf("Heap realloc before 0x%08x\n",cmdstr-1);
-            cmdstr = heap_realloc(cmdstr-1,*cmdsize<<1);
-            if (tempptr != cmdstr) {
-                cmdend = cmdstr + (cmdend-tempptr);
-            }
-            cmdstr++;
-			dprintf("Heap realloc after 0x%08x\n",cmdstr-1);
-            *cmdsize <<=1;
-        }
-		if (quotespace)
+		else {
+			/* directly copy the argument into the destination */
+			tempptr = *args;
+			while(*tempptr) {
+				*cmdend++ = *tempptr++;
+				cmdlen++;
+			}
+		}
+
+		if (quotespace) {
 			*cmdend++ = '"';
+			cmdlen ++;
+		}
 
-        if (!isset(WINNTNOQUOTEPROTECT) && quotequote){
-            tempquotedbuf[0]=0;
-
-            tempptr = &tempquotedbuf[0];
-            quoteProtect(tempquotedbuf,*args);
-            while (*tempptr) {
-                *cmdend = *tempptr;
-                cmdend++;
-                tempptr++;
-            }
-            cmdlen +=2;
-        }
-        else {
-            tempptr = *args;
-            while(*tempptr) {
-                *cmdend = *tempptr;
-                cmdend++;
-                tempptr++;
-            }
-        }
-
-        if (quotespace) {
-            *cmdend++ = '"';
-            cmdlen +=2;
-        }
-        cmdlen += arglen;
-
-        args++;
+		args++;
 	}
 	*clen = cmdlen;
 	*cend = cmdend;
 	*cstr = cmdstr;
-
 
 }
 /* Takes pwd as argument. extracts drive letter or server name 

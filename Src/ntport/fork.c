@@ -224,6 +224,7 @@ int fork(void) {
 	STARTUPINFO si;
 	PROCESS_INFORMATION pi;
 	SECURITY_ATTRIBUTES sa;
+	DWORD object_active;
 
 	unsigned long fork_stack_end;
 
@@ -275,8 +276,8 @@ int fork(void) {
 		rc = GetLastError();
 		return -1;
 	}
-	rc = CreateProcess(NULL,
-			modname,
+	rc = CreateProcess(modname,
+			NULL,
 			NULL,
 			NULL,
 			TRUE,
@@ -317,8 +318,8 @@ int fork(void) {
 	hArray[0] = __hforkchild;
 	hArray[1] = hProc;
 
-	if (WaitForMultipleObjects(2,hArray,FALSE,FORK_TIMEOUT) != WAIT_OBJECT_0){
-
+	object_active = WaitForMultipleObjects(2,hArray,FALSE,FORK_TIMEOUT);
+	if (object_active != WAIT_OBJECT_0) {
 		int err = GetLastError(); // For debugging purposes
 		goto error;
 	}
@@ -790,8 +791,8 @@ static int     realloc_srchlen = 4;
 #endif /* lint */
 #endif NOTNT
 
-#undef realloc
-extern void* realloc(void*,size_t);
+//#undef realloc
+//extern void* realloc(void*,size_t);
 
 	memalign_t
 frealloc(cp, nbytes)

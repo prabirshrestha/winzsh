@@ -34,21 +34,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  -amol
  */
 
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include "ntport.h"
 
 extern unsigned long bookend1,bookend2;
 extern char **environ;
 
 //char ** __saved_environ=0;
+#ifdef NTDBG
 #undef dprintf
 void
 dprintf(char *format, ...)
 {				/* } */
 	va_list vl;
-	char putbuf[1024];
+	char putbuf[2048];
 	{
 		va_start(vl, format);
 		vsprintf(putbuf, format, vl);//melkov@cs.muh.ru
@@ -56,6 +54,8 @@ dprintf(char *format, ...)
 		OutputDebugString(putbuf);
 	}
 }
+#endif
+
 int fork_copy_user_mem(HANDLE hproc) {
 	
 	int bytes,rc;

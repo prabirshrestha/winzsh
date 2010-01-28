@@ -252,7 +252,7 @@ void			nt_free(void *);
 extern void dprintf(char *,...);
 #define DBreak() __asm {int 3}
 #else
-#define dprintf ((void))
+#define dprintf if(0)printf
 #define DBreak()
 #endif NTDBG
 

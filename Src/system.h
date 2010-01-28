@@ -483,7 +483,7 @@ struct timezone {
 # define R_OK 4
 #endif
 
-extern char **environ;     /* environment variable list */
+// extern char **environ;     /* environment variable list */
 
 /* These variables are sometimes defined in, *
  * and needed by, the termcap library.       */
