@@ -1,8 +1,8 @@
 #set -v
-TERM=vt100
-setenv() { export $1=$2 }  # csh compatibility
+#TERM=vt100
+#setenv() { export $1=$2 }  # csh compatibility
 
-	setenv LESS "-B -c -h4 -i -M -q -x4"
+#	setenv LESS "-B -c -h4 -i -M -q -x4"
 
 #if (test "$PROCESSOR_ARCHITECTURE""X"=="X") then
 #	setenv USER  $USERNAME
@@ -17,7 +17,8 @@ setenv() { export $1=$2 }  # csh compatibility
 
 bindkey -em
 
-path=($path c:/gnubin .)
+# Note: path (lowercase) is an array, PATH (uppercase) is a string.
+path=($path C:/GnuWin32/bin .)
 cdpath=( C:/ D:/ )
 fignore=(.obj .pdb .bsc .ilk .idb  .OBJ .PDB .BSC .ILK .IDB)
 
@@ -25,13 +26,12 @@ PROMPT='%3C>' #'%/>' #'%{f9%}%/%{gg%}(%{f2%}%?%{gg%})\>'
 prompt3='%{fc%}Do you mean: %R ?(y|n|e)%{gg%} '
 
 setopt autolist correctall automenu
-setopt pushdtohome pushdsilent #autopushd
-setopt nolistbeep
+#setopt pushdtohome pushdsilent #autopushd
+setopt nolistbeep nobeep
 
-dirstacksize=100
-histsize=1000
-histfile=~/.zhistory
-
+export HISTSIZE=1000
+export HISTFILE=~/.zhistory
+export SAVEHIST=1000
 
 setopt notify monitor
 setopt noclobber ignoreeof histignoredups autocd
@@ -41,17 +41,17 @@ alias	ls='ls -F'
 alias 	h=history
 
 #
-alias 	rm='c:/gnubin/rm.exe -i'
-alias 	rd='c:/gnubin/rmdir.exe'
-alias 	md='c:/gnubin/mkdir.exe'
-alias 	mv='c:/bin/mv.exe -i'
-alias   cp='C:/bin/cp.exe -i'
-alias	vi='nocorrect vi.exe'
-alias	less='nocorrect less.exe'
-alias   word='c:/apps/winword/winword/winword.exe'
-alias   excel='e:/apps/excel/Excel/Excel.exe'
-alias	emacs=c:/bin/emacs.csh
-alias	gemacs=c:/bin/gemacs.csh #gui emacs
+#alias 	rm='c:/gnubin/rm.exe -i'
+#alias 	rd='c:/gnubin/rmdir.exe'
+#alias 	md='c:/gnubin/mkdir.exe'
+#alias 	mv='c:/bin/mv.exe -i'
+#alias   cp='C:/bin/cp.exe -i'
+#alias	vi='nocorrect vi.exe'
+#alias	less='nocorrect less.exe'
+#alias   word='c:/apps/winword/winword/winword.exe'
+#alias   excel='e:/apps/excel/Excel/Excel.exe'
+#alias	emacs=c:/bin/emacs.csh
+#alias	gemacs=c:/bin/gemacs.csh #gui emacs
 alias	helpcommand=winhlp32
 
 bindkey ^W backward-delete-word

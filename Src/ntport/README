@@ -51,13 +51,10 @@ Compiling:
 		  Visual C++ 6.0 (sorry). Note: the 2008 Express Edition was
 		  tested and was confirmed not to work.
 		
-		* Sed and awk are needed to generate some headers. Sed v4.2 and
-		  mawk v1.3.3 from the GnuWin32 project
-		  (http://gnuwin32.sourceforge.net) have been tested and are
-		  known to work. Note: gawk and nawk were also tested and did
-		  NOT work, however the output from these was the same as on
-		  Linux, so this is not a Windows/GnuWin32 problem. Ensure that
-		  these are in your path so that make can find them.
+		* Sed and awk are needed to generate some headers, ensure that
+		  these are in your path so that make can find them.  Sed and awk
+		  (either gawk, mawk, or nawk) from the GnuWin32
+		  <http://gnuwin32.sourceforge.net></a> project work fine.
 	
 	- Download and extract the source.
 	
