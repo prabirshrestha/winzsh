@@ -70,10 +70,10 @@ NT_SRC = ntport\support.c ntport\bogus.c ntport\dirent.c \
 	 ntport\io.c ntport\fork.c ntport\globals.c ntport\ntb1.c \
 	 ntport\ntb2.c ntport\signal.c ntport\termcap.c ntport\tparam.c \
 	 ntport\console.c ntport\tparse.c ntport\stdio.c ntport\zsh_nt.c\
-	 ntport\ntbin.c ntport\ps.c
+	 ntport\ntfunc.c ntport\ps.c
 
 NT_OBJ = support.o bogus.o dirent.o io.o fork.o globals.o signal.o \
-	termcap.o tparam.o console.o tparse.o stdio.o zsh_nt.o ntbin.o ps.o
+	termcap.o tparam.o console.o tparse.o stdio.o zsh_nt.o ntfunc.o ps.o
 NT_BOOKEND1 = ntb1.o
 NT_BOOKEND2 = ntb2.o
 NT_HDRS = ntport\ntport.h ntport\signal.h
@@ -203,7 +203,7 @@ stdio.o: ntport\stdio.c
 	$(COMPILE) -Fo$*.o ntport\$*.c
 zsh_nt.o: ntport\zsh_nt.c
 	$(COMPILE) -Fo$*.o ntport\$*.c
-ntbin.o: ntport\ntbin.c
+ntfunc.o: ntport\ntfunc.c
 	$(COMPILE) -Fo$*.o ntport\$*.c
 ps.o: ntport\ps.c
 	$(COMPILE) -Fo$*.o ntport\$*.c

@@ -29,7 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 /*
- ntbin.c
+ ntfunc.c
  builtins specific to NT
  -amol
  */

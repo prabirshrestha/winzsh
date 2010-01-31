@@ -335,7 +335,7 @@ extern void ffree(void *);
 extern void *frealloc(void*,int);
 extern void *fcalloc(int,int);
 
-/* ntbin.c */
+/* ntfunc.c */
 int bin_start (char *name, char **argv, char *ops, int func) ;
 int bin_title (char *name, char **argv, char *ops, int func) ;
 int bin_cls (char *name, char **argv, char *ops, int func) ;
