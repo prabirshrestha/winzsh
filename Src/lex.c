@@ -34,7 +34,7 @@
 /* lexical state */
 
 int len = 0, bsiz = 256;
-char *bptr INIT_ZERO;
+char *bptr;
 extern int hwgetword;
 
 struct lexstack {
@@ -279,9 +279,7 @@ ctxtlex(void)
 #define LX2_OTHER 18
 #define LX2_META 19
 
-unsigned char lexact1[256] INIT_ZERO_STRUCT, 
-	lexact2[256] INIT_ZERO_STRUCT,
-	lextok2[256] INIT_ZERO_STRUCT;
+unsigned char lexact1[256], lexact2[256], lextok2[256];
 
 /**/
 void

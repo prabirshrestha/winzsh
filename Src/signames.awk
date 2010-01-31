@@ -53,14 +53,14 @@
 
 END {
     ps = "%s"
-    ifdstr = sprintf("#ifdef USE_SUSPENDED\n\t%csuspended%s%c,\n%selse\n\t%cstopped%s%c,\n#endif\n", 34, ps, 34, "#", 34, ps, 34)
+    ifdstr = sprintf("#ifdef USE_SUSPENDED\n\t%csuspended%s%c,\n%selse\n\t%cstopped%s%c,\n#endif\n", 034, ps, 034, "#", 034, ps, 034)
 
-    printf("%s\n%s\n\n%s\t%d\n\n%s\n\n%s\n\t%c%s%c,\n", "/** signals.h                                 **/", "/** architecture-customized signals.h for zsh **/", "#define SIGCOUNT", max, "#ifdef GLOBALS", "char *sigmsg[SIGCOUNT+2] = {", 34, "done", 34)
+    printf("%s\n%s\n\n%s\t%d\n\n%s\n\n%s\n\t%c%s%c,\n", "/** signals.h                                 **/", "/** architecture-customized signals.h for zsh **/", "#define SIGCOUNT", max, "#ifdef GLOBALS", "char *sigmsg[SIGCOUNT+2] = {", 034, "done", 034)
 
     for (i = 1; i <= 0 + max; i++)
 	if (msg[i] == "") {
 	    if (sig[i] == "")
-		printf("\t%c%c,\n", 34, 34)
+		printf("\t%c%c,\n", 034, 034)
 	    else if (sig[i] == "STOP")
 		printf ifdstr, " (signal)", " (signal)"
 	    else if (sig[i] == "TSTP")
@@ -70,21 +70,21 @@ END {
 	    else if (sig[i] == "TTOU")
 		printf ifdstr, " (tty output)", " (tty output)"
 	    else
-		printf("\t%cSIG%s%c,\n", 34, sig[i], 34)
+		printf("\t%cSIG%s%c,\n", 034, sig[i], 034)
 	} else
-	    printf("\t%c%s%c,\n", 34, msg[i], 34)
+	    printf("\t%c%s%c,\n", 034, msg[i], 034)
     print "\tNULL"
     print "};"
     print ""
     printf "char *sigs[SIGCOUNT+4] = {\n"
-    printf("\t%cEXIT%c,\n", 34, 34)
+    printf("\t%cEXIT%c,\n", 034, 034)
     for (i = 1; i <= 0 + max; i++)
 	if (sig[i] == "")
-	    printf("\t%c%d%c,\n", 34, i, 34)
+	    printf("\t%c%d%c,\n", 034, i, 034)
 	else
-	    printf("\t%c%s%c,\n", 34, sig[i], 34)
-    printf("\t%cZERR%c,\n", 34, 34)
-    printf("\t%cDEBUG%c,\n", 34, 34)
+	    printf("\t%c%s%c,\n", 034, sig[i], 034)
+    printf("\t%cZERR%c,\n", 034, 034)
+    printf("\t%cDEBUG%c,\n", 034, 034)
     print "\tNULL"
     print "};"
     print ""

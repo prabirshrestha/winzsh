@@ -7,12 +7,19 @@
 # NB: On SunOS 4.1.3 - user-functions don't work properly, also \" problems
 # Without 0 + hacks some nawks compare numbers as strings
 #
-/^[\t ]*#[\t ]*define[\t _]*RLIMIT_[A-Z]*[\t ]*[0-9][0-9]*/ { 
+BEGIN {limidx = 0}
+
+/^[\t ]*(#[\t ]*define[\t _]*RLIMIT_[A-Z]*[\t ]*[0-9][0-9]*|RLIMIT_[A-Z]*,[\t ]*)/ {
     limindex = index($0, "RLIMIT_")
     limtail = substr($0, limindex, 80)
     split(limtail, tmp)
     limnam = substr(tmp[1], 8, 20)
     limnum = tmp[2]
+    # in this case I assume GNU libc resourcebits.h
+    if (limnum == "") {
+	limnum = limidx++
+	sub (",", "", limnam)
+    }
     limrev[limnam] = limnum
     if (lim[limnum] == "") {
 	lim[limnum] = limnam
@@ -21,6 +28,7 @@
 	    if (limnam == "RSS")     { msg[limnum] = "resident" }
 	    if (limnam == "VMEM")    { msg[limnum] = "vmemorysize" }
 	    if (limnam == "NOFILE")  { msg[limnum] = "descriptors" }
+	    if (limnam == "OFILE")   { msg[limnum] = "descriptors" }
 	    if (limnam == "CORE")    { msg[limnum] = "coredumpsize" }
 	    if (limnam == "STACK")   { msg[limnum] = "stacksize" }
 	    if (limnam == "DATA")    { msg[limnum] = "datasize" }
@@ -38,6 +46,10 @@
     split(limtail, tmp)
     nlimits = tmp[2]
 }
+# in case of GNU libc
+/^[\t ]*RLIM_NLIMITS[\t ]*=[\t ]*RLIMIT_NLIMITS/ {
+    nlimits = limidx
+}
 
 END {
     if (limrev["MEMLOCK"] != "") {
@@ -46,7 +58,8 @@ END {
     }
     ps = "%s"
 
-    printf("%s\n%s\n\n%s\n", "/** rlimits.h                                 **/", "/** architecture-customized limits for zsh **/", "static char *recs[RLIM_NLIMITS+1] = {")
+    printf("%s\n%s\n\n", "/** rlimits.h                                 **/", "/** architecture-customized limits for zsh **/")
+    printf("#define ZSH_NLIMITS %d\n\nstatic char *recs[ZSH_NLIMITS+1] = {\n", 0 + nlimits)
 
     for (i = 0; i < 0 + nlimits; i++)
 	if (msg[i] == "") {

@@ -58,10 +58,8 @@
 #endif
 
 #include <stdio.h>
-#ifndef WINNT
 #include <pwd.h>
 #include <grp.h>
-#endif WINNT
 #include <ctype.h>
 #include <sys/stat.h>
 #include <signal.h>
@@ -183,7 +181,6 @@ struct timezone {
 #ifdef HAVE_SYS_WAIT_H
 # include <sys/wait.h>
 #else
-#ifndef WINNT
 #undef WIFEXITED
 #undef WEXITSTATUS
 #undef WIFSIGNALED
@@ -191,7 +188,6 @@ struct timezone {
 #undef WCOREDUMP
 #undef WIFSTOPPED
 #undef WSTOPSIG
-#endif WINNT
 #endif
 
 /* missing macros for wait/waitpid/wait3 */
@@ -227,7 +223,6 @@ struct timezone {
 # include <sys/filio.h>
 #endif
 
-#ifndef WINNT
 #ifdef HAVE_TERMIOS_H
 # ifdef __sco
    /* termios.h includes sys/termio.h instead of sys/termios.h; *
@@ -236,7 +231,11 @@ struct timezone {
 # else
 #  include <termios.h>
 # endif
-# define VDISABLEVAL 0
+# ifdef _POSIX_VDISABLE
+#  define VDISABLEVAL _POSIX_VDISABLE
+# else
+#  define VDISABLEVAL 0
+# endif
 # define HAS_TIO 1
 #else    /* not TERMIOS */
 # ifdef HAVE_TERMIO_H
@@ -247,13 +246,12 @@ struct timezone {
 #  include <sgtty.h>
 # endif  /* HAVE_TERMIO_H  */
 #endif   /* HAVE_TERMIOS_H */
-#endif WINNT
 
 #ifdef HAVE_TERMCAP_H
 #include <termcap.h>
 #endif
 
-#ifdef GWINSZ_IN_SYS_IOCTL
+#if defined(GWINSZ_IN_SYS_IOCTL) || defined(CLOBBERS_TYPEAHEAD)
 # include <sys/ioctl.h>
 #endif
 #ifdef WINSIZE_IN_PTEM
@@ -269,7 +267,6 @@ struct timezone {
 # include <sys/utsname.h>
 #endif
 
-#ifndef WINNT
 #ifdef HAVE_UTMPX_H
 # include <utmpx.h>
 # define STRUCT_UTMP struct utmpx
@@ -278,7 +275,6 @@ struct timezone {
 # include <utmp.h>
 # define STRUCT_UTMP struct utmp
 #endif
-#endif WINNT
  
 #if !defined (UTMP_FILE) && defined (_PATH_UTMP)        /* 4.4BSD.  */
 # define UTMP_FILE _PATH_UTMP
@@ -385,19 +381,6 @@ struct timezone {
 # define RLIMIT_VMEM RLIMIT_AS
 #endif
 
-/* RLIM_T is the type for system calls involving resource limits     */
-/* Eventually the following will be replaced by a check in configure */
-
-#if defined(BSD4_4) && (BSD > 199300)
-# define RLIM_T_IS_QUAD_T
-#endif
-
-#ifdef RLIM_T_IS_QUAD_T
-# define RLIM_T quad_t
-#else
-# define RLIM_T long
-#endif
-
 /* DIGBUFSIZ is the length of a buffer which can hold the -LONG_MAX-1 *
  * converted to printable decimal form including the sign and the     *
  * terminating null character. Below 0.30103 > lg 2.                  */
@@ -483,7 +466,7 @@ struct timezone {
 # define R_OK 4
 #endif
 
-// extern char **environ;     /* environment variable list */
+extern char **environ;     /* environment variable list */
 
 /* These variables are sometimes defined in, *
  * and needed by, the termcap library.       */

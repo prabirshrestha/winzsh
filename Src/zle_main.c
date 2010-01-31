@@ -48,8 +48,8 @@
 #define ZLE
 #include "zsh.h"
 
-static int emacs_cur_bindtab[256] INIT_ZERO_STRUCT, eofchar, eofsent;
-static int viins_cur_bindtab[256] INIT_ZERO_STRUCT;
+static int emacs_cur_bindtab[256], eofchar, eofsent;
+static int viins_cur_bindtab[256];
 
 static Key cky;
 
@@ -63,7 +63,6 @@ static long keytimeout;
 void
 setterm(void)
 {
-#ifndef WINNT
     struct ttyinfo ti;
 
 #if defined(CLOBBERS_TYPEAHEAD) && defined(FIONREAD)
@@ -181,7 +180,6 @@ setterm(void)
 #endif
 
     settyinfo(&ti);
-#endif WINNT
 }
 
 static char *kungetbuf;
@@ -243,7 +241,6 @@ getkey(int keytmout)
     if (kungetct)
 	ret = STOUC(kungetbuf[--kungetct]);
     else {
-#ifndef WINNT
 	if (keytmout) {
 	    if (keytimeout > 500)
 		exp100ths = 500;
@@ -284,21 +281,6 @@ getkey(int keytmout)
 # endif
 #endif
 	}
-#else WINNT
-	if (keytmout) {
-	    if (keytimeout > 500)
-		exp100ths = 500;
-	    else if (keytimeout > 0)
-		exp100ths = keytimeout;
-	    else
-		exp100ths = 0;
-		
-	    if (WaitForSingleObject(
-	    	   (HANDLE)_open_osfhandle(SHTTY,_O_NOINHERIT),
-		    exp100ths*10) != WAIT_OBJECT_0)
-		    return EOF;
-	}
-#endif WINNT
 	while ((r = read(SHTTY, &cc, 1)) != 1) {
 	    if (r == 0) {
 		/* The test for IGNOREEOF was added to make zsh ignore ^Ds
@@ -324,10 +306,8 @@ getkey(int keytmout)
 		errflag = 0;
 		errno = old_errno;
 		return EOF;
-#ifndef WINNT
 	    } else if (errno == EWOULDBLOCK) {
 		fcntl(0, F_SETFL, 0);
-#endif WINNT
 	    } else if (errno == EIO && !die) {
 		ret = opts[MONITOR];
 		opts[MONITOR] = 1;
@@ -531,9 +511,6 @@ getkeycmd(void)
 {
     int ret;
     static int hops = 0;
-#ifdef WINNT
-    __nt_want_vcode = 1;
-#endif WINNT
 
     cky = NULL;
     if (!keybuf)
@@ -542,18 +519,8 @@ getkeycmd(void)
 
     if ((c = getkey(0)) < 0)
 	return -1;
-
     keybuf[0] = c;
-    ret = bindtab[c];
-#ifdef WINNT
-    if (__nt_want_vcode & 0x02) {
-    	int idx = (__nt_want_vcode & (~0 << 8));
-	idx >>=8;
-    	ret = ntvirtualbind[idx];
-    }
-    __nt_want_vcode = 0;
-#endif WINNT
-    if (ret  == z_prefix) {
+    if ((ret = bindtab[c]) == z_prefix) {
 	int lastlen = 0, t0 = 1, firstc = c;
 	Key ky;
 
@@ -685,16 +652,7 @@ initkeybindings(void)
     }
 
     for (i = 0200; i < 0240; i++)
-#ifndef WINNT
 	emacs_cur_bindtab[i] = viins_cur_bindtab[i] = z_undefinedkey;
-#else WINNT
-	{
-	    if (!isset(PRINTEIGHTBIT))
-		emacs_cur_bindtab[i] = viins_cur_bindtab[i] = z_undefinedkey;
-	    else
-		emacs_cur_bindtab[i] = viins_cur_bindtab[i] = z_selfinsert;
-	}
-#endif WINNT
     for (i = 0; i < 128; i++)
 	altbindtab[i] = vicmdbind[i];
     for (i = 128; i < 256; i++)
@@ -831,7 +789,7 @@ getkeystring(char *s, int *len, int fromwhere, int *misc)
 			s[3] = '\0';
 			u = s;
 		    }
-		    *t++ = (char)zstrtol(s + (*s == 'x'), &s,
+		    *t++ = zstrtol(s + (*s == 'x'), &s,
 				   (*s == 'x') ? 16 : 8);
 		    if (svchar) {
 			u[3] = svchar;
@@ -938,12 +896,6 @@ bin_bindkey(char *name, char **argv, char *ops, int junc)
 	    zerrnam(name, "too many arguments", NULL, 0);
 	    return 1;
 	}
-#ifdef WINNT
-	if (ops['N'] ){
-	    zerrnam(name,"-N cannot be combined with other options",NULL,0);
-	    return 1;
-	}
-#endif  WINNT
 	if (ops['d']) {
 	    /* empty the hash tables for multi-character bindings */
 	    emkeybindtab->emptytable(emkeybindtab);
@@ -966,10 +918,6 @@ bin_bindkey(char *name, char **argv, char *ops, int junc)
 	return 0;
     }
     tab = (ops['a']) ? altbindtab : mainbindtab;
-#ifdef WINNT
-    if (ops['N'])
-    	tab = ntvirtualbind;
-#endif WINNT
 
     /* print bindings to stdout */
     bindout = stdout;

@@ -64,30 +64,24 @@ evalcond(Cond c)
     case 'e':
     case 'a':
 	return (doaccess(c->left, F_OK));
-#ifndef WINNT
     case 'b':
 	return (S_ISBLK(dostat(c->left)));
-#endif WINNT
     case 'c':
 	return (S_ISCHR(dostat(c->left)));
     case 'd':
 	return (S_ISDIR(dostat(c->left)));
     case 'f':
 	return (S_ISREG(dostat(c->left)));
-#ifndef WINNT
     case 'g':
 	return (!!(dostat(c->left) & S_ISGID));
     case 'k':
 	return (!!(dostat(c->left) & S_ISVTX));
-#endif WINNT
     case 'n':
 	return (!!strlen(c->left));
     case 'o':
 	return (optison(c->left));
-#ifndef WINNT
     case 'p':
 	return (S_ISFIFO(dostat(c->left)));
-#endif WINNT
     case 'r':
 	return (doaccess(c->left, R_OK));
     case 's':
@@ -98,27 +92,21 @@ evalcond(Cond c)
 #else
 	return 0;   /* some versions of SCO are missing S_ISSOCK */
 #endif
-#ifndef WINNT
     case 'u':
 	return (!!(dostat(c->left) & S_ISUID));
-#endif WINNT
     case 'w':
 	return (doaccess(c->left, W_OK));
     case 'x':
-#ifndef WINNT
 	if (!geteuid()) {
 	    unsigned short mode = dostat(c->left);
 	    return (mode & 0111) || S_ISDIR(mode);
 	}
-#endif WINNT
-	return (doaccess(c->left, X_OK));
+	return doaccess(c->left, X_OK);
     case 'z':
 	return (!strlen(c->left));
-#ifndef WINNT
     case 'h':
     case 'L':
 	return (S_ISLNK(dolstat(c->left)));
-#endif WINNT
     case 'O':
 	return ((st = getstat(c->left)) && st->st_uid == geteuid());
     case 'G':

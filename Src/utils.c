@@ -140,11 +140,7 @@ zerrnam(char *cmd, char *fmt, char *str, int num)
 int
 putraw(int c)
 {
-#ifndef WINNT
     putc(c, stdout);
-#else
-    tc_putc((char)c,stdout);
-#endif WINNT
     return 0;
 }
 
@@ -154,11 +150,7 @@ putraw(int c)
 int
 putshout(int c)
 {
-#ifndef WINNT
     putc(c, shout);
-#else 
-    tc_putc((char)c,shout);
-#endif WINNT
     return 0;
 }
 
@@ -256,13 +248,11 @@ findpwd(char *s)
 int
 ispwd(char *s)
 {
-#ifndef WINNT
     struct stat sbuf, tbuf;
 
     if (stat(unmeta(s), &sbuf) == 0 && stat(".", &tbuf) == 0)
 	if (sbuf.st_dev == tbuf.st_dev && sbuf.st_ino == tbuf.st_ino)
 	    return 1;
-#endif WINNT
     return 0;
 }
 
@@ -332,11 +322,7 @@ xsymlinks(char *s, int flag)
 	    continue;
 	}
 	sprintf(xbuf2, "%s/%s", xbuf, *pp);
-#ifndef WINNT
 	t0 = readlink(unmeta(xbuf2), xbuf3, PATH_MAX);
-#else
-	t0 =-1;
-#endif WINNT
 	if (t0 == -1 || !flag) {
 	    strcat(xbuf, "/");
 	    strcat(xbuf, *pp);
@@ -495,12 +481,7 @@ adduserdir(char *s, char *t, int flags, int always)
 	    !nameddirtab->getnode2(nameddirtab, s))
 	return;
 
-#ifndef WINNT
     if (!t || *t != '/' || strlen(t) >= PATH_MAX) {
-#else
-    if (!t || (*t != '/' && *t != '\\' && t[1] != ':')
-    	|| strlen(t) >= PATH_MAX) {
-#endif WINNT
 	/* We can't use this value as a directory, so simply remove *
 	 * the corresponding entry in the hash table, if any.       */
 	HashNode hn = nameddirtab->removenode(nameddirtab, s);
@@ -538,14 +519,7 @@ getnameddir(char *name)
      * return the new value.                                           */
     if ((pm = (Param) paramtab->getnode(paramtab, name)) &&
 	    (PM_TYPE(pm->flags) == PM_SCALAR) &&
-#ifndef WINNT
 	    (str = getsparam(name)) && *str == '/') {
-#else 
-	    (str = getsparam(name)) && 
-	    	( 
-		(*str == '/') || (str[1] && str[1] == ':') || (*str == '\\')
-		)) {
-#endif WINNT
 	adduserdir(name, str, 0, 1);
 	return str;
     }
@@ -562,28 +536,15 @@ getnameddir(char *name)
     /* There are no more possible sources of directory names, so give up. */
     return NULL;
 }
-#ifdef WINNT
-/**/
-char
-dirchar(char c)
-{
-    if (c == '\\' && isset(WINNTCONVERTBACKSLASH))
-        return '/';
-    return (isset(WINNTIGNORECASE)) ? tolower(c) : c;
-}
-#endif
+
 /**/
 int
 dircmp(char *s, char *t)
 {
     if (s) {
-#ifdef WINNT /* patch from Dominik Vogt */
-	    for (; dirchar(*s) == dirchar(*t); s++, t++)
-#else
-	    for (; *s == *t; s++, t++)
-#endif
-		if (!*s)
-		    return 0;
+	for (; *s == *t; s++, t++)
+	    if (!*s)
+		return 0;
 	if (!*s && *t == '/')
 	    return 0;
     }
@@ -812,7 +773,6 @@ freestr(void *a)
 void
 gettyinfo(struct ttyinfo *ti)
 {
-#ifndef WINNT
     if (SHTTY != -1) {
 #ifdef HAVE_TERMIOS_H
 # ifdef HAVE_TCGETATTR
@@ -832,14 +792,12 @@ gettyinfo(struct ttyinfo *ti)
 # endif
 #endif
     }
-#endif WINNT
 }
 
 /**/
 void
 settyinfo(struct ttyinfo *ti)
 {
-#ifndef WINNT
     if (SHTTY != -1) {
 #ifdef HAVE_TERMIOS_H
 # ifdef HAVE_TCGETATTR
@@ -864,7 +822,6 @@ settyinfo(struct ttyinfo *ti)
 # endif
 #endif
     }
-#endif WINNT
 }
 
 #ifdef TIOCGWINSZ
@@ -902,21 +859,6 @@ adjustwinsize(int from)
 	    columns = shttyinfo.winsize.ws_col;
     }
 #endif   /* TIOCGWINSZ */
-#ifdef WINNT
-    static int userlines, usercols;
-    extern int winchanged;
-    extern void nt_getsize(int*,int*);
-
-    if (SHTTY == -1)
-	return;
-
-    if (from == 2)
-	userlines = lines > 0;
-    if (from == 3)
-	usercols = columns > 0;
-    
-    nt_getsize(&lines,&columns);
-#endif
 
     if (lines <= 0)
 	lines = tclines > 0 ? tclines : 24;
@@ -1395,13 +1337,7 @@ spckword(char **s, int hist, int cmd, int ask)
     }
     if (errflag)
 	return;
-#ifndef WINNT
     if (best && (int)strlen(best) > 1 && strcmp(best, guess)) {
-#else
-    if (best && (int)strlen(best) > 1 && 
-    (isset(WINNTIGNORECASE)?lstrcmpi(best,guess):strcmp(best, guess))
-    ) {
-#endif WINNT
 	if (ic) {
 	    if (preflen) {
 		/* do not correct the result of an expansion */
@@ -2577,11 +2513,7 @@ void
 feep(void)
 {
     if (isset(BEEP))
-#ifndef WINNT
 	write(2, "\07", 1);
-#else
-	MessageBeep(MB_ICONQUESTION);
-#endif WINNT
 }
 
 /**/
@@ -2650,18 +2582,6 @@ inittyptab(void)
 	typtab[t0] = typtab[t0 - 'a' + 'A'] = IALPHA | IALNUM | IIDENT | IUSER | IWORD;
     for (t0 = 0240; t0 != 0400; t0++)
 	typtab[t0] = IALPHA | IALNUM | IIDENT | IUSER | IWORD;
-#ifdef WINNT_NOT
-    if (!NoNlsRebind){
-	unsigned char och[2],ach[2];
-	for (t0 = 0200; t0 != 0400; t0++){
-	    och[0] = t0;
-	    och[1] = 0;
-	    OemToChar(och,ach);
-	    if (isprint(ach[0]))
-		typtab[t0] = IALPHA | IALNUM | IIDENT | IUSER | IWORD;
-	}
-    }
-#endif WINNT
     typtab['_'] = IIDENT | IUSER;
     typtab['-'] = IUSER;
     typtab[' '] |= IBLANK | INBLANK;
@@ -2835,7 +2755,6 @@ spdist(char *s, char *t, int thresh)
 void
 setcbreak(void)
 {
-#ifndef WINNT
     struct ttyinfo ti;
 
     ti = shttyinfo;
@@ -2847,7 +2766,6 @@ setcbreak(void)
     ti.sgttyb.sg_flags |= CBREAK;
 #endif
     settyinfo(&ti);
-#endif WINNT
 }
 
 /* give the tty to some process */
@@ -2856,7 +2774,6 @@ setcbreak(void)
 void
 attachtty(pid_t pgrp)
 {
-#ifndef WINNT
     static int ep = 0;
 
     if (jobbing) {
@@ -2886,7 +2803,6 @@ attachtty(pid_t pgrp)
 	    }
 	}
     }
-#endif WINNT
 }
 
 /* get the process group associated with the tty */
@@ -2895,7 +2811,6 @@ attachtty(pid_t pgrp)
 pid_t
 gettygrp(void)
 {
-#ifndef WINNT
     pid_t arg;
 
     if (SHTTY == -1)
@@ -2908,9 +2823,6 @@ gettygrp(void)
 #endif
 
     return arg;
-#else
-    return 0;
-#endif WINNT
 }
 
 /* Return the output baudrate */
@@ -2920,7 +2832,6 @@ gettygrp(void)
 long
 getbaudrate(struct ttyinfo *shttyinfo)
 {
-#ifndef WINNT
     long speedcode;
 
 #ifdef HAS_TIO
@@ -3013,7 +2924,6 @@ getbaudrate(struct ttyinfo *shttyinfo)
 	    return speedcode;
 	break;
     }
-#endif WINNT
     return (0L);
 }
 #endif
@@ -3507,9 +3417,6 @@ dosetopt(int optno, int value, int force)
     opts[optno] = value;
     if (optno == BANGHIST || optno == SHINSTDIN)
 	inittyptab();
-    if (optno == PRINTEIGHTBIT)
-    	initkeybindings();
-    	
     return 0;
 }
 

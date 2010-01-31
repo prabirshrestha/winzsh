@@ -42,29 +42,12 @@ main(int argc, char **argv)
 #ifdef LC_ALL
     setlocale(LC_ALL, "");
 #endif
-#ifdef WINNT
-	__try {
-	//nt_init();
-	fork_init();
-	}__except(1) {
-		dprintf("damn 0x%08x\n",GetExceptionCode());
-		return 1;
-	};
-#endif WINNT
 
     global_permalloc();
 
     for (t = argv; *t; *t = metafy(*t, -1, META_ALLOC), t++);
 
-#ifndef WINNT
     if (!(zsh_name = strrchr(argv[0], '/')))
-#else WINNT
-    if (!(zsh_name = strrchr(argv[0], '/')) && 
-    	!(zsh_name = strrchr(argv[0], '\\')) &&
-    	!(zsh_name = strchr(argv[0],':'))
-//    	!(argv[0][1] ==':')
-	)
-#endif WINNT
 	zsh_name = argv[0];
     else
 	zsh_name++;
@@ -109,7 +92,6 @@ main(int argc, char **argv)
 	zerrnam("zsh", (!islogin) ? "use 'exit' to exit."
 		: "use 'logout' to logout.", NULL, 0);
     }
-    return 0;
 }
 
 /* keep executing lists until EOF found */
@@ -302,9 +284,7 @@ parseargs(char **argv)
 void
 init_io(void)
 {
-#ifndef WINNT
     long ttpgrp;
-#endif WINNT
     static char outbuf[BUFSIZ], errbuf[BUFSIZ];
 
 #ifdef RSH_BUG_WORKAROUND
@@ -338,7 +318,6 @@ init_io(void)
 	SHTTY = -1;
     }
 
-#ifndef WINNT
     /* Make sure the tty is opened read/write. */
     if (isatty(0)) {
 	zsfree(ttystrname);
@@ -362,19 +341,6 @@ init_io(void)
 	    opts[USEZLE] = 0;
     } else
 	opts[USEZLE] = 0;
-#else
-    {
-	int fd;
-	SHTTY = movefd(open("CONIN$",O_RDONLY));
-	fd = open("CONOUT$",O_WRONLY);
-	if (interact && SHTTY != -1) {
-	    shout = fdopen(fd,"w");
-	    if(!shout)
-		opts[USEZLE] = 0;
-	} else
-	    opts[USEZLE] = 0;
-    }
-#endif WINNT
 
 #ifdef JOB_CONTROL
     /* If interactive, make the shell the foreground process */
@@ -548,15 +514,11 @@ setupvals(void)
 
     /* Set default path */
     path    = (char **) zalloc(sizeof(*path) * 5);
-#ifndef WINNT
     path[0] = ztrdup("/bin");
     path[1] = ztrdup("/usr/bin");
     path[2] = ztrdup("/usr/ucb");
     path[3] = ztrdup("/usr/local/bin");
     path[4] = NULL;
-#else
-	set_default_path(path);
-#endif WINNT
 
     cdpath   = mkarray(NULL);
     manpath  = mkarray(NULL);
@@ -685,9 +647,7 @@ setupvals(void)
 #endif
     }
 
-#ifndef WINNT_REPLACE
     times(&shtms);
-#endif WINNT_REPLACE
 }
 
 /* Initialize signal handling */
@@ -878,7 +838,6 @@ sourcehome(char *s)
 {
     char buf[PATH_MAX];
     char *h;
-    int rc;
 
     if (emulation == EMULATE_SH || emulation == EMULATE_KSH ||
 	!(h = getsparam("ZDOTDIR")))
@@ -888,13 +847,7 @@ sourcehome(char *s)
 	return;
     }
     sprintf(buf, "%s/%s", h, s);
-    rc = source(buf);
-#ifdef WINNT
-    if ( (rc == 1) && (s[0] == '.') && (s[1] != '\0') ) {
-    	sprintf(buf,"%s/%s",h,s+1);
-	source(buf);
-    }
-#endif WINNT
+    source(buf);
 }
 
 /**/

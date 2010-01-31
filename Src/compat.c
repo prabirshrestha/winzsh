@@ -118,11 +118,6 @@ zgetcwd(void)
     ino_t ino, pino, rootino = (ino_t) ~ 0;
     dev_t dev, pdev, rootdev = (dev_t) ~ 0;
 
-#ifdef WINNT
-	if (forward_slash_get_cwd(buf3,PATH_MAX)) {
-		return ztrdup(buf3);
-	}
-#endif WINNT
     holdintr();
     buf2[0] = '\0';
     buf0[0] = '/';
@@ -131,6 +126,7 @@ zgetcwd(void)
 	rootino = sbuf.st_ino;
 	rootdev = sbuf.st_dev;
     }
+
     if (stat(".", &sbuf) < 0) {
 	noholdintr();
 	return ztrdup(".");
