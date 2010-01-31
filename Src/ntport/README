@@ -54,7 +54,7 @@ Compiling:
 		* Sed and awk are needed to generate some headers, ensure that
 		  these are in your path so that make can find them.  Sed and awk
 		  (either gawk, mawk, or nawk) from the GnuWin32
-		  <http://gnuwin32.sourceforge.net></a> project work fine.
+		  <http://gnuwin32.sourceforge.net> project work fine.
 	
 	- Download and extract the source.
 	
