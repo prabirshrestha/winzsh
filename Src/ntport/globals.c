@@ -39,6 +39,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 extern unsigned long bookend1,bookend2;
 extern char **environ;
 
+#define IMAGE_SIZEOF_NT_OPTIONAL32_HEADER    224
+#define IMAGE_SIZEOF_NT_OPTIONAL64_HEADER    240
+
+#ifdef _WIN64
+#define IMAGE_SIZEOF_NT_OPTIONAL_HEADER     IMAGE_SIZEOF_NT_OPTIONAL64_HEADER
+#else
+#define IMAGE_SIZEOF_NT_OPTIONAL_HEADER     IMAGE_SIZEOF_NT_OPTIONAL32_HEADER
+#endif
+
+
 //char ** __saved_environ=0;
 #ifdef NTDBG
 #undef dprintf
@@ -90,106 +100,81 @@ int fork_copy_user_mem(HANDLE hproc) {
 	return 0;
 }
 /*
-How To Determine Whether an Application is Console or GUI     [win32sdk]
-ID: Q90493     CREATED: 15-OCT-1992   MODIFIED: 16-DEC-1996
+ * Inspired by Microsoft KB article ID: Q90493 
+ *
+ * returns 0 (false) if app is non-gui, 1 otherwise.
 */
 #include <winnt.h>
-#define xmalloc(s) HeapAlloc(GetProcessHeap(),HEAP_ZERO_MEMORY,(s))
-#define xfree(p) HeapFree(GetProcessHeap(),0,(p))
-#define XFER_BUFFER_SIZE 2048
+#include <ntport.h>
+
+__inline BOOL wait_for_io(HANDLE hi, OVERLAPPED *pO) {
+
+        DWORD bytes = 0;
+        if(GetLastError() != ERROR_IO_PENDING)
+        {
+                return FALSE;
+        }
+
+        return GetOverlappedResult(hi,pO,&bytes,TRUE);
+}
+#define CHECK_IO(h,o)  if(!wait_for_io(h,o)) {goto done;}
 
 int is_gui(char *exename) {
 
-	HANDLE hImage;
+        HANDLE hImage;
 
-	DWORD  bytes;
-	DWORD  SectionOffset;
-	DWORD  CoffHeaderOffset;
-	DWORD  MoreDosHeader[16];
+        DWORD  bytes;
+        OVERLAPPED overlap;
 
-	ULONG  ntSignature;
+        ULONG  ntSignature;
 
-	IMAGE_DOS_HEADER      image_dos_header;
-	IMAGE_FILE_HEADER     image_file_header;
-	IMAGE_OPTIONAL_HEADER image_optional_header;
+        struct DosHeader{
+                IMAGE_DOS_HEADER     doshdr;
+                DWORD                extra[16];
+        };
+
+        struct DosHeader dh;
+        IMAGE_OPTIONAL_HEADER optionalhdr;
+
+        int retCode = 0;
+
+        memset(&overlap,0,sizeof(overlap));
 
 
-	hImage = CreateFile(exename, GENERIC_READ, FILE_SHARE_READ, NULL,
-			OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+        hImage = CreateFile(exename, GENERIC_READ, FILE_SHARE_READ, NULL,
+                        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL| FILE_FLAG_OVERLAPPED, NULL);
+        if (INVALID_HANDLE_VALUE == hImage) {
+                return 0;
+        }
 
-	if (INVALID_HANDLE_VALUE == hImage) {
-		return 0;
-	}
+        ReadFile(hImage, &dh, sizeof(struct DosHeader), &bytes,&overlap);
+        CHECK_IO(hImage,&overlap);
 
-	/*
-	 *  Read the MS-DOS image header.
-	 */
-	if (!ReadFile(hImage, &image_dos_header, sizeof(IMAGE_DOS_HEADER),
-			&bytes,NULL)){
-		CloseHandle(hImage);
-		return 0;
-	}
 
-	if (IMAGE_DOS_SIGNATURE != image_dos_header.e_magic) {
-		CloseHandle(hImage);
-		return 0;
-	}
+        if (IMAGE_DOS_SIGNATURE != dh.doshdr.e_magic) {
+                goto done;
+        }
 
-	/*
-	 *  Read more MS-DOS header.       */
-	if (!ReadFile(hImage, MoreDosHeader, sizeof(MoreDosHeader),
-			&bytes,NULL)){
-		CloseHandle(hImage);
-		return 0;
-	}
+        // read from the coffheaderoffset;
+        overlap.Offset = dh.doshdr.e_lfanew;
 
-	/*
-	 *  Get actual COFF header.
-	 */
-	CoffHeaderOffset = SetFilePointer(hImage, image_dos_header.e_lfanew,
-			NULL,FILE_BEGIN);
+        ReadFile(hImage, &ntSignature, sizeof(ULONG), &bytes,&overlap);
+        CHECK_IO(hImage,&overlap);
 
-	if (CoffHeaderOffset == (DWORD) -1){
-		CloseHandle(hImage);
-		return 0;
-	}
+        if (IMAGE_NT_SIGNATURE != ntSignature) {
+                goto done;
+        }
+        overlap.Offset = dh.doshdr.e_lfanew + sizeof(ULONG) +
+                sizeof(IMAGE_FILE_HEADER);
 
-	CoffHeaderOffset += sizeof(ULONG);
+        ReadFile(hImage, &optionalhdr,IMAGE_SIZEOF_NT_OPTIONAL_HEADER, &bytes,&overlap);
+        CHECK_IO(hImage,&overlap);
 
-	if (!ReadFile (hImage, &ntSignature, sizeof(ULONG),
-			&bytes,NULL)){
-		CloseHandle(hImage);
-		return 0;
-	}
-
-	if (IMAGE_NT_SIGNATURE != ntSignature) {
-		CloseHandle(hImage);
-		return 0;
-	}
-
-	SectionOffset = CoffHeaderOffset + IMAGE_SIZEOF_FILE_HEADER +
-		IMAGE_SIZEOF_NT_OPTIONAL_HEADER;
-
-	if (!ReadFile(hImage, &image_file_header, IMAGE_SIZEOF_FILE_HEADER,
-			&bytes, NULL)){
-		CloseHandle(hImage);
-		return 0;
-	}
-
-	/*
-	 *  Read optional header.
-	 */
-	if (!ReadFile(hImage, &image_optional_header, 
-			IMAGE_SIZEOF_NT_OPTIONAL_HEADER,&bytes,NULL)) {
-		CloseHandle(hImage);
-		return 0;
-	}
-
-	CloseHandle(hImage);
-
-	if (image_optional_header.Subsystem ==IMAGE_SUBSYSTEM_WINDOWS_GUI)
-		return 1;
-	return 0;
+        if (optionalhdr.Subsystem ==IMAGE_SUBSYSTEM_WINDOWS_GUI)
+                retCode =  1;
+done:
+        CloseHandle(hImage);
+        return retCode;
 }
 int is_9x_gui(char *prog) {
 	
@@ -198,9 +183,13 @@ int is_9x_gui(char *prog) {
 	char *pathbuf;
 	char *pext;
 	
-	pathbuf=xmalloc(MAX_PATH);
+	pathbuf=heap_alloc(MAX_PATH+1);
+	if(!pathbuf)
+		return 0;
 
-	progpath=xmalloc(MAX_PATH<<1);
+	progpath=heap_alloc((MAX_PATH<<1)+1);
+	if(!progpath)
+		return 0;
 
 	if (GetEnvironmentVariable("PATH",pathbuf,MAX_PATH) ==0) {
 		goto failed;
@@ -216,14 +205,14 @@ int is_9x_gui(char *prog) {
 	dprintf("progpath is %s\n",progpath);
 	dwret = is_gui(progpath);
 
-	xfree(pathbuf);
-	xfree(progpath);
+	heap_free(pathbuf);
+	heap_free(progpath);
 
 	return dwret;
 
 failed:
-	xfree(pathbuf);
-	xfree(progpath);
+	heap_free(pathbuf);
+	heap_free(progpath);
 	return 0;
 
 
