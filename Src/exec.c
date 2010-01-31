@@ -34,8 +34,8 @@
 #define execerr() if (!forked) { lastval = 1; return; } else _exit(1)
 	
 
-static LinkList args;
-static int doneps4;
+static LinkList args INIT_ZERO;
+static int doneps4 INIT_ZERO;
 
 /* parse string into a list */
 
@@ -181,7 +181,13 @@ zexecve(char *pth, char **argv)
 		    if (execvebuf[1] == '!') {
 			for (t0 = 0; t0 != ct; t0++)
 			    if (execvebuf[t0] == '\n')
+				/*
 				execvebuf[t0] = '\0';
+				*/
+				break;
+			while(inblank(execvebuf[t0]))
+				execvebuf[t0--]='\0';
+				/* end patch*/
 			execvebuf[POUNDBANGLIMIT] = '\0';
 			for (ptr = execvebuf + 2; *ptr && *ptr == ' '; ptr++);
 			for (ptr2 = ptr; *ptr && *ptr != ' '; ptr++);
@@ -246,7 +252,7 @@ void
 execute(Cmdnam not_used_yet, int dash)
 {
     Cmdnam cn;
-    static LinkList exargs;
+    static LinkList exargs INIT_ZERO;
     char buf[MAXCMDLEN], buf2[MAXCMDLEN];
     char *s, *z, *arg0;
     char **argv, **pp;
@@ -289,7 +295,7 @@ execute(Cmdnam not_used_yet, int dash)
 	_exit(1);
     }
     for (s = arg0; *s; s++)
-	if (*s == '/') {
+	if (ABSOLUTEP(s)) { //(*s == '/') {
 	    errno = zexecve(arg0, argv);
 	    if (arg0 == s || unset(PATHDIRS) ||
 		(arg0[0] == '.' && (arg0 + 1 == s ||
@@ -311,7 +317,7 @@ execute(Cmdnam not_used_yet, int dash)
 		    ee = zexecve(arg0, argv);
 		    if (isgooderr(ee, *pp))
 			eno = ee;
-		} else if (**pp != '/') {
+		} else if (!ABSOLUTEP(*pp)) { //(**pp != '/') {
 		    z = buf;
 		    strucpy(&z, *pp);
 		    *z++ = '/';
@@ -418,15 +424,24 @@ iscom(char *s)
     struct stat statbuf;
     char *us = unmeta(s);
 
+#ifndef WINNT
     return (access(us, X_OK) == 0 && stat(us, &statbuf) >= 0 &&
 	    S_ISREG(statbuf.st_mode));
+#else
+    USE(statbuf);
+    return (access(us, XD_OK) == 0 );
+#endif WINNT
 }
 
 /**/
 int
 isrelative(char *s)
 {
+#ifndef WINNT
     if (*s != '/')
+#else
+    if ( (*s != '/') && (s[1] && s[1] != ':'))
+#endif /*WINNT */
 	return 1;
     for (; *s; s++)
 	if (*s == '.' && s[-1] == '/' &&
@@ -926,6 +941,11 @@ clobber_open(struct redir *f)
 
 /* close an multio (success) */
 
+/* VC 6.0 uses registers agressively. If a local variable is in a
+ * register during fork(), it gets lost in the child. There is no cure
+ * for this, except to turn off the optimization. -amol 5/19/99
+ */
+#pragma optimize("",off)
 /**/
 void
 closemn(struct multio **mfds, int fd)
@@ -959,6 +979,7 @@ closemn(struct multio **mfds, int fd)
     }
     _exit(0);
 }
+#pragma optimize("",on)
 
 /* close all the mnodes (failure) */
 
@@ -1127,6 +1148,7 @@ addvars(LinkList l, int export)
     }
 }
 
+#pragma optimize("",off)
 /**/
 void
 execcmd(Cmd cmd, int input, int output, int how, int last1)
@@ -1563,6 +1585,7 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
 		    fil = open(unmeta(fn->name),
 			       (unset(CLOBBER) && !IS_CLOBBER_REDIR(fn->type)) ?
 			       O_WRONLY | O_APPEND : O_WRONLY | O_APPEND | O_CREAT, 0666);
+		
 		else
 		    fil = clobber_open(fn);
 		if(fil != -1 && IS_ERROR_REDIR(fn->type))
@@ -1740,6 +1763,7 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
 	_exit(lastval);
     fixfds(save);
 }
+#pragma optimize("",on)
 
 /* Arrange to have variables restored. */
 
@@ -1920,7 +1944,9 @@ entersubsh(int how, int cl, int fake)
     zleactive = 0;
     if (cl)
 	clearjobtab();
+#ifdef WINNT_REPLACE
     times(&shtms);
+#endif WINNT
 }
 
 /* close internal shell fds */
@@ -2020,6 +2046,7 @@ getherestr(struct redir *fn)
 
 /* $(...) */
 
+#pragma optimize("",off)
 /**/
 LinkList
 getoutput(char *cmd, int qt)
@@ -2089,6 +2116,7 @@ getoutput(char *cmd, int qt)
     kill(getpid(), SIGKILL);
     return NULL;
 }
+#pragma optimize("",on)
 
 /* read output of command substitution */
 
@@ -2162,6 +2190,7 @@ parsecmd(char *cmd)
 
 /* =(...) */
 
+#pragma optimize("",off)
 /**/
 char *
 getoutputfile(char *cmd)
@@ -2213,6 +2242,7 @@ getoutputfile(char *cmd)
     kill(getpid(), SIGKILL);
     return NULL;
 }
+#pragma optimize("",on)
 
 #if !defined(PATH_DEV_FD) && defined(HAVE_FIFOS)
 /* get a temporary named pipe */
@@ -2235,6 +2265,7 @@ namedpipe(void)
 
 /* <(...) or >(...) */
 
+#pragma optimize("",off)
 /**/
 char *
 getproc(char *cmd)
@@ -2298,9 +2329,10 @@ getproc(char *cmd)
     return NULL;
 #endif   /* HAVE_FIFOS and PATH_DEV_FD not defined */
 }
-
+#pragma optimize("",on)
 /* > >(...) or < <(...) (does not use named pipes) */
 
+#pragma optimize("",off)
 /**/
 int
 getpipe(char *cmd)
@@ -2322,6 +2354,7 @@ getpipe(char *cmd)
     _exit(lastval);
     return 0;
 }
+#pragma optimize("",on)
 
 /* open pipes with fds >= 10 */
 
@@ -2637,13 +2670,21 @@ getfpfunc(char *s)
 	    if ((len = lseek(fd, 0, 2)) != -1) {
 		lseek(fd, 0, 0);
 		d = (char *) zcalloc(len + 1);
+#ifndef WINNT
 		if (read(fd, d, len) == len) {
+#else /* WINNT */
+		if (read(fd, d, len) <= len) {
+#endif /* WINNT*/
 		    close(fd);
 		    d = metafy(d, len, META_REALLOC);
 		    HEAPALLOC {
 			r = parse_string(d);
 		    } LASTALLOC;
+#ifndef WINNT
 		    zfree(d, len + 1);
+#else WINNT
+		    zfree(d, 0);
+#endif WINNT
 		    return r;
 		} else {
 		    zfree(d, len + 1);
@@ -2669,7 +2710,11 @@ cancd(char *s)
     (s[1] == '/' || !s[1] || (s[1] == '.' && (s[2] == '/' || !s[1])));
     char *t;
 
+#ifdef WINNT
     if (*s != '/') {
+#else
+    if ( (*s != '/') && (s[1] && s[1] != ':') ){
+#endif WINNT
 	char sbuf[PATH_MAX], **cp;
 
 	if (cancd2(s))
@@ -2707,6 +2752,10 @@ cancd2(char *s)
     struct stat buf;
     char *us = unmeta(s);
 
+#ifdef WINNT
+    if (us[1] && !us[2] && us[1] == ':')
+    	return 1;
+#endif WINNT
     return !(access(us, X_OK) || stat(us, &buf) || !S_ISDIR(buf.st_mode));
 }
 

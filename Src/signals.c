@@ -363,6 +363,7 @@ handler(int sig)
 {
     sigset_t newmask, oldmask;
 
+//dprintf("handler got sig %d\n",sig);
 #if defined(NO_SIGNAL_BLOCKING)
     int do_jump;
     signal_jmp_buf jump_to;

@@ -194,6 +194,29 @@ static int amenu;
 
 static int remove_at = -1;
 
+#ifdef WINNT
+/**/
+void
+backdelreal(int ct)
+{
+    int i = (cs -= ct);
+
+    while ((line[i] = line[i + ct]))
+    i++;
+    ll -= ct;
+}
+
+/**/
+void
+foredelreal(int ct)
+{
+    int i = cs;
+
+    while ((line[i] = line[i + ct]))
+    i++;
+    ll -= ct;
+}
+#endif WINNT
 /* Find out if we have to insert a tab (instead of trying to complete). */
 
 /**/
@@ -1352,7 +1375,12 @@ addmatch(char *s, char *t)
 
 	    for (test = 1; test && *pt; pt++)
 		if ((filell = strlen(*pt)) < sl
+#ifdef WINNT
+		    && ( isset(WINNTIGNORECASE)?!stricmp(*pt,s + sl - filell)
+		    :!strcmp(*pt, s + sl - filell)))
+#else
 		    && !strcmp(*pt, s + sl - filell))
+#endif !WINNT
 		    test = 0;
 
 	    if (!test)
@@ -1370,8 +1398,19 @@ addmatch(char *s, char *t)
 		    cc = 1;
 	    } else {
 		e = s + sl - fsl;
+#ifndef WINNT
 		if ((test = !strncmp(s, fpre, fpl)))
 		    test = !strcmp(e, fsuf);
+#else
+		if (isset(WINNTIGNORECASE)) {
+		    if ((test = !strnicmp(s, fpre, fpl)))
+			test = !stricmp(e, fsuf);
+		}
+		else {
+		    if ((test = !strncmp(s, fpre, fpl)))
+			test = !strcmp(e, fsuf);
+		}
+#endif WINNT
 		if (ispattern)
 		    cc = 1;
 	    }
@@ -1428,16 +1467,38 @@ addmatch(char *s, char *t)
 		test = domatch(s, patcomp, 0);
 	    else {
 		e = s + sl - rsl;
+#ifndef WINNT
 		if ((test = !strncmp(s, rpre, rpl)))
 		    test = !strcmp(e, rsuf);
+#else
+		if (isset(WINNTIGNORECASE)) {
+		    if ((test = !strnicmp(s, rpre, rpl)))
+			test = !stricmp(e, rsuf);
+		}
+		else {
+		    if ((test = !strncmp(s, rpre, rpl)))
+			test = !strcmp(e, rsuf);
+		}
+#endif WINNT
 	    }
 	}
 	if (!test && sl < lpl + lsl)
 	    return;
 	if (!test && lpre && lsuf && sl >= lpl + lsl) {
 	    e = s + sl - lsl;
+#ifndef WINNT
 	    if ((test = !strncmp(s, lpre, lpl)))
 		test = !strcmp(e, lsuf);
+#else
+	    if (isset(WINNTIGNORECASE) ) {
+		if ((test = !strnicmp(s, lpre, lpl)))
+		    test = !stricmp(e, lsuf);
+	    }
+	    else {
+		if ((test = !strncmp(s, lpre, lpl)))
+		    test = !strcmp(e, lsuf);
+	    }
+#endif WINNT
 	    pl = lpl;
 	}
 	if (addwhat == CC_QUOTEFLAG) {
@@ -1451,7 +1512,11 @@ addmatch(char *s, char *t)
     if (!test)
 	return;
 
+#ifndef WINNT
     if (ispattern) {
+#else WINNT
+    if (ispattern || isset(WINNTIGNORECASE)) {
+#endif WINNT
 	t = s;
     } else {
 	t = s += pl;
@@ -1472,10 +1537,17 @@ addmatch(char *s, char *t)
     }
 
     if (!ispattern && *fm) {
+#ifndef WINNT
 	if ((test = pfxlen(*fm, s)) < *bp)
 	    *bp = test;
 	if ((test = sfxlen(*fm, s)) < *ep)
 	    *ep = test;
+#else
+	if ((test = isset(WINNTIGNORECASE)?pfxilen(*fm,s):pfxlen(*fm, s)) < *bp)
+	    *bp = test;
+	if ((test = isset(WINNTIGNORECASE)?sfxilen(*fm,s):sfxlen(*fm, s)) < *ep)
+	    *ep = test;
+#endif WINNT
     }
 
     /* If we are doing a glob completion we store the whole string in *
@@ -2003,8 +2075,19 @@ gen_matches_files(int dirs, int execs, int all)
 		else {
 		    /* Otherwise use the prefix and suffix strings directly. */
 		    e = n + strlen(n) - fsl;
+#ifndef WINNT
 		    if ((test = !strncmp(n, fpre, fpl)))
 			test = !strcmp(e, fsuf);
+#else WINNT
+		    if (!isset(WINNTIGNORECASE)) {
+			if ((test = !strncmp(n, fpre, fpl)))
+			    test = !strcmp(e, fsuf);
+		    }
+		    else {
+			if ((test = !strnicmp(n, fpre, fpl)))
+			    test = !stricmp(e, fsuf);
+		    }
+#endif WINNT
 		}
 		/* Filename didn't match? */
 		if (!test)
@@ -2646,7 +2729,13 @@ makecomplist(char *s, int incmd, int *delit, int *compadd, int untokenized)
 					 * if it realy matches what we have  *
 					 * on the line.                      */
 					while ((p2 = (char *)ugetnode(l)))
+#ifndef WINNT
 					    if (strpfx(prpre, p2))
+#else
+					    if (isset(WINNTIGNORECASE)?
+					    	stripfx(prpre,p2):
+						strpfx(prpre, p2))
+#endif WINNT
 						addmatch(p2 + pl, NULL);
 				    } else {
 					/* Otherwise ignore the path we *
@@ -3145,6 +3234,12 @@ do_ambiguous(void)
 	/* Sort-of general case: we have an ambiguous completion, and aren't *
 	 * starting menu completion or doing anything really weird.  We need *
 	 * to insert any unambiguous prefix and suffix, if possible.         */
+#ifdef WINNT
+	if (isset(WINNTIGNORECASE) ) {
+		fpre ? backdelreal(fpl):backdelreal(lpl);
+		if(fsuf)foredelreal(fsl);
+	}
+#endif WINNT
 	complexpect = 0;
 	if(ab)
 	    inststrlen(firstm, 1, ab);
@@ -3246,6 +3341,16 @@ do_single(char *str)
 	    foredel(1);
 	}
 	l = menulen;
+#ifdef WINNT
+	if (isset(WINNTIGNORECASE) && !ispattern) {
+		if (fpre)
+			l-= strlen(fpre);
+		else
+			l-= strlen(lpre);
+		if (fsuf)
+			l-=strlen(fsuf);
+	}
+#endif WINNT
     } else if (ispattern)
 	l = we - wb;
     else
@@ -3259,9 +3364,33 @@ do_single(char *str)
 	    ccs -= l;
 	menuend -= l;
     }
+#ifdef WINNT
+    if (isset(WINNTIGNORECASE) && !ispattern) {
+        int fpl2, lpl2;
+        if (fpre) {
+            backdelreal(fpl2 = strlen(fpre));
+            if (menuwe)
+                ccs -= fpl2;
+            menuend -= fpl2;
+        } else {
+            backdelreal(lpl2 = strlen(lpre));
+            if (menuwe)
+                ccs -= lpl2;
+            menuend -= lpl2;
+        }
+        /* fpre and lpre are quoted. lpl and fpl is non-quoted-length */
+    }
+#endif
     /* And than we insert the new string. */
     inststrlen(str, 1, menulen = strlen(str));
 
+#ifdef WINNT
+    if (isset(WINNTIGNORECASE) && fsuf && !ispattern) {
+        int fsl2;
+        foredelreal(fsl2 = strlen(fsuf));
+        cs -= fsl2;
+    }
+#endif
     /* And move the cursor and adjust the menuend variable. */
     if (menuwe)
 	cs = ccs + menulen;
@@ -3306,6 +3435,12 @@ do_single(char *str)
 	    } else {
 		p = (char *) ncalloc((prpre ? strlen(prpre) : 0) + strlen(fpre) +
 				     strlen(str) + strlen(fsuf) + strlen(psuf) + 3);
+#ifdef WINNT
+                if (isset(WINNTIGNORECASE))
+                    sprintf(p, "%s%s%s",
+                            (prpre && *prpre) ? prpre : "./", str, psuf);
+                else
+#endif WINNT
 		sprintf(p, "%s%s%s%s%s",
 			(prpre && *prpre) ? prpre : "./", fpre, str,
 			fsuf, psuf);
@@ -3377,6 +3512,16 @@ strpfx(char *s, char *t)
 	s++, t++;
     return !*s;
 }
+#ifdef WINNT
+/**/
+int
+stripfx(char *s, char *t)
+{
+    while (*s && toupper(*s) == toupper(*t) )
+	s++, t++;
+    return !*s;
+}
+#endif WINNT
 
 /* Return non-zero if s is a suffix of t. */
 
@@ -3390,6 +3535,19 @@ strsfx(char *s, char *t)
 	return !strcmp(t + lt - ls, s);
     return 0;
 }
+#ifdef WINNT
+/**/
+int
+strisfx(char *s, char *t)
+{
+    int ls = strlen(s), lt = strlen(t);
+
+    if (ls <= lt)
+	return !stricmp(t + lt - ls, s);
+    return 0;
+}
+#endif WINNT
+
 
 /* Return the length of the common prefix of s and t. */
 
@@ -3403,6 +3561,18 @@ pfxlen(char *s, char *t)
 	s++, t++, i++;
     return i;
 }
+#ifdef WINNT
+/**/
+int
+pfxilen(char *s, char *t)
+{
+    int i = 0;
+
+    while (*s && toupper(*s) == toupper(*t))
+	s++, t++, i++;
+    return i;
+}
+#endif WINNT
 
 /* Return the length of the common suffix of s and t. */
 
@@ -3421,6 +3591,23 @@ sfxlen(char *s, char *t)
     } else
 	return 0;
 }
+#ifdef WINNT
+/**/
+int
+sfxilen(char *s, char *t)
+{
+    if (*s && *t) {
+	int i = 0;
+	char *s2 = s + strlen(s) - 1, *t2 = t + strlen(t) - 1;
+
+	while (s2 >= s && t2 >= t && toupper(*s2) == toupper(*t2))
+	    s2--, t2--, i++;
+
+	return i;
+    } else
+	return 0;
+}
+#endif WINNT
 
 /* This is used to print the explanation string. *
  * It returns the number of lines printed.       */
@@ -3529,7 +3716,11 @@ listmatches(void)
        of lines. */
     for (ap = arr; *ap; ap++)
 	if ((cl = niceztrlen(*ap + off) - nboff +
+#ifdef WINNT
+	     ( (ispattern || isset(WINNTIGNORECASE)) ? 0 :
+#else
 	     (ispattern ? 0 :
+#endif WINNT
 	      (!(haswhat & HAS_MISC) ? nfpl + nfsl : nlpl + nlsl))) > longest)
 	    longest = cl;
     if (of)
@@ -3605,14 +3796,26 @@ listmatches(void)
 		    ap[0][cut] = sav;
 		    pb = *ap;
 		} else {
-		    nicezputs(fpre, shout);
-		    nicezputs(*ap, shout);
-		    nicezputs(fsuf, shout);
-		    t2 = nfpl + niceztrlen(*ap) + nfsl;
-		    pb = (char *) halloc((prpre ? strlen(prpre) : 0) + 3 +
-					 strlen(fpre) + strlen(*ap) + strlen(fsuf));
-		    sprintf(pb, "%s%s%s%s",
+#ifdef WINNT
+                    if (isset(WINNTIGNORECASE)) {
+                        nicezputs(*ap, shout);
+                        t2 = niceztrlen(*ap);
+                        pb = (char *) ncalloc((prpre ? strlen(prpre) : 0) + 3 +
+				  strlen(fpre) + strlen(*ap) + strlen(fsuf));
+                        sprintf(pb, "%s%s",
+                                (prpre && *prpre) ? prpre : "./", *ap);
+                    } else
+#endif WINNT
+		    {
+			nicezputs(fpre, shout);
+			nicezputs(*ap, shout);
+			nicezputs(fsuf, shout);
+			t2 = nfpl + niceztrlen(*ap) + nfsl;
+			pb = (char *) halloc((prpre ? strlen(prpre) : 0) + 3 +
+				     strlen(fpre) + strlen(*ap) + strlen(fsuf));
+			sprintf(pb, "%s%s%s%s",
 			    (prpre && *prpre) ? prpre : "./", fpre, *ap, fsuf);
+		    }
 		}
 		if (ztat(pb, &buf, 1))
 		    putc(' ', shout);
@@ -3638,15 +3841,29 @@ listmatches(void)
 		    t2 = niceztrlen(*ap + off);
 		    ap[0][cut] = sav;
 		} else if (!(haswhat & HAS_MISC)) {
+#ifdef WINNT
+                    if (!isset(WINNTIGNORECASE)) nicezputs(fpre, shout);
+                    nicezputs(*ap, shout);
+                    if (!isset(WINNTIGNORECASE)) nicezputs(fsuf, shout);
+                    t2 = niceztrlen(*ap) + (isset(WINNTIGNORECASE) ? 0 : nfpl+nfsl);
+#else !WINNT
 		    nicezputs(fpre, shout);
 		    nicezputs(*ap, shout);
 		    nicezputs(fsuf, shout);
 		    t2 = nfpl + niceztrlen(*ap) + nfsl;
+#endif !WINNT
 		} else {
+#ifdef WINNT
+                    if (!isset(WINNTIGNORECASE)) nicezputs(lpre, shout);
+                    nicezputs(*ap, shout);
+                    if (!isset(WINNTIGNORECASE)) nicezputs(lsuf, shout);
+		    t2 =niceztrlen(*ap)+(isset(WINNTIGNORECASE)?0:nlpl+ nlsl);
+#else
 		    nicezputs(lpre, shout);
 		    nicezputs(*ap, shout);
 		    nicezputs(lsuf, shout);
 		    t2 = nlpl + niceztrlen(*ap) + nlsl;
+#endif !WINNT
 		}
 		for (t0 = colsz; t0 && *ap; t0--, ap++);
 		if (*ap)

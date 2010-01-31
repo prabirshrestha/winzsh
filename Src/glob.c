@@ -36,7 +36,11 @@ exists(char *s)
 {
     char *us = unmeta(s);
 
+#ifndef WINNT
     return access(us,0) == 0 || readlink(us,NULL,0) == 0;
+#else WINNT
+    return access(us,0) == 0 ;
+#endif WINNT
 }
 
 static int mode;		/* != 0 if we are parsing glob patterns */
@@ -648,12 +652,17 @@ insert(char *s)
 	if (!lstat(unmeta(s), &buf)) {
 	    mode_t mode = buf.st_mode;
 	    statted = 1;
+#ifndef WINNT
 	    if (gf_follow) {
 		if (!S_ISLNK(mode) || stat(unmeta(s), &buf2))
+		if (stat(unmeta(s), &buf2))
 		    memcpy(&buf2, &buf, sizeof(buf));
 		statted = 2;
 		mode = buf2.st_mode;
 	    }
+#else
+		;
+#endif WINNT
 	    if (gf_listtypes || S_ISDIR(mode)) {
 		int ll = strlen(s);
 
@@ -679,7 +688,11 @@ insert(char *s)
 		    units = qn->units;
 		    if ((qn->sense & 2) && statted != 2) {
 			/* If (sense & 2), we're following links */
+#ifndef WINNT
 			if (!S_ISLNK(buf.st_mode) || stat(unmeta(s), &buf2))
+#else
+			if (stat(unmeta(s), &buf2))
+#endif WINNT
 			    memcpy(&buf2, &buf, sizeof(buf));
 			statted = 2;
 		    }
@@ -726,8 +739,10 @@ file_type(mode_t filemode)
 #endif
     case S_IFCHR:
 	return '%';
+#ifndef WINNT
     case S_IFBLK:
 	return '#';
+#endif WINNT
 #ifdef S_IFLNK
     case S_IFLNK:
 	return /* (access(pbuf, F_OK) == -1) ? '&' :*/ '@';
@@ -1491,6 +1506,7 @@ scanner(Complist q)
     /* make sure we haven't just done this one. */
     if (q->closure && old_pos != pathpos &&
 	stat((*pathbuf) ? unmeta(pathbuf) : ".", &st) != -1)
+#ifndef WINNT
 	if (st.st_ino == old_ino && st.st_dev == old_dev)
 	    return;
 	else {
@@ -1498,6 +1514,11 @@ scanner(Complist q)
 	    old_ino = st.st_ino;
 	    old_dev = st.st_dev;
 	}
+#else
+	{
+	    ;
+	}
+#endif WINNT
     if ((closure = q->closure))	/* (foo/)# - match zero or more dirs */
 	if (q->closure == 2)	/* (foo/)## - match one or more dirs */
 	    q->closure = 1;
@@ -1549,8 +1570,18 @@ scanner(Complist q)
 		    continue;
 		/* prefix and suffix are zle trickery */
 		if (!dirs && !colonmod &&
+#ifndef WINNT
 		    ((glob_pre && !strpfx(glob_pre, fn))
-		     || (glob_suf && !strsfx(glob_suf, fn))))
+		     || (glob_suf && !strsfx(glob_suf, fn)))
+#else
+		    (
+		    	(glob_pre && (isset(WINNTIGNORECASE)?
+				!stripfx(glob_pre, fn):!strpfx(glob_pre, fn)) )
+		     || (glob_suf && (isset(WINNTIGNORECASE)?
+		     		!strisfx(glob_suf, fn):!strsfx(glob_suf, fn)) )
+		     )
+#endif WINNT
+		    )
 		    continue;
 		if (domatch(fn, c, gf_noglobdots)) {
 		    /* if this name matchs the pattern... */
@@ -1828,7 +1859,12 @@ doesmatch(Comp c)
 	    }
 	    continue;
 	}
+#ifdef WINNT
+	if (isset(WINNTIGNORECASE)?(tolower(*pptr)==tolower(*pat))
+		:*pptr == *pat) {
+#else
 	if (*pptr == *pat) {
+#endif WINNT
 	    /* just plain old characters */
 	    pptr++;
 	    pat++;
@@ -2275,7 +2311,11 @@ int
 qualisdev(struct stat *buf, long junk)
 {
     junk = buf->st_mode & S_IFMT;
+#ifndef WINNT
     return junk == S_IFBLK || junk == S_IFCHR;
+#else
+    return  junk == S_IFCHR;
+#endif WINNT
 }
 
 /* block special file? */
@@ -2285,7 +2325,11 @@ int
 qualisblk(struct stat *buf, long junk)
 {
     junk = buf->st_mode & S_IFMT;
+#ifndef WINNT
     return junk == S_IFBLK;
+#else WINNT
+	return 0;
+#endif WINNT
 }
 
 /* character special file? */

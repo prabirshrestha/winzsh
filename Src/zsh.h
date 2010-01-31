@@ -35,6 +35,12 @@
 #include <config.h>
 #include <system.h>
 
+#ifndef WINNT
+# define ABSOLUTEP(p)	(*(p) == '/')
+#else /* WINNT */
+# define ABSOLUTEP(p)	((p)[0] == '/' || \
+			 (isalpha((p)[0]) && (p)[1] == ':' && (p)[2] == '/'))
+#endif /* WINNT */
 /* A few typical macros */
 #define minimum(a,b)  ((a) < (b) ? (a) : (b))
 
@@ -70,30 +76,30 @@ typedef int LV;
 #define DEFAULT_IFS	" \t\n\203 "
 
 /* Character tokens */
-#define Pound		((char) 0x84)
-#define String		((char) 0x85)
-#define Hat		((char) 0x86)
-#define Star		((char) 0x87)
-#define Inpar		((char) 0x88)
-#define Outpar		((char) 0x89)
-#define Qstring	        ((char) 0x8a)
-#define Equals		((char) 0x8b)
-#define Bar	      	((char) 0x8c)
-#define Inbrace	        ((char) 0x8d)
-#define Outbrace	((char) 0x8e)
-#define Inbrack	        ((char) 0x8f)
-#define Outbrack	((char) 0x90)
-#define Tick		((char) 0x91)
-#define Inang		((char) 0x92)
-#define Outang		((char) 0x93)
-#define Quest		((char) 0x94)
-#define Tilde		((char) 0x95)
-#define Qtick		((char) 0x96)
-#define Comma		((char) 0x97)
-#define Snull		((char) 0x98)
-#define Dnull		((char) 0x99)
-#define Bnull		((char) 0x9a)
-#define Nularg		((char) 0x9b)
+#define Pound		( 0x84)
+#define String		( 0x85)
+#define Hat		( 0x86)
+#define Star		( 0x87)
+#define Inpar		( 0x88)
+#define Outpar		( 0x89)
+#define Qstring	        ( 0x8a)
+#define Equals		( 0x8b)
+#define Bar	      	( 0x8c)
+#define Inbrace	        ( 0x8d)
+#define Outbrace	( 0x8e)
+#define Inbrack	        ( 0x8f)
+#define Outbrack	( 0x90)
+#define Tick		( 0x91)
+#define Inang		( 0x92)
+#define Outang		( 0x93)
+#define Quest		( 0x94)
+#define Tilde		( 0x95)
+#define Qtick		( 0x96)
+#define Comma		( 0x97)
+#define Snull		( 0x98)
+#define Dnull		( 0x99)
+#define Bnull		( 0x9a)
+#define Nularg		( 0x9b)
 
 #define INULL(x)	(((x) & 0xfc) == 0x98)
 
@@ -1135,6 +1141,7 @@ enum {
     OVERSTRIKE,
     PATHDIRS,
     POSIXBUILTINS,
+    PRINTEIGHTBIT,
     PRINTEXITVALUE,
     PRIVILEGED,
     PROMPTCR,
@@ -1159,6 +1166,14 @@ enum {
     SUNKEYBOARDHACK,
     UNSET,
     VERBOSE,
+#ifdef WINNT
+    WINNTCONVERTBACKSLASH,
+    WINNTIGNORECASE,
+    WINNTLAMEPATHFIX,
+    WINNTNOASSOCIATIONS,
+    WINNTNOQUOTEPROTECT,
+    WINNTWAITFORGUIAPPS,
+#endif WINNT
     XTRACE,
     USEZLE,
     OPT_SIZE
@@ -1180,6 +1195,7 @@ enum {
 /* tty state structure */
 
 struct ttyinfo {
+#ifndef WINNT
 #ifdef HAVE_TERMIOS_H
     struct termios tio;
 #else
@@ -1195,6 +1211,9 @@ struct ttyinfo {
 #ifdef TIOCGWINSZ
     struct winsize winsize;
 #endif
+#else WINNT
+	int ignore;
+#endif WINNT
 };
 
 /* defines for whether tabs expand to spaces */

@@ -46,8 +46,13 @@ dtime(struct timeval *dt, struct timeval *t1, struct timeval *t2)
     dt->tv_sec = t2->tv_sec - t1->tv_sec;
     dt->tv_usec = t2->tv_usec - t1->tv_usec;
     if (dt->tv_usec < 0) {
+#ifndef WINNT
 	dt->tv_usec += 1000000.0;
 	dt->tv_sec -= 1.0;
+#else
+	dt->tv_usec += 1000000;
+	dt->tv_sec -= 1;
+#endif WINNT
     }
     return dt;
 }
@@ -731,8 +736,13 @@ printtime(struct timeval *real, struct timeinfo *ti, char *desc)
     elapsed_time = real->tv_sec + real->tv_usec / 1000000.0;
     user_time    = ti->ut / (double) clktck;
     system_time  = ti->st / (double) clktck;
+#ifndef WINNT
     percent      =  100.0 * (ti->ut + ti->st)
 	/ (clktck * real->tv_sec + clktck * real->tv_usec / 1000000.0);
+#else
+    percent      =  100 * (ti->ut + ti->st)
+	/ (clktck * real->tv_sec + clktck * real->tv_usec / 1000000);
+#endif WINNT
 
     if (!(s = getsparam("TIMEFMT")))
 	s = DEFAULT_TIMEFMT;
@@ -803,6 +813,7 @@ dumptime(Job jn)
 void
 shelltime(void)
 {
+#ifndef WINNT
     struct timeinfo ti;
     struct timezone dummy_tz;
     struct tms buf;
@@ -815,6 +826,7 @@ shelltime(void)
     ti.ut = buf.tms_cutime;
     ti.st = buf.tms_cstime;
     printtime(dtime(&dtimeval, &shtimer, &now), &ti, "children");
+#endif !WINNT
 }
 
 /* see if jobs need printing */

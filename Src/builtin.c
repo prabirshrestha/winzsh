@@ -1134,7 +1134,11 @@ cd_do_chdir(char *cnam, char *dest)
 				    (dest[2] == '/' || !dest[2])));
 
     /* if we have an absolute path, use it as-is only */
+#ifndef WINNT
     if (*dest == '/') {
+#else
+    if( (*dest == '/') || (dest[1] == ':') || (*dest == '\\') ){
+#endif WINNT
 	if ((ret = cd_try_chdir(NULL, dest)))
 	    return ret;
 	zwarnnam(cnam, "%e: %s", dest, errno);
@@ -1239,8 +1243,37 @@ cd_try_chdir(char *pfix, char *dest)
 
     /* if the path is absolute, the test and return value are (relatively)
     simple */
+#ifndef WINNT
     if (buf2[0] == '/')
-	return (chdir(unmeta(buf)) == -1) ? NULL : ztrdup(buf2);
+		return (chdir(unmeta(buf)) == -1) ? NULL : ztrdup(buf2);
+#else
+    // fix cd /. -amol 4/14/97
+    {
+	char drive ='A' + _getdrive()-1;
+	if (buf2[0] == '\\')
+		buf2[0]='/';
+	if ( !buf2[1] && (buf2[0] == '/') ) {
+	    sprintf(buf2,"%c:/",drive);
+	}
+	else if (buf2[0] == '/') {
+		char buf3[PATH_MAX];
+		lstrcpy(buf3,buf2);
+		sprintf(buf2,"%c:%s",drive,buf3);
+	}
+    }
+    if ( (buf2[0] == '/')||(buf2[0] == '\\')||(buf2[1] == ':'))
+	/*if (buf2[1] && buf[2])
+	    return (chdir(unmeta(buf)) == -1) ? NULL : ztrdup(buf2);
+	else if (buf2[1] == ':' && buf2[2] == 0)*/ {
+		if(chdir(unmeta(buf))<0)
+			return NULL;
+		 else{
+		 	forward_slash_get_cwd(buf2,MAX_PATH);
+			return ztrdup(buf2);
+		 }
+	}
+	//return (chdir(unmeta(buf)) == -1) ? NULL : ztrdup(buf2);
+#endif WINNT
     /* If the path is a simple `downward' relative path, the test is again
     fairly simple.  The relative path must be added to the end of the current
     directory. */
@@ -1250,7 +1283,15 @@ cd_try_chdir(char *pfix, char *dest)
 	if (*buf2) {
 	    if (strlen(pwd) + strlen(buf2) + 1 >= PATH_MAX)
 		return NULL;
+#ifndef WINNT
 	    sprintf(buf, "%s/%s", (!strcmp("/", pwd)) ? "" : pwd, buf2);
+#else WINNT
+    	    if ( (pwd[3] == 0) && (pwd[1] == ':') && (pwd[2] == '/') ){
+		sprintf(buf, "%s%s", pwd, buf2);
+	    }
+	    else
+		sprintf(buf, "%s/%s", pwd, buf2);
+#endif WINNT
 	} else
 	    strcpy(buf, pwd);
 	return ztrdup(buf);
@@ -1269,6 +1310,12 @@ cd_try_chdir(char *pfix, char *dest)
     strcpy(s, buf2);
     /* For some reason, this chdir must be attempted with both the newly
     created path and the original non-normalised version. */
+#ifdef WINNT
+	if (buf[1]==':' && buf[2] == '\0') {
+		buf[2] = '/';
+		buf[3]='\0';
+	}
+#endif WINNT
     if (chdir(unmeta(buf)) != -1 || chdir(unmeta(dest)) != -1)
 	return ztrdup(buf);
     return NULL;
@@ -1314,6 +1361,9 @@ cd_new_pwd(int func, LinkNode dir)
     current (i.e. new) pwd */
     zsfree(oldpwd);
     oldpwd = pwd;
+#ifdef WINNT
+    caseify_pwd(new_pwd);
+#endif /* WINNT */
     pwd = new_pwd;
     /* update the PWD and OLDPWD shell parameters */
     if ((pm = (Param) paramtab->getnode(paramtab, "PWD")) &&
@@ -3218,7 +3268,6 @@ bin_vared(char *name, char **args, char *ops, int func)
     pm = (Param) paramtab->getnode(paramtab, args[0]);
     if (pm && PM_TYPE(pm->flags) == PM_ARRAY) {
 	char **a;
-
 	PERMALLOC {
 	    a = spacesplit(t, 1);
 	} LASTALLOC;
@@ -3649,7 +3698,7 @@ bin_limit(char *nam, char **argv, char *ops, int func)
 #else
     char *s;
     int hard, limnum, lim;
-    rlim_t val;
+    RLIM_T val;
     int ret = 0;
 
     hard = ops['h'];
@@ -3664,7 +3713,7 @@ bin_limit(char *nam, char **argv, char *ops, int func)
 	/* Search for the appropriate resource name.  When a name matches (i.e. *
 	 * starts with) the argument, the lim variable changes from -1 to the   *
 	 * number of the resource.  If another match is found, lim goes to -2.  */
-	for (lim = -1, limnum = 0; limnum < ZSH_NLIMITS; limnum++)
+	for (lim = -1, limnum = 0; limnum < RLIM_NLIMITS; limnum++)
 	    if (!strncmp(recs[limnum], s, strlen(s))) {
 		if (lim != -1)
 		    lim = -2;
@@ -3789,7 +3838,7 @@ bin_unlimit(char *nam, char **argv, char *ops, int func)
 	     * matches (i.e. starts with) the argument, the lim variable  *
 	     * changes from -1 to the number of the resource.  If another *
 	     * match is found, lim goes to -2.                            */
-	    for (lim = -1, limnum = 0; limnum < ZSH_NLIMITS; limnum++)
+	    for (lim = -1, limnum = 0; limnum < RLIM_NLIMITS; limnum++)
 		if (!strncmp(recs[limnum], *argv, strlen(*argv))) {
 		    if (lim != -1)
 			lim = -2;
@@ -3929,7 +3978,7 @@ bin_ulimit(char *name, char **argv, char *ops, int func)
 	    res = RLIMIT_FSIZE;
 	if (strcmp(*argv, "unlimited")) {
 	    /* set limit to specified value */
-	    rlim_t limit;
+	    RLIM_T limit;
 
 	    limit = ZSTRTORLIMT(*argv, NULL, 10);
 	    /* scale appropriately */
@@ -4009,10 +4058,10 @@ void
 showlimits(int hard, int lim)
 {
     int rt;
-    rlim_t val;
+    RLIM_T val;
 
     /* main loop over resource types */
-    for (rt = 0; rt != ZSH_NLIMITS; rt++)
+    for (rt = 0; rt != RLIM_NLIMITS; rt++)
 	if (rt == lim || lim == -1) {
 	    /* display limit for resource number rt */
 	    printf("%-16s", recs[rt]);
@@ -4058,7 +4107,7 @@ showlimits(int hard, int lim)
 void
 printulimit(int lim, int hard, int head)
 {
-    rlim_t limit;
+    RLIM_T limit;
 
     /* get the limit in question */
     limit = (hard) ? limits[lim].rlim_max : limits[lim].rlim_cur;
@@ -4864,9 +4913,15 @@ bin_read(char *name, char **args, char *ops, int func)
 	bptr = buf = (char *)zalloc(nchars+1);
 
 	do {
+#ifndef WINNT
 	    /* If read returns 0, is end of file */
 	    if ((val = read(readfd, bptr, nchars)) <= 0)
 		break;
+#else
+	    /* If read returns 0, is end of file */
+	    if ((val = force_read(readfd, bptr, nchars)) <= 0)
+		break;
+#endif /* WINNT */
 	    
 	    /* decrement number of characters read from number required */
 	    nchars -= val;
@@ -5032,6 +5087,7 @@ bin_read(char *name, char **args, char *ops, int func)
 	buf = bptr = (char *)zalloc(bsiz = 64);
 	/* get input, a character at a time */
 	while (!gotnl) {
+		break;
 	    c = zread();
 	    /* \ at the end of a line indicates a continuation *
 	     * line, except in raw mode (-r option)            */
@@ -5200,16 +5256,22 @@ zread(void)
 	    return (*zbuf) ? STOUC(*zbuf++) : EOF;
     for (;;) {
 	/* read a character from readfd */
+#ifndef WINNT
 	switch (read(readfd, &cc, 1)) {
+#else
+	switch (force_read(readfd, &cc, 1)) {
+#endif /* WINNT */
 	case 1:
 	    /* return the character read */
 	    return STOUC(cc);
 	case -1:
+#ifndef WINNT
 	    if (!retry && errno == EWOULDBLOCK &&
 		readfd == 0 && setblock_stdin()) {
 		retry = 1;
 		continue;
 	    }
+#endif WINNT
 	    break;
 	}
 	return EOF;
@@ -5414,6 +5476,7 @@ bin_test(char *name, char **argv, char *ops, int func)
 int
 bin_times(char *name, char **argv, char *ops, int func)
 {
+#ifndef WINNT
     struct tms buf;
 
     /* get time accounting information */
@@ -5427,6 +5490,7 @@ bin_times(char *name, char **argv, char *ops, int func)
     putchar(' ');
     pttime(buf.tms_cstime);	/* system time, children */
     putchar('\n');
+#endif WINNT
     return 0;
 }
 

@@ -35,29 +35,39 @@
 #define ZLEXTERN extern
 #endif
 
+#if defined (WINNT)
+#ifndef ZLEGLOBALS
+#undef INIT_ZERO
+#undef INIT_ZERO_STRUCT
+#define INIT_ZERO
+#define INIT_ZERO_STRUCT
+#endif ZLEGLOBALS
+#endif WINNT
+
 #ifdef ZLE
 
+
 /* size of line buffer */
-ZLEXTERN int linesz;
+ZLEXTERN int linesz INIT_ZERO;
 
 /* location of mark */
-ZLEXTERN int mark;
+ZLEXTERN int mark INIT_ZERO;
 
 /* last character pressed */
-ZLEXTERN int c;
+ZLEXTERN int c INIT_ZERO;
 
 /* the z_ binding id for this key */
-ZLEXTERN int bindk;
+ZLEXTERN int bindk INIT_ZERO;
 
 /* command argument */
-ZLEXTERN int zmult;
+ZLEXTERN int zmult INIT_ZERO;
 
 /* buffer specified with "x */
-ZLEXTERN int vibufspec;
+ZLEXTERN int vibufspec INIT_ZERO;
 /* is the current vi buffer specification overwriting or appending? */
-ZLEXTERN int vibufappend;
+ZLEXTERN int vibufappend INIT_ZERO;
 /* insert mode/overwrite mode flag */
-ZLEXTERN int insmode;
+ZLEXTERN int insmode INIT_ZERO;
 
 #ifdef HAVE_SELECT
 /* cost of last update */
@@ -95,70 +105,70 @@ ZLEXTERN int vilinerange;
 
 /* != 0 if we're in vared */
 
-ZLEXTERN int in_vared;
+ZLEXTERN int in_vared INIT_ZERO;
 
 /* cursor position */
-ZLEXTERN int cs;
+ZLEXTERN int cs INIT_ZERO;
 
 /* line length */
-ZLEXTERN int ll;
+ZLEXTERN int ll INIT_ZERO;
 
 /* height of left prompt */
-ZLEXTERN int lppth;
+ZLEXTERN int lppth INIT_ZERO;
 
 /* last named command done */
-ZLEXTERN int lastnamed;
+ZLEXTERN int lastnamed INIT_ZERO;
 
 /* != 0 if we're done editing */
-ZLEXTERN int done;
+ZLEXTERN int done INIT_ZERO;
 
 /* current history line number */
-ZLEXTERN int histline;
+ZLEXTERN int histline INIT_ZERO;
 
 /* != 0 if we need to call resetvideo() */
-ZLEXTERN int resetneeded;
+ZLEXTERN int resetneeded INIT_ZERO;
 
 /* != 0 if the line editor is active */
-ZLEXTERN int zleactive;
+ZLEXTERN int zleactive INIT_ZERO;
 
 /* the line buffer */
-ZLEXTERN unsigned char *line;
+ZLEXTERN unsigned char *line INIT_ZERO;
 
 /* left prompt and right prompt */
-ZLEXTERN char *lpmpt, *rpmpt;
+ZLEXTERN char *lpmpt INIT_ZERO, *rpmpt INIT_ZERO;
 
 /* the last line in the history (the current one), metafied */
-ZLEXTERN char *curhistline;
+ZLEXTERN char *curhistline INIT_ZERO;
 
 /* the status line, and its length */
-ZLEXTERN char *statusline;
-ZLEXTERN int statusll;
+ZLEXTERN char *statusline INIT_ZERO;
+ZLEXTERN int statusll INIT_ZERO;
 
 /* !=0 if a complete added a suffix at the end of a completion */
-ZLEXTERN int addedsuffix;
+ZLEXTERN int addedsuffix INIT_ZERO;
 
 /* 1 if we expect special keys after completing a parameter name */
-ZLEXTERN int complexpect;
+ZLEXTERN int complexpect INIT_ZERO;
 
 /* The current history line and cursor position for the top line *
  * on the buffer stack.                                          */
-ZLEXTERN int stackhist, stackcs;
+ZLEXTERN int stackhist INIT_ZERO, stackcs INIT_ZERO;
 
 /* != 0 if we are in the middle of a menu completion */
-ZLEXTERN int menucmp;
+ZLEXTERN int menucmp INIT_ZERO;
 
 /* != 0 if we are making undo records */
-ZLEXTERN int undoing;
+ZLEXTERN int undoing INIT_ZERO;
 
 /* != 0 if executing a shell function called from zle */
-ZLEXTERN int inzlefunc;
+ZLEXTERN int inzlefunc INIT_ZERO;
 
 /* last vi change buffer, for vi change repetition */
-ZLEXTERN int vichgbufsz, vichgbufptr, vichgflag;
-ZLEXTERN char *vichgbuf;
+ZLEXTERN int vichgbufsz INIT_ZERO, vichgbufptr INIT_ZERO, vichgflag INIT_ZERO;
+ZLEXTERN char *vichgbuf INIT_ZERO;
 
 /* point where vi insert mode was last entered */
-ZLEXTERN int viinsbegin;
+ZLEXTERN int viinsbegin INIT_ZERO;
 
 /* inwhat says what exactly we are in           *
  * (its value is one of the IN_* things below). */
@@ -176,10 +186,10 @@ ZLEXTERN int inwhat;
 #define IN_ENV     4
 
 /* != 0 if an argument has been given for this command */
-ZLEXTERN int gotmult;
+ZLEXTERN int gotmult INIT_ZERO;
 
 /* != 0 if a kill buffer has been given for this command */
-ZLEXTERN int gotvibufspec;
+ZLEXTERN int gotvibufspec INIT_ZERO;
 
 typedef void bindfunc _((void));
 typedef bindfunc *F;
@@ -213,15 +223,15 @@ struct undoent {
 
 #define UNDOCT 64
 
-ZLEXTERN struct undoent undos[UNDOCT];
+ZLEXTERN struct undoent undos[UNDOCT] INIT_ZERO_STRUCT;
 
 /* the line before last mod (for undo purposes) */
-ZLEXTERN unsigned char *lastline;
+ZLEXTERN unsigned char *lastline INIT_ZERO;
 
-ZLEXTERN int undoct, lastcs, lastll;
+ZLEXTERN int undoct INIT_ZERO, lastcs INIT_ZERO, lastll INIT_ZERO;
 
-ZLEXTERN char *visrchstr;
-ZLEXTERN int visrchsense;
+ZLEXTERN char *visrchstr INIT_ZERO;
+ZLEXTERN int visrchsense INIT_ZERO;
 
 #define ZLE_MOVEMENT	(1<<0)
 #define ZLE_MENUCMP	(1<<1)
@@ -238,9 +248,9 @@ ZLEXTERN int visrchsense;
 
 typedef struct key *Key;
 
-ZLEXTERN int *bindtab, *mainbindtab;
-extern int emacsbind[], viinsbind[], vicmdbind[];
-ZLEXTERN int altbindtab[256];
+ZLEXTERN int *bindtab INIT_ZERO, *mainbindtab INIT_ZERO;
+extern int emacsbind[] , viinsbind[] , vicmdbind[] ;
+ZLEXTERN int altbindtab[256] INIT_ZERO_STRUCT;
 
 /* Cut/kill buffer type.  The buffer itself is purely binary data, *
  * not NUL-terminated.  len is a length count.  flags uses the     *
@@ -258,18 +268,18 @@ typedef struct cutbuffer *Cutbuffer;
 
 /* Primary cut buffer */
 
-ZLEXTERN struct cutbuffer cutbuf;
+ZLEXTERN struct cutbuffer cutbuf INIT_ZERO_STRUCT;
 
 /* Emacs-style kill buffer ring */
 
 #define KRINGCT 8
-ZLEXTERN struct cutbuffer kring[KRINGCT];
-ZLEXTERN int kringnum;
+ZLEXTERN struct cutbuffer kring[KRINGCT] INIT_ZERO_STRUCT;
+ZLEXTERN int kringnum INIT_ZERO;
 
 /* Vi named cut buffers.  0-25 are the named buffers "a to "z, and *
  * 26-34 are the numbered buffer stack "1 to "9.                   */
 
-ZLEXTERN struct cutbuffer vibuf[35];
+ZLEXTERN struct cutbuffer vibuf[35] INIT_ZERO_STRUCT;
 
 /* ZLE command table indices */
 
@@ -439,4 +449,12 @@ enum {
     ZLECMDCOUNT
 };
 
-extern struct zlecmd zlecmds[];
+extern struct zlecmd zlecmds[] ;
+#if defined (WINNT)
+#ifndef ZLEGLOBALS
+#undef INIT_ZERO
+#undef INIT_ZERO_STRUCT
+#define INIT_ZERO =0
+#define INIT_ZERO_STRUCT ={0}
+#endif ZLEGLOBALS
+#endif WINNT

@@ -954,7 +954,7 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 	int quoted = *s == Qstring;
 
 	val = s++;
-	skipparens(*s, *s == Inpar ? Outpar : Outbrace, &s);
+	skipparens(*s, (char)(*s == Inpar ? Outpar : Outbrace), &s);
 	sav = *s;
 	*s = 0;
 	if (multsub(&val, &aval, &isarr, NULL) && quoted) {
@@ -1439,7 +1439,7 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 	    }
 	    if (plan9) {
 		uremnode(l, n);
-		return NULL;
+		return n;
 	    }
 	} else {
 	    x = aval[0];

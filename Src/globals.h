@@ -39,6 +39,16 @@
 #else
 # define EXTERN extern
 #endif
+
+
+#if defined (WINNT)
+#ifndef GLOBALS
+#undef INIT_ZERO
+#undef INIT_ZERO_STRUCT
+#define INIT_ZERO
+#define INIT_ZERO_STRUCT
+#endif GLOBALS
+#endif WINNT
  
 #ifdef GLOBALS
 int redirtab[TRINANG - OUTANG + 1] =
@@ -73,136 +83,136 @@ extern int  nulstrlen;
 
 /* NULL-terminated arrays containing path, cdpath, etc. */
  
-EXTERN char **path;		/* $path     */
-EXTERN char **cdpath;		/* $cdpath   */
-EXTERN char **fpath;		/* $fpath    */
-EXTERN char **watch;		/* $watch    */
-EXTERN char **mailpath;		/* $mailpath */
-EXTERN char **manpath;		/* $manpath  */
-EXTERN char **fignore;		/* $fignore  */
-EXTERN char **psvar;		/* $psvar    */
+EXTERN char **path INIT_ZERO;		/* $path     */
+EXTERN char **cdpath INIT_ZERO;		/* $cdpath   */
+EXTERN char **fpath INIT_ZERO;		/* $fpath    */
+EXTERN char **watch INIT_ZERO;		/* $watch    */
+EXTERN char **mailpath INIT_ZERO;		/* $mailpath */
+EXTERN char **manpath INIT_ZERO;		/* $manpath  */
+EXTERN char **fignore INIT_ZERO;		/* $fignore  */
+EXTERN char **psvar INIT_ZERO;		/* $psvar    */
  
-EXTERN char *yytext;
+EXTERN char *yytext INIT_ZERO;
 
 /* used to suppress ERREXIT and  *
  * trapping of SIGZERR, SIGEXIT. */
 
-EXTERN int noerrexit;
+EXTERN int noerrexit INIT_ZERO;
 
 /* do not save history on exec and exit */
 
-EXTERN int nohistsave;
+EXTERN int nohistsave INIT_ZERO;
  
 /* error/break flag */
  
-EXTERN int errflag;
+EXTERN int errflag INIT_ZERO;
  
 /* Status of return from a trap */
  
-EXTERN int trapreturn;
+EXTERN int trapreturn INIT_ZERO;
  
-EXTERN char *tokstr;
-EXTERN int tok, tokfd;
+EXTERN char *tokstr INIT_ZERO;
+EXTERN int tok, tokfd INIT_ZERO;
  
 /* lexical analyzer error flag */
  
-EXTERN int lexstop;
+EXTERN int lexstop INIT_ZERO;
 
-EXTERN struct heredocs *hdocs;
+EXTERN struct heredocs *hdocs INIT_ZERO;
  
 /* suppress error messages */
  
-EXTERN int noerrs;
+EXTERN int noerrs INIT_ZERO;
  
 /* nonzero means we are not evaluating, just parsing (in math.c) */
  
-EXTERN int noeval;
+EXTERN int noeval INIT_ZERO;
  
 /* current history event number */
  
-EXTERN int curhist;
+EXTERN int curhist INIT_ZERO;
  
 /* if != 0, we are expanding the current line */
 
-EXTERN int expanding;
+EXTERN int expanding INIT_ZERO;
 
 /* these are used to modify the cursor position during expansion */
 
-EXTERN int excs, exlast;
+EXTERN int excs INIT_ZERO, exlast INIT_ZERO;
 
 /* if != 0, this is the first line of the command */
  
-EXTERN int isfirstln;
+EXTERN int isfirstln INIT_ZERO;
  
 /* if != 0, this is the first char of the command (not including
         white space) */
  
-EXTERN int isfirstch;
+EXTERN int isfirstch INIT_ZERO;
 
 /* number of history entries */
  
-EXTERN int histentct;
+EXTERN int histentct INIT_ZERO;
  
 /* array of history entries */
  
-EXTERN Histent histentarr;
+EXTERN Histent histentarr INIT_ZERO;
  
 /* capacity of history lists */
  
-EXTERN int histsiz;
+EXTERN int histsiz INIT_ZERO;
  
 /* if = 1, we have performed history substitution on the current line
         if = 2, we have used the 'p' modifier */
  
-EXTERN int histdone;
+EXTERN int histdone INIT_ZERO;
  
 /* default event (usually curhist-1, that is, "!!") */
  
-EXTERN int defev;
+EXTERN int defev INIT_ZERO;
  
 /* != 0 if we are about to read a command word */
  
-EXTERN int incmdpos;
+EXTERN int incmdpos INIT_ZERO;
  
 /* != 0 if we are in the middle of a [[ ... ]] */
  
-EXTERN int incond;
+EXTERN int incond INIT_ZERO;
  
 /* != 0 if we are after a redirection (for ctxtlex only) */
  
-EXTERN int inredir;
+EXTERN int inredir INIT_ZERO;
  
 /* != 0 if we are about to read a case pattern */
  
-EXTERN int incasepat;
+EXTERN int incasepat INIT_ZERO;
  
 /* != 0 if we just read FUNCTION */
  
-EXTERN int infunc;
+EXTERN int infunc INIT_ZERO;
  
 /* != 0 if we just read a newline */
  
-EXTERN int isnewlin;
+EXTERN int isnewlin INIT_ZERO;
 
 /* the lists of history events */
  
-EXTERN LinkList histlist;
+EXTERN LinkList histlist INIT_ZERO;
  
 /* the directory stack */
  
-EXTERN LinkList dirstack;
+EXTERN LinkList dirstack INIT_ZERO;
  
 /* the zle buffer stack */
  
-EXTERN LinkList bufstack;
+EXTERN LinkList bufstack INIT_ZERO;
 
 /* total # of characters waiting to be read. */
 
-EXTERN int inbufct;
+EXTERN int inbufct INIT_ZERO;
 
 /* the flags controlling the input routines in input.c: see INP_* in zsh.h */
 
-EXTERN int inbufflags;
+EXTERN int inbufflags INIT_ZERO;
 
 /* flag that an alias should be expanded after expansion ending in space */
 
@@ -210,188 +220,191 @@ EXTERN int inalmore;
 
 /* != 0 if this is a subshell */
  
-EXTERN int subsh;
+EXTERN int subsh INIT_ZERO;
  
 /* # of break levels */
  
-EXTERN int breaks;
+EXTERN int breaks INIT_ZERO;
  
 /* != 0 if we have a return pending */
  
-EXTERN int retflag;
+EXTERN int retflag INIT_ZERO;
  
 /* how far we've hashed the PATH so far */
  
-EXTERN char **pathchecked;
+EXTERN char **pathchecked INIT_ZERO;
  
 /* # of nested loops we are in */
  
-EXTERN int loops;
+EXTERN int loops INIT_ZERO;
  
 /* # of continue levels */
  
-EXTERN int contflag;
+EXTERN int contflag INIT_ZERO;
  
 /* the job we are working on */
  
-EXTERN int thisjob;
+EXTERN int thisjob INIT_ZERO;
 
 /* the current job (+) */
  
-EXTERN int curjob;
+EXTERN int curjob INIT_ZERO;
  
 /* the previous job (-) */
  
-EXTERN int prevjob;
+EXTERN int prevjob INIT_ZERO;
  
 /* hash table containing the aliases */
  
-EXTERN HashTable aliastab;
+EXTERN HashTable aliastab INIT_ZERO;
  
 /* hash table containing the reserved words */
 
-EXTERN HashTable reswdtab;
+EXTERN HashTable reswdtab INIT_ZERO;
 
 /* hash table containing the parameters */
  
-EXTERN HashTable paramtab;
+EXTERN HashTable paramtab INIT_ZERO;
  
 /* hash table containing the external/hashed commands */
  
-EXTERN HashTable cmdnamtab;
+EXTERN HashTable cmdnamtab INIT_ZERO;
 
 /* hash table containing the shell functions */
 
-EXTERN HashTable shfunctab;
+EXTERN HashTable shfunctab INIT_ZERO;
 
 /* hash table containing builtin commands */
 
-EXTERN HashTable builtintab;
+EXTERN HashTable builtintab INIT_ZERO;
  
 /* hash table for completion info for commands */
  
-EXTERN HashTable compctltab;
+EXTERN HashTable compctltab INIT_ZERO;
 
 /* hash table for multi-character bindings */
 
-EXTERN HashTable keybindtab;
+EXTERN HashTable keybindtab INIT_ZERO;
 
 /* hash table for emacs multi-character bindings */
 
-EXTERN HashTable emkeybindtab;
+EXTERN HashTable emkeybindtab INIT_ZERO;
 
 /* hash table for vi multi-character bindings */
 
-EXTERN HashTable vikeybindtab;
+EXTERN HashTable vikeybindtab INIT_ZERO;
 
 /* hash table for named directories */
 
-EXTERN HashTable nameddirtab;
+EXTERN HashTable nameddirtab INIT_ZERO;
  
 /* default completion infos */
  
-EXTERN struct compctl cc_compos, cc_default, cc_first, cc_dummy;
+EXTERN struct compctl cc_compos INIT_ZERO_STRUCT, 
+			cc_default INIT_ZERO_STRUCT,
+			cc_first INIT_ZERO_STRUCT, 
+			cc_dummy INIT_ZERO_STRUCT;
  
 /* the job table */
  
-EXTERN struct job jobtab[MAXJOB];
+EXTERN struct job jobtab[MAXJOB]  INIT_ZERO_STRUCT;
  
 /* shell timings */
  
-EXTERN struct tms shtms;
+EXTERN struct tms shtms INIT_ZERO_STRUCT;
  
 /* the list of sched jobs pending */
  
-EXTERN struct schedcmd *schedcmds;
+EXTERN struct schedcmd *schedcmds INIT_ZERO;
  
 /* the last l for s/l/r/ history substitution */
  
-EXTERN char *hsubl;
+EXTERN char *hsubl INIT_ZERO;
 
 /* the last r for s/l/r/ history substitution */
  
-EXTERN char *hsubr;
+EXTERN char *hsubr INIT_ZERO;
  
 /* We cache `USERNAME' and use check cached_uid *
  * so we know when to recompute it.             */
 
-EXTERN uid_t cached_uid;
-EXTERN char *cached_username;   /* $USERNAME   */
-EXTERN char *zsh_name;		/* ZSH_NAME    */
+EXTERN uid_t cached_uid INIT_ZERO;
+EXTERN char *cached_username INIT_ZERO;   /* $USERNAME   */
+EXTERN char *zsh_name INIT_ZERO;		/* ZSH_NAME    */
 
-EXTERN char *underscore;	/* $_          */
-EXTERN long lastval;            /* $?          */
-EXTERN long mypid;		/* $$          */
-EXTERN long lastpid;		/* $!          */
-EXTERN long ppid;		/* $PPID       */
-EXTERN char *ifs;		/* $IFS        */
-EXTERN char *pwd;		/* $PWD        */
-EXTERN char *oldpwd;		/* $OLDPWD     */
+EXTERN char *underscore INIT_ZERO;	/* $_          */
+EXTERN long lastval INIT_ZERO;            /* $?          */
+EXTERN long mypid INIT_ZERO;		/* $$          */
+EXTERN long lastpid INIT_ZERO;		/* $!          */
+EXTERN long ppid INIT_ZERO;		/* $PPID       */
+EXTERN char *ifs INIT_ZERO;		/* $IFS        */
+EXTERN char *pwd INIT_ZERO;		/* $PWD        */
+EXTERN char *oldpwd INIT_ZERO;		/* $OLDPWD     */
 
-EXTERN long columns;            /* $COLUMNS    */
-EXTERN long lines;              /* $LINES      */
+EXTERN long columns INIT_ZERO;            /* $COLUMNS    */
+EXTERN long lines INIT_ZERO;              /* $LINES      */
 
-EXTERN char *zoptarg;		/* $OPTARG     */
-EXTERN long zoptind;		/* $OPTIND     */
-EXTERN char *prompt;		/* $PROMPT     */
-EXTERN char *prompt2;		/* etc.        */
-EXTERN char *prompt3;
-EXTERN char *prompt4;
-EXTERN char *rprompt;		/* $RPROMPT    */
-EXTERN char *sprompt;
+EXTERN char *zoptarg INIT_ZERO;		/* $OPTARG     */
+EXTERN long zoptind INIT_ZERO;		/* $OPTIND     */
+EXTERN char *prompt INIT_ZERO;		/* $PROMPT     */
+EXTERN char *prompt2 INIT_ZERO;		/* etc.        */
+EXTERN char *prompt3 INIT_ZERO;
+EXTERN char *prompt4 INIT_ZERO;
+EXTERN char *rprompt INIT_ZERO;		/* $RPROMPT    */
+EXTERN char *sprompt INIT_ZERO;
 
-EXTERN char *wordchars;
-EXTERN char *rstring, *Rstring;
-EXTERN char *postedit;
+EXTERN char *wordchars INIT_ZERO;
+EXTERN char *rstring INIT_ZERO, *Rstring INIT_ZERO;
+EXTERN char *postedit INIT_ZERO;
 
-EXTERN char *hostnam;           /* from gethostname */
-EXTERN char *home;              /* $HOME */
-EXTERN char **pparams;          /* $argv */
+EXTERN char *hostnam INIT_ZERO;           /* from gethostname */
+EXTERN char *home INIT_ZERO;              /* $HOME */
+EXTERN char **pparams INIT_ZERO;          /* $argv */
 
-EXTERN pid_t mypgrp;		/* the process group of the shell */
+EXTERN pid_t mypgrp INIT_ZERO;		/* the process group of the shell */
  
-EXTERN char *argzero;           /* $0 */
+EXTERN char *argzero INIT_ZERO;           /* $0 */
  
-EXTERN char *hackzero;
-EXTERN char *scriptname;        /* name of script being sourced */
+EXTERN char *hackzero INIT_ZERO;
+EXTERN char *scriptname INIT_ZERO;        /* name of script being sourced */
 
-EXTERN long lineno;             /* $LINENO       */
-EXTERN long shlvl;              /* $SHLVL        */
+EXTERN long lineno INIT_ZERO;             /* $LINENO       */
+EXTERN long shlvl INIT_ZERO;              /* $SHLVL        */
  
-EXTERN long lastval2;
+EXTERN long lastval2 INIT_ZERO;
 
 /* the last time we checked mail */
  
-EXTERN time_t lastmailcheck;
+EXTERN time_t lastmailcheck INIT_ZERO;
  
 /* the last time we checked the people in the WATCH variable */
  
-EXTERN time_t lastwatch;
+EXTERN time_t lastwatch INIT_ZERO;
  
 /* the last time we did the periodic() shell function */
  
-EXTERN time_t lastperiodic;
+EXTERN time_t lastperiodic INIT_ZERO;
  
 /* $SECONDS = time(NULL) - shtimer.tv_sec */
  
-EXTERN struct timeval shtimer;
+EXTERN struct timeval shtimer INIT_ZERO_STRUCT;
  
 /* the default command for null commands */
  
-EXTERN char *nullcmd;
-EXTERN char *readnullcmd;
+EXTERN char *nullcmd INIT_ZERO;
+EXTERN char *readnullcmd INIT_ZERO;
  
 /* the List of local variables we have to destroy */
  
-EXTERN LinkList locallist;
+EXTERN LinkList locallist INIT_ZERO;
 
 /* what level of localness we are at */
  
-EXTERN int locallevel;
+EXTERN int locallevel INIT_ZERO;
  
 /* what level of sourcing we are at */
  
-EXTERN int sourcelevel;
+EXTERN int sourcelevel INIT_ZERO;
 
 /* The table of file descriptors.  A table element is zero if the  *
  * corresponding fd is not used by the shell.  It is greater than  *
@@ -401,69 +414,69 @@ EXTERN int sourcelevel;
  * table is not used.  A table element is set by movefd and cleard *
  * by zclose.                                                      */
 
-EXTERN char *fdtable;
+EXTERN char *fdtable INIT_ZERO;
 
 /* The allocated size of fdtable */
 
-EXTERN int fdtable_size;
+EXTERN int fdtable_size INIT_ZERO;
 
 /* The highest fd that marked with nonzero in fdtable */
 
-EXTERN int max_zsh_fd;
+EXTERN int max_zsh_fd INIT_ZERO;
 
 /* input fd from the coprocess */
 
-EXTERN int coprocin;
+EXTERN int coprocin INIT_ZERO;
 
 /* output fd from the coprocess */
 
-EXTERN int coprocout;
+EXTERN int coprocout INIT_ZERO;
 
 /* the shell input fd */
 
-EXTERN int SHIN;
+EXTERN int SHIN INIT_ZERO;
 
 /* the shell tty fd */
 
-EXTERN int SHTTY;
+EXTERN int SHTTY INIT_ZERO;
 
 /* the FILE attached to the shell tty */
 
-EXTERN FILE *shout;
+EXTERN FILE *shout INIT_ZERO;
 
 /* buffered shell input for non-interactive shells */
 
-EXTERN FILE *bshin;
+EXTERN FILE *bshin INIT_ZERO;
 
 /* != 0 means we are reading input from a string */
  
-EXTERN int strin;
+EXTERN int strin INIT_ZERO;
  
 /* != 0 means history substitution is turned off */
  
-EXTERN int stophist;
+EXTERN int stophist INIT_ZERO;
  
 /* this line began with a space, so junk it if HISTIGNORESPACE is on */
  
-EXTERN int spaceflag;
+EXTERN int spaceflag INIT_ZERO;
  
 /* don't do spelling correction */
  
-EXTERN int nocorrect;
+EXTERN int nocorrect INIT_ZERO;
 
 /* state of the history mechanism (see hist.c) */
  
-EXTERN int histactive;
+EXTERN int histactive INIT_ZERO;
 
 /* current emulation (used to decide which set of option letters is used) */
 
-EXTERN int emulation;
+EXTERN int emulation INIT_ZERO;
  
 /* the options; e.g. if opts[SHGLOB] != 0, SH_GLOB is turned on */
  
-EXTERN char opts[OPT_SIZE];
+EXTERN char opts[OPT_SIZE] INIT_ZERO_STRUCT;
  
-EXTERN int lastbase;            /* last input base we used */
+EXTERN int lastbase INIT_ZERO;            /* last input base we used */
  
 #ifdef HAVE_GETRLIMIT
 /* the resource limits for the shell and its children */
@@ -474,16 +487,16 @@ EXTERN struct rlimit limits[RLIM_NLIMITS];
  
 /* pointer into the history line */
  
-EXTERN char *hptr;
+EXTERN char *hptr INIT_ZERO;
  
 /* the current history line */
  
-EXTERN char *chline;
+EXTERN char *chline INIT_ZERO;
 
 /* true if the last character returned by hgetc was an escaped bangchar
  * if it is set and NOBANGHIST is unset hwaddc escapes bangchars */
 
-EXTERN int qbang;
+EXTERN int qbang INIT_ZERO;
  
 /* text attribute mask */
  
@@ -495,81 +508,81 @@ extern unsigned txtattrmask;
 
 /* text change - attribute change made by prompts */
 
-EXTERN unsigned txtchange;
+EXTERN unsigned txtchange INIT_ZERO;
 
-EXTERN char *term;		/* $TERM */
+EXTERN char *term INIT_ZERO;		/* $TERM */
  
 /* 0 if this $TERM setup is usable, otherwise it contains TERM_* flags */
 
-EXTERN int termflags;
+EXTERN int termflags INIT_ZERO;
  
 /* flag for CSHNULLGLOB */
  
-EXTERN int badcshglob;
+EXTERN int badcshglob INIT_ZERO;
  
 /* max size of histline */
  
-EXTERN int hlinesz;
+EXTERN int hlinesz INIT_ZERO;
  
 /* we have printed a 'you have stopped (running) jobs.' message */
  
-EXTERN int stopmsg;
+EXTERN int stopmsg INIT_ZERO;
  
 /* the default tty state */
  
-EXTERN struct ttyinfo shttyinfo;
+EXTERN struct ttyinfo shttyinfo INIT_ZERO_STRUCT;
  
-EXTERN char *ttystrname;	/* $TTY */
+EXTERN char *ttystrname INIT_ZERO;	/* $TTY */
  
 /* 1 if ttyctl -f has been executed */
  
-EXTERN int ttyfrozen;
+EXTERN int ttyfrozen INIT_ZERO;
  
 /* != 0 if we are allocating in the heaplist */
  
-EXTERN int useheap;
+EXTERN int useheap INIT_ZERO;
  
 /* Words on the command line, for use in completion */
  
-EXTERN int clwsize, clwnum, clwpos;
-EXTERN char **clwords;
+EXTERN int clwsize INIT_ZERO, clwnum INIT_ZERO, clwpos INIT_ZERO;
+EXTERN char **clwords INIT_ZERO;
 
 /* pid of process undergoing 'process substitution' */
  
-EXTERN pid_t cmdoutpid;
+EXTERN pid_t cmdoutpid INIT_ZERO;
  
 /* exit status of process undergoing 'process substitution' */
  
-EXTERN int cmdoutval;
+EXTERN int cmdoutval INIT_ZERO;
  
 /* Stack to save some variables before executing a signal handler function */
 
-EXTERN struct execstack *exstack;
+EXTERN struct execstack *exstack INIT_ZERO;
 
 /* Array describing the state of each signal: an element contains *
  * 0 for the default action or some ZSIG_* flags ored together.   */
 
-EXTERN int sigtrapped[VSIGCOUNT];
+EXTERN int sigtrapped[VSIGCOUNT] INIT_ZERO_STRUCT;
 
 /* trap functions for each signal */
 
-EXTERN List sigfuncs[VSIGCOUNT];
+EXTERN List sigfuncs[VSIGCOUNT] INIT_ZERO_STRUCT;
 
 #ifdef DEBUG
-EXTERN int alloc_stackp;
+EXTERN int alloc_stackp INIT_ZERO;
 #endif
 
 /* Variables used by signal queueing */
 
-EXTERN int queueing_enabled;
-EXTERN sigset_t signal_mask_queue[MAX_QUEUE_SIZE];
-EXTERN int signal_queue[MAX_QUEUE_SIZE];
-EXTERN int queue_front;
-EXTERN int queue_rear;
+EXTERN int queueing_enabled INIT_ZERO;
+EXTERN sigset_t signal_mask_queue[MAX_QUEUE_SIZE] INIT_ZERO_STRUCT;
+EXTERN int signal_queue[MAX_QUEUE_SIZE] INIT_ZERO_STRUCT;
+EXTERN int queue_front INIT_ZERO;
+EXTERN int queue_rear INIT_ZERO;
 
 /* 1 if aliases should not be expanded */
  
-EXTERN int noaliases;
+EXTERN int noaliases INIT_ZERO;
 
 #ifdef GLOBALS
 /* tokens */
@@ -580,34 +593,34 @@ extern char *ztokens;
 
 /* $histchars */
  
-EXTERN unsigned char bangchar, hatchar, hashchar;
+EXTERN unsigned char bangchar INIT_ZERO, hatchar INIT_ZERO, hashchar INIT_ZERO;
  
-EXTERN int eofseen;
+EXTERN int eofseen INIT_ZERO;
  
 /* we are parsing a line sent to use by the editor */
  
-EXTERN int zleparse;
+EXTERN int zleparse INIT_ZERO;
  
-EXTERN int wordbeg;
+EXTERN int wordbeg INIT_ZERO;
  
-EXTERN int parbegin;
+EXTERN int parbegin INIT_ZERO;
 
-EXTERN int parend;
+EXTERN int parend INIT_ZERO;
  
 /* used in arrays of lists instead of NULL pointers */
  
-EXTERN struct list dummy_list;
+EXTERN struct list dummy_list INIT_ZERO_STRUCT;
 
 /* lengths of each string */
  
-EXTERN int tclen[TC_COUNT];
+EXTERN int tclen[TC_COUNT] INIT_ZERO_STRUCT;
  
-EXTERN char *tcstr[TC_COUNT];
-
+EXTERN char *tcstr[TC_COUNT] INIT_ZERO_STRUCT;
+ 
 /* Values of the li and co entries */
 
-EXTERN int tclines, tccolumns;
- 
+EXTERN int tclines INIT_ZERO, tccolumns INIT_ZERO;
+
 /* names of the strings we want */
 #ifdef GLOBALS
 char *tccapnams[TC_COUNT] =
@@ -622,8 +635,8 @@ extern char *tccapnams[TC_COUNT];
 
 /* the command stack for use with %_ in prompts */
  
-EXTERN unsigned char *cmdstack;
-EXTERN int cmdsp;
+EXTERN unsigned char *cmdstack INIT_ZERO;
+EXTERN int cmdsp INIT_ZERO;
 
 #ifdef GLOBALS
 char *tokstrings[WHILE + 1] = {
@@ -762,6 +775,7 @@ struct option optns[OPT_SIZE] = {
     {"overstrike", 		0,    0,    0},
     {"pathdirs", 		'Q',  0,    0},
     {"posixbuiltins",		0,    0,    OPT_EMULATE|OPT_BOURNE},
+    {"printeightbit", 		0,  0,    0},
     {"printexitvalue", 		'1',  0,    0},
     {"privileged", 		'p',  'p',  OPT_SPECIAL},
     {"promptcr", 		x'V', 0,    OPT_ALL},
@@ -786,10 +800,26 @@ struct option optns[OPT_SIZE] = {
     {"sunkeyboardhack", 	'L',  0,    0},
     {"unset", 			x'u', x'u', OPT_EMULATE|OPT_BSHELL},
     {"verbose", 		'v',  'v',  0},
+#ifdef WINNT
+    {"winntconvertbackslash", 	0,  0,  0},
+    {"winntignorecase", 	0,  0,  0},
+    {"winntlamepathfix",  	0,  0,  0},
+    {"winntnoassociations",	0,  0,  0},
+    {"winntnoquoteprotect",	0,  0,  0},
+    {"winntwaitforguiapps",	0,  0,  0},
+#endif WINNT
     {"xtrace", 			'x',  'x',  0},
     {"zle", 			'Z',  0,    OPT_SPECIAL},
 };
 # undef x
 #endif
 
-EXTERN short int typtab[256];
+EXTERN short int typtab[256] INIT_ZERO_STRUCT;
+#if defined (WINNT)
+#ifndef GLOBALS
+#undef INIT_ZERO
+#undef INIT_ZERO_STRUCT
+#define INIT_ZERO =0
+#define INIT_ZERO_STRUCT ={0}
+#endif GLOBALS
+#endif WINNT

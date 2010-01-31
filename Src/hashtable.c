@@ -164,7 +164,6 @@ gethashnode2(HashTable ht, char *nam)
     }
     return NULL;
 }
-
 /* Remove an entry from a hash table.           *
  * If successful, it removes the node from the  *
  * table and returns a pointer to it.  If there *
@@ -552,12 +551,44 @@ hashdir(char **dirp)
 	    (fn[1] == '\0' ||
 	     (fn[1] == '.' && fn[2] == '\0')))
 	    continue;
+#ifndef WINNT
 	if (!cmdnamtab->getnode(cmdnamtab, fn)) {
 	    cn = (Cmdnam) zcalloc(sizeof *cn);
 	    cn->flags = 0;
 	    cn->u.name = dirp;
 	    cmdnamtab->addnode(cmdnamtab, ztrdup(fn), cn);
 	}
+#else /* WINNT */
+	if (!cmdnamtab->getnode(cmdnamtab, fn)) {
+	    char *fext;
+	    fext = fn;
+	    while(*fext++)
+		;
+
+	    while((fext >fn )&& (*fext != '.'))
+		fext--;
+
+	    if ( (fext == fn) /*no extension */
+		    || is_pathext(fext+1) ) {
+		cn = (Cmdnam) zcalloc(sizeof *cn);
+		cn->flags = 0;
+		cn->u.name = dirp;
+		cmdnamtab->addnode(cmdnamtab, ztrdup(fn), cn);
+
+		/*if (fext != fn && !strnicmp(fext+1,"exe",3)) */
+
+		*fext = 0;
+		cn = (Cmdnam) zcalloc(sizeof *cn);
+		cn->flags = 0;
+		cn->u.name = dirp;
+
+		cmdnamtab->addnode(cmdnamtab, ztrdup(fn), cn);
+	    }
+#ifdef ZSH_HASH_DEBUG
+	    printhashtabinfo(cmdnamtab);
+#endif ZSH_HASH_DEBUG
+	}
+#endif WINNT
     }
     closedir(dir);
 }
@@ -1152,6 +1183,7 @@ emptynameddirtable(HashTable ht)
 void
 fillnameddirtable(HashTable ht)
 {
+#ifndef WINNT
     if (!allusersadded) {
 	struct passwd *pw;
  
@@ -1165,6 +1197,7 @@ fillnameddirtable(HashTable ht)
 	endpwent();
 	allusersadded = 1;
     }
+#endif WINNT
     return;
 }
 

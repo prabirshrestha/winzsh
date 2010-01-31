@@ -31,7 +31,7 @@
 
 #include "zsh.h"
 
-static Param argvparam;
+static Param argvparam INIT_ZERO_STRUCT;
 
 /* Set up parameter hash table.  This will add predefined  *
  * parameter entries as well as setting up parameter table *
@@ -92,7 +92,17 @@ createparamtable(void)
 	setiparam("BAUD", getbaudrate(&shttyinfo));  /* get the output baudrate */
 #endif
 	setsparam("FCEDIT", ztrdup(DEFAULT_FCEDIT));
+#ifndef WINNT
 	setsparam("TMPPREFIX", ztrdup(DEFAULT_TMPPREFIX));
+#else
+	{
+	    char temp[PATH_MAX];
+	    char *ptr = getenv("TEMP");
+	    if (ptr)
+		sprintf(temp,"%s/",ptr);
+	    setsparam("TMPPREFIX", ztrdup(ptr?temp:DEFAULT_TMPPREFIX));
+	}
+#endif WINNT
 	setsparam("TIMEFMT", ztrdup(DEFAULT_TIMEFMT));
 	setsparam("WATCHFMT", ztrdup(DEFAULT_WATCHFMT));
 	setsparam("HOST", ztrdup(hostnam));
@@ -1777,7 +1787,11 @@ arrfixenv(char *s, char **t)
     MUSTUSEHEAP("arrfixenv");
     if (t == path)
 	cmdnamtab->emptytable(cmdnamtab);
+#ifndef WINNT
     u = zjoin(t, ':');
+#else
+    u = zjoin(t, t == path?';':':');
+#endif WINNT
     len_s = strlen(s);
     pm = (Param) paramtab->getnode(paramtab, s);
     if (isset(ALLEXPORT))
@@ -1817,18 +1831,37 @@ replenv(char *e, char *value)
 {
     char **ep, *s;
     int len_value;
+#ifdef WINNT
+    char *p1,p2[256];
+#endif WINNT
 
     for (ep = environ; *ep; ep++)
 	if (*ep == e) {
 	    for (len_value = 0, s = value;
 		 *s && (*s++ != Meta || *s++ != 32); len_value++);
 	    s = e;
-	    while (*s++ != '=');
+#ifndef WINNT
+	    while (*s++ != '=')
+	    	;
+#else
+	    p1 = &p2[0];
+	    while(*s != '=') {
+	    	*p1++ = *s++;
+	    }
+	    s++;
+	    *p1 = 0;
+#endif WINNT
 	    *ep = (char *) zrealloc(e, s - e + len_value + 1);
 	    s = s - e + *ep - 1;
+#ifdef WINNT
+	    p1 = s+1;
+#endif WINNT
 	    while (*s++)
 		if ((*s = *value++) == Meta)
 		    *s = *value++ ^ 32;
+#ifdef WINNT
+	    (void)SetEnvironmentVariable(p2,p1);
+#endif WINNT
 	    return *ep;
 	}
     return NULL;
@@ -1885,6 +1918,9 @@ addenv(char *name, char *value)
 
     /* Now add it at the end */
     ep = environ + num_env;
+#ifdef WINNT
+    (void)SetEnvironmentVariable(name,value);
+#endif WINNT
     *ep = mkenvstr(name, value);
     *(ep + 1) = NULL;
     return *ep;
@@ -1898,11 +1934,22 @@ void
 delenv(char *x)
 {
     char **ep;
+#ifdef WINNT
+    char *p1,*p3,p2[256];
+#endif WINNT
 
     for (ep = environ; *ep; ep++) {
 	if (*ep == x)
 	    break;
     }
+#ifdef WINNT
+    p1 = *ep;
+    p3 = &p2[0];
+    while(*p1 != '=') 
+    	*p3++ = *p1++;
+    *p3 = 0;
+    (void)SetEnvironmentVariable(p2,NULL);
+#endif WINNT
     if (*ep)
 	for (; (ep[0] = ep[1]); ep++);
 }

@@ -185,7 +185,7 @@ scrollwindow(int tline)
     sen = s + winw;					\
 }
 
-#ifdef TIOCGWINSZ
+#if defined( TIOCGWINSZ) || defined(WINNT)
 int winchanged;			/* window size changed */
 #endif
 
@@ -226,10 +226,14 @@ refresh(void)
     cost = 0;			/* reset */
 #endif
 
+#ifndef WINNT
 /* Nov 96: <mason>  I haven't checked how complete this is.  sgtty stuff may
    or may not work */
     oxtabs = ((SGTTYFLAG & SGTABTYPE) == SGTABTYPE);
 
+#else WINNT
+    oxtabs = 0;
+#endif WINNT
     cleareol = 0;		/* unset */
     more_start = more_end = 0;	/* unset */
     if (isset(SINGLELINEZLE) || lines < 3
@@ -240,7 +244,7 @@ refresh(void)
     if (resetneeded) {
 	onumscrolls = 0;
 	setterm();
-#ifdef TIOCGWINSZ
+#if defined( TIOCGWINSZ) || defined(WINNT)
 	if (winchanged) {
 	    moveto(0, 0);
 	    t0 = olnct;		/* this is to clear extra lines even when */

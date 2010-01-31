@@ -854,22 +854,28 @@ vipoundinsert(void)
 void
 viquotedinsert(void)
 {
+#ifndef WINNT
 #ifndef HAS_TIO
     struct sgttyb sob;
 #endif
+#endif WINNT
 
     spaceinline(1);
     line[cs] = '^';
     refresh();
+#ifndef WINNT
 #ifndef HAS_TIO
     sob = shttyinfo.sgttyb;
     sob.sg_flags = (sob.sg_flags | RAW) & ~ECHO;
     ioctl(SHTTY, TIOCSETN, &sob);
 #endif
+#endif WINNT
     c = getkey(0);
+#ifndef WINNT
 #ifndef HAS_TIO
     setterm();
 #endif
+#endif WINNT
     foredel(1);
     if(c < 0)
 	feep();

@@ -380,6 +380,7 @@ undefinedkey(void)
 void
 quotedinsert(void)
 {
+#ifndef WINNT
 #ifndef HAS_TIO
     struct sgttyb sob;
 
@@ -387,6 +388,7 @@ quotedinsert(void)
     sob.sg_flags = (sob.sg_flags | RAW) & ~ECHO;
     ioctl(SHTTY, TIOCSETN, &sob);
 #endif
+#endif WINNT
     c = getkey(0);
 #ifndef HAS_TIO
     setterm();
@@ -1032,6 +1034,32 @@ putpromptchar(int doprint, int endchar)
 		    }
 		if (*ss == '/' && ss[1] && (ss != buf3))
 		    ss++;
+#ifdef WINNT
+		if (0){
+			char tmp[5]={'(',0,0,')',0};
+
+			if (ss == &buf3[3]) {
+				ss -= 3;
+			}
+			if ((ss != buf3) && (pwd[1] == ':')) {
+				tmp[1]=pwd[0];
+				tmp[2]=pwd[1];
+				stradd(tmp);
+			}
+		}
+		else {
+			extern char *fmt_pwd_for_prompt(char*);
+			char *tmp;
+			if (ss == &buf3[3]) {
+				ss -= 3;
+			}
+			if (ss != buf3)  {
+			    tmp = fmt_pwd_for_prompt(pwd);
+			    if (tmp)
+				stradd(tmp);
+			}
+		}
+#endif !WINNT
 		stradd(ss);
 		break;
 	    case 'h':
@@ -1276,7 +1304,7 @@ putpromptchar(int doprint, int endchar)
 	    }
 	} else if (doprint) {
 	    addbufspc(1);
-	    pputc(*fm == Meta ? *++fm ^ 32 : *fm);
+	    pputc((char)(*fm == Meta ? *++fm ^ 32 : *fm));
 	}
     }
 

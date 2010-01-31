@@ -29,6 +29,7 @@
  *
  */
 
+#ifndef WINNT
 #include "zsh.h"
 
 static int wtabsz;
@@ -467,3 +468,4 @@ bin_log(char *nam, char **argv, char *ops, int func)
     return 0;
 }
 
+#endif WINNT

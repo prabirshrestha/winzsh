@@ -31,8 +31,9 @@
 
 #include "zsh.h"
 
-void *(*alloc) _((size_t));
-void *(*ncalloc) _((size_t));
+void *(*alloc) _((size_t)) INIT_ZERO;
+void *(*ncalloc) _((size_t)) INIT_ZERO;
+
 
 /*
 

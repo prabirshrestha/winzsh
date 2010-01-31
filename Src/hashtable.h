@@ -64,7 +64,6 @@ struct reswd reswds[] =
 extern struct reswd reswds[];
 #endif
 
-
 /* Nodes for special parameters for parameter hash table */
 
 #ifdef GLOBALS
@@ -88,7 +87,7 @@ struct iparam {
     int level;			/* if (old != NULL), level of localness  */
 }
 # endif
-special_params[] ={
+special_params[] = {
 #define SFN(X) BR(((void (*)_((Param, char *)))(X)))
 #define GFN(X) BR(((char *(*)_((Param)))(X)))
 #define IPDEF1(A,B,C,D) {NULL,A,PM_INTEGER|PM_SPECIAL|D,BR(NULL),SFN(C),GFN(B),10,NULL,NULL,NULL,NULL,0}
@@ -162,6 +161,7 @@ IPDEF7("RPS1", &rprompt),
 IPDEF7("SPROMPT", &sprompt),
 IPDEF7("0", &argzero),
 
+#ifndef WINNT
 #define IPDEF8(A,B,C) {NULL,A,PM_SCALAR|PM_SPECIAL,BR(NULL),SFN(colonarrsetfn),GFN(colonarrgetfn),0,(void *)B,NULL,C,NULL,0}
 IPDEF8("CDPATH", &cdpath, "cdpath"),
 IPDEF8("FIGNORE", &fignore, "fignore"),
@@ -170,6 +170,17 @@ IPDEF8("MAILPATH", &mailpath, "mailpath"),
 IPDEF8("WATCH", &watch, "watch"),
 IPDEF8("PATH", &path, "path"),
 IPDEF8("PSVAR", &psvar, "psvar"),
+#else WINNT
+#define IPDEF8(A,B,C) {NULL,A,PM_SCALAR|PM_SPECIAL,BR(NULL),SFN(semicolonarrsetfn),GFN(semicolonarrgetfn),0,(void *)B,NULL,C,NULL,0}
+//#define IPDEF8(A,B,C) {NULL,A,PM_SCALAR|PM_SPECIAL,NULL,IFN(semicolonarrsetfn),IFN(semicolonarrgetfn),0,(void *)B,NULL,C,NULL,0}
+IPDEF8("CDPATH", &cdpath, "cdpath"),
+IPDEF8("FIGNORE", &fignore, "fignore"),
+IPDEF8("FPATH", &fpath, "fpath"),
+IPDEF8("MAILPATH", &mailpath, "mailpath"),
+IPDEF8("WATCH", &watch, "watch"),
+IPDEF8("PATH", &path, "path"),
+IPDEF8("PSVAR", &psvar, "psvar"),
+#endif WINNT
 
 #define IPDEF9(A,B,C) {NULL,A,PM_ARRAY|PM_SPECIAL|PM_DONTIMPORT,BR(NULL),SFN(arrvarsetfn),GFN(arrvargetfn),0,(void *)B,NULL,C,NULL,0}
 IPDEF9("*", &pparams, NULL),
@@ -199,7 +210,7 @@ IPDEF9("psvar", &psvar, "PSVAR"),
 
 {NULL, NULL}
 };
-# undef BR
+#undef BR
 #else
 extern struct param special_params[];
 #endif
@@ -258,11 +269,18 @@ struct builtin builtins[] =
     {NULL, "alias", BINF_MAGICEQUALS, bin_alias, 0, -1, 0, "Lgmr", NULL},
     {NULL, "autoload", BINF_TYPEOPTS, bin_functions, 0, -1, 0, "t", "u"},
     {NULL, "bg", 0, bin_fg, 0, -1, BIN_BG, NULL, NULL},
+#ifndef WINNT
     {NULL, "bindkey", 0, bin_bindkey, 0, -1, 0, "asvemdr", NULL},
+#else
+    {NULL, "bindkey", 0, bin_bindkey, 0, -1, 0, "asvemdrN", NULL},
+#endif WINNT
     {NULL, "break", BINF_PSPECIAL, bin_break, 0, 1, BIN_BREAK, NULL, NULL},
     {NULL, "bye", 0, bin_break, 0, 1, BIN_EXIT, NULL, NULL},
     {NULL, "cd", 0, bin_cd, 0, 2, BIN_CD, NULL, NULL},
     {NULL, "chdir", 0, bin_cd, 0, 2, BIN_CD, NULL, NULL},
+#ifdef WINNT
+    {NULL, "cls", 0, bin_cls, 0, 0, 0, NULL, NULL},
+#endif WINNT
     {NULL, "compctl", 0, bin_compctl, 0, -1, 0, NULL, NULL},
     {NULL, "continue", BINF_PSPECIAL, bin_break, 0, 1, BIN_CONTINUE, NULL, NULL},
     {NULL, "declare", BINF_TYPEOPTS | BINF_MAGICEQUALS | BINF_PSPECIAL, bin_typeset, 0, -1, 0, "LRUZfilrtux", NULL},
@@ -304,6 +322,9 @@ struct builtin builtins[] =
 
     {NULL, "popd", 0, bin_cd, 0, 2, BIN_POPD, NULL, NULL},
     {NULL, "print", BINF_PRINTOPTS, bin_print, 0, -1, BIN_PRINT, "RDPnrslzNu0123456789pioOcm-", NULL},
+#ifdef WINNT
+    {NULL, "ps", 0, bin_ps, 0, -1, 0, NULL, NULL},
+#endif WINNT
     {NULL, "pushd", 0, bin_cd, 0, 2, BIN_PUSHD, NULL, NULL},
     {NULL, "pushln", BINF_PRINTOPTS, bin_print, 0, -1, BIN_PRINT, NULL, "-nz"},
     {NULL, "pwd", 0, bin_pwd, 0, 0, 0, "r", NULL},
@@ -316,11 +337,20 @@ struct builtin builtins[] =
     {NULL, "set", BINF_PSPECIAL, bin_set, 0, -1, 0, NULL, NULL},
     {NULL, "setopt", 0, bin_setopt, 0, -1, BIN_SETOPT, NULL, NULL},
     {NULL, "shift", BINF_PSPECIAL, bin_shift, 0, -1, 0, NULL, NULL},
+#ifdef WINNT
+    {NULL, "shutdown", 0, bin_shutdown, 0, -1, 0, NULL, NULL},
+#endif WINNT
     {NULL, "source", BINF_PSPECIAL, bin_dot, 1, -1, 0, NULL, NULL},
+#ifdef WINNT
+    {NULL, "start", 0, bin_start, 0, -1, 0, NULL, NULL},
+#endif WINNT
     {NULL, "suspend", 0, bin_suspend, 0, 0, 0, "f", NULL},
     {NULL, "test", 0, bin_test, 0, -1, BIN_TEST, NULL, NULL},
     {NULL, "ttyctl", 0, bin_ttyctl, 0, 0, 0, "fu", NULL},
     {NULL, "times", BINF_PSPECIAL, bin_times, 0, 0, 0, NULL, NULL},
+#ifdef WINNT
+    {NULL, "title", 0, bin_title, 0, -1, 0, NULL, NULL},
+#endif WINNT
     {NULL, "trap", BINF_PSPECIAL, bin_trap, 0, -1, 0, NULL, NULL},
     {NULL, "true", 0, bin_true, 0, -1, 0, NULL, NULL},
     {NULL, "type", 0, bin_whence, 0, -1, 0, "ampf", "v"},

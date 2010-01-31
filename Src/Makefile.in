@@ -96,7 +96,7 @@ zle_vi.c zle_word.c
 PROTO = builtin.pro compat.pro cond.pro exec.pro glob.pro hashtable.pro \
 hist.pro init.pro input.pro jobs.pro lex.pro linklist.pro loop.pro \
 math.pro mem.pro params.pro parse.pro signals.pro subst.pro text.pro \
-utils.pro watch.pro zle_hist.pro zle_main.pro \
+utils.pro watch.pro zle_bindings.pro zle_hist.pro zle_main.pro \
 zle_misc.pro zle_move.pro zle_refresh.pro zle_tricky.pro zle_utils.pro \
 zle_vi.pro zle_word.pro
 
@@ -120,7 +120,7 @@ DIST = $(DIST_HDRS) $(SRCS) $(AUX)
 # default target
 all: zsh
 
-zsh: $(OBJS)
+zsh: $(PROTO) $(OBJS)
 	$(LINK) $(OBJS) $(LIBS)
 
 ansi2knr: ansi2knr.o
@@ -128,8 +128,6 @@ ansi2knr: ansi2knr.o
 
 signames.h: signames.awk
 	$(AWK) -f $(srcdir)/signames.awk $(SIGNAL_H) > signames.h
-
-prototypes.h: $(PROTO)
 
 # this file will not be made if limits are unavailable:
 # silent so the warning doesn't appear unless necessary
