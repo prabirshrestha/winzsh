@@ -41,26 +41,40 @@ bindir      = $(exec_prefix)/bin
 
 CC       = cl
 CPPFLAGS = 
+
+!if "$(MSVC)" == "6"
 #DEFS     = -DHAVE_CONFIG_H -DHAVE_DIRENT_H -DWINNT -DNTDBG -DDBG
-#DEFS     = -DHAVE_CONFIG_H -DHAVE_DIRENT_H -DWINNT -DNTDBG
 DEFS     = -DHAVE_CONFIG_H -DHAVE_DIRENT_H -DWINNT
-#CFLAGS   =   -W3 -WX -MT -YX -Zi -J -nologo -O2
 CFLAGS   =   -W3 -WX -MT -YX -J -nologo -O2
 #CFLAGS   =  -Wall -Wno-implicit -Wmissing-prototypes -O2
-#LDFLAGS  =  -nologo -pdb:none -debug:full -entry:silly_entry
 LDFLAGS  =  -nologo -pdb:none -entry:silly_entry
+!else
+!if "$(MSVC)" == "9"
+DEFS     = -DHAVE_CONFIG_H -DHAVE_DIRENT_H -DWINNT
+CFLAGS   =   -W3 -MT -J -nologo -O2
+LDFLAGS  =  -nologo -pdb:none -entry:silly_entry
+!else
+!error "usage: nmake MSVC=(6|9) [DBG=(0|1)]"
+!endif
+!endif
+
 LINK     = link
 LIBS     =  -nodefaultlib kernel32.lib user32.lib libcmt.lib oldnames.lib \
 	advapi32.lib 
 #d:\mstools\lib\imagehlp.lib #-ltermcap
 
 !if "$(DBG)" != ""
-#DEFS = $(DEFS) -DDBG -DDEBUG -DZSH_HASH_DEBUG
-#DEFS = $(DEFS) -DDBG -DZSH_HASH_DEBUG
 DEFS = $(DEFS) -DNTDBG -DDBG -DDEBUG -DZSH_HASH_DEBUG
 #DEFS = $(DEFS) -DZSH_MEM_DEBUG -DZSH_MEM_WARNING
+!if "$(MSVC)" == "6"
 CFLAGS = $(CFLAGS) -Zi -Od
 LDFLAGS = $(LDFLAGS) -debug:full
+!else
+!if "$(MSVC)" == "9"
+CFLAGS = $(CFLAGS) -Zi -Od
+LDFLAGS = $(LDFLAGS) -debug
+!endif
+!endif
 !endif
 
 INCLUDES = -I.. -I. -I$(srcdir) -Intport -Id:\mstools\include

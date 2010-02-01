@@ -48,22 +48,22 @@ Compiling:
 	- Prerequisites:
 	
 		* Currently the source is only known to compile with Microsoft
-		  Visual C++ 6.0 (sorry). Note: the 2008 Express Edition was
-		  tested and was confirmed not to work.
+		  Visual C++ 6.0 (sorry). Note: the 2008 Express Edition currently
+		  compiles, but throws an exception during running.
 		
 		* Sed and awk are needed to generate some headers, ensure that
-		  these are in your path so that make can find them.  Sed and awk
-		  (either gawk, mawk, or nawk) from the GnuWin32
-		  <http://gnuwin32.sourceforge.net> project work fine.
+		  these are in your path so that make can find them.  Sed and
+		  (g|m|n)awk from the GnuWin32 <http://gnuwin32.sourceforge.net>
+		  project work fine.
 	
 	- Download and extract the source.
 	
 	- Open a cmd.exe prompt and cd into the Src directory. Run 
 	  "vcvars32.bat" from your Visual C++ installation.
 
-    - type "nmake -f ntport\Makefile.msvc6"
+    - type "nmake -f ntport\Makefile.msvc MSVC=(6|9)", using your version of MSVC.
 	
-	- to include debugging support, type "nmake -f ntport\Makefile.msvc6 DBG=1"
+	- to include debugging support, type "nmake -f ntport\Makefile.msvc6 MSVC=(6|9) DBG=1"
 
 6. ZSHROOT:
 ----------
