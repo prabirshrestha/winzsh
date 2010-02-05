@@ -1,0 +1,49 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:577: checking host system type
+configure:795: checking for gcc
+configure:872: checking whether the C compiler (gcc  ) works
+configure:886: gcc -o conftest    conftest.c  1>&5
+configure:906: checking whether the C compiler (gcc  ) is a cross-compiler
+configure:911: checking whether we are using GNU C
+configure:920: gcc -E conftest.c
+configure:935: checking whether gcc accepts -g
+configure:985: checking how to run the C preprocessor
+configure:1006: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1046: checking whether gcc needs -traditional
+configure:1091: checking for working const
+configure:1145: gcc -c  -Wall -Wno-implicit -Wmissing-prototypes -O2  conftest.c 1>&5
+configure: In function `main':
+configure:1119: warning: unused variable `s'
+configure:1139: warning: unused variable `foo'
+configure:1107: warning: unused variable `zero'
+configure:1101: warning: unused variable `x'
+configure:1118: warning: `t' might be used uninitialized in this function
+configure:1136: warning: `b' might be used uninitialized in this function
+configure:1165: checking for gcc option to accept ANSI C
+configure:1193: gcc -c  -Wall -Wno-implicit -Wmissing-prototypes -O2   conftest.c 1>&5
+configure:1214: checking for function prototypes
+configure:1227: checking size of long
+configure:1246: gcc -o conftest  -Wall -Wno-implicit -Wmissing-prototypes -O2   conftest.c  1>&5
+configure:1238: warning: return-type defaults to `int'
+configure: In function `main':
+configure:1241: warning: int format, long int arg (arg 3)
+configure:1266: checking if the compiler supports union initialisation
+configure:1278: gcc -c  -Wall -Wno-implicit -Wmissing-prototypes -O2  conftest.c 1>&5
+configure:1299: checking if signed to unsigned casting is broken
+configure:1311: gcc -o conftest  -Wall -Wno-implicit -Wmissing-prototypes -O2   conftest.c  1>&5
+configure:1308: warning: return-type defaults to `int'
+configure: failed program was:
+#line 1307 "configure"
+#include "confdefs.h"
+main(){return((int)(unsigned char)((char) -1) == 255);}
+configure:1334: checking whether make sets ${MAKE}
+configure:1370: checking for a BSD compatible install
+configure:1423: checking for mawk
+configure:1423: checking for gawk
+configure:1456: checking for dirent.h that defines DIR
+configure:1469: gcc -c  -Wall -Wno-implicit -Wmissing-prototypes -O2  conftest.c 1>&5
+configure: In function `main':
+configure:1465: warning: unused variable `dirp'
+configure:1494: checking for opendir in -ldir

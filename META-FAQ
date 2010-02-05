@@ -1,0 +1,112 @@
+
+   Zsh META-FAQ
+   $Revision: 3.1.3.1 $, $Date: 1997/06/23 04:57:10 $
+
+The latest version of this META-FAQ can be found at any of the
+ftp sites below, or at:
+   http://www.cs.elte.hu/pub/zsh/META-FAQ.html
+
+----------------------------------------------------------------------
+
+1. Zsh Ftp Sites
+
+Zsh is available from the following anonymous ftp sites.  The first
+is the official archive site.  The rest are mirror sites which are
+kept frequently up to date.  The sites marked with a star may mirror
+ftp.math.gatech.edu instead of the primary site.
+
+   HUNGARY
+      ftp://ftp.cs.elte.hu/pub/zsh/  --  primary site
+     http://www.cs.elte.hu/pub/zsh/ (the same using http)
+      ftp://ftp.kfki.hu/pub/packages/zsh/
+
+   Australia
+    * ftp://ftp.ips.oz.au/pub/packages/zsh/
+
+   Finland
+      ftp://ftp.funet.fi/pub/unix/shells/zsh/
+
+   France
+      ftp://ftp.cenatls.cena.dgac.fr/pub/shells/zsh/
+
+   Germany
+      ftp://ftp.fu-berlin.de/pub/unix/shells/zsh/
+      ftp://ftp.gmd.de/packages/zsh/
+      ftp://ftp.uni-trier.de/pub/unix/shell/zsh/
+
+   Israel
+      ftp://www.math.technion.ac.il/mirror/bolyai.cs.elte.hu/pub/zsh/ 
+     http://www.math.technion.ac.il/mirror/bolyai.cs.elte.hu/pub/zsh/
+            (same site via http) 
+
+   Japan
+      ftp://ftp.tohoku.ac.jp/mirror/zsh/
+      ftp://ftp.nis.co.jp/pub/shells/zsh/
+
+   Norway
+      ftp://ftp.uit.no/pub/unix/shells/zsh/
+
+   Slovenia
+      ftp://ftp.siol.net/pub/unix/shells/zsh/
+
+   Sweden
+      ftp://ftp.lysator.liu.se/pub/unix/zsh/
+
+   UK
+      ftp://ftp.net.lut.ac.uk/zsh/
+
+   USA
+      ftp://ftp.math.gatech.edu/pub/zsh/
+      ftp://uiarchive.uiuc.edu/pub/packages/shells/zsh/
+    * ftp://ftp.sterling.com/zsh/
+    * ftp://ftp.rge.com/pub/shells/zsh/
+
+----------------------------------------------------------------------
+
+2. Zsh Web Page
+
+Zsh has a web page maintained by Mark Borges <mdb@cdc.noaa.gov>
+which is located at:
+   http://www.peak.org/zsh/
+
+----------------------------------------------------------------------
+
+3. Zsh FAQ
+
+Zsh has a list of Frequently Asked Questions (FAQ) maintained by
+Peter Stephenson <P.Stephenson@swansea.ac.uk>.  The latest version
+can be found at any of the ftp sites above, or at:
+   http://www.peak.org/zsh/FAQ/
+
+----------------------------------------------------------------------
+
+4. Zsh Mailing Lists
+
+Zsh has three mailing lists:
+
+   zsh-announce@math.gatech.edu   (announcements [moderated list])
+   zsh-users@math.gatech.edu      (user discussions)
+   zsh-workers@math.gatech.edu    (zsh hacking and development)
+
+To subscribe or unsubscribe, send mail with the SUBJECT
+
+  subscribe e-mail-address       (or)
+  unsubscribe e-mail-address
+
+to the associated administrative address for the mailing list:
+
+   zsh-announce-request@math.gatech.edu
+   zsh-users-request@math.gatech.edu
+   zsh-workers-request@math.gatech.edu
+
+YOU ONLY NEED TO JOIN ONE OF THE MAILING LISTS AS THEY ARE NESTED.
+All submissions to zsh-announce are automatically forwarded to zsh-users.
+All submissions to zsh-users are automatically forwarded to zsh-workers.
+
+If you have problems subscribing/unsubscribing to any of the mailing
+lists, send mail to Richard Coleman <coleman@math.gatech.edu>.
+
+----------------------------------------------------------------------
+
+Zoltán Hidvégi          (Coordinator, Zsh Development Group)
+hzoli@cs.elte.hu
