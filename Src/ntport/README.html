@@ -1,0 +1,456 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!--
+
+WinZsh README
+Version 3.05-NT-078
+Date: 2010-02-02
+
+-->
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta name="generator" content=
+    "HTML Tidy for Windows (vers 14 February 2006), see www.w3.org" />
+    <title>
+      WinZsh README
+    </title>
+  </head>
+  <body>
+    <h3>
+      README
+    </h3>
+    <p>
+      Note: most of the WinZsh-specific information will likely move into a man
+      page in the future.
+    </p>
+    <h4>
+      Zsh (non WinZsh-specific) Documentation
+    </h4>
+    <p>
+      The zsh man pages are now included with the WinZsh distribution. If you
+      prefer documentation in info or html format, you can download it from one
+      of the zsh mirror sites listed at <a href=
+      "http://www.zsh.org/">http://www.zsh.org/</a>. Select the "doc" package
+      for the appropriate version of zsh. For example, for the current version
+      of WinZsh based on zsh 3.0.5, from <a href=
+      "http://www.zsh.org/pub/old/">http://www.zsh.org/pub/old/</a> select the
+      <code>zsh-3.0.5-doc.tar.gz</code> package.
+    </p>
+    <h4>
+      Man page reader
+    </h4>
+    <p>
+      If you do not have a man page reader, you can use the included
+      <code>man</code> zsh script, originally written by Wu Yongwei for
+      <a href="http://www.mingw.org/wiki/ManScript">MSYS</a> and modified to
+      work in WinZsh. Note: this script requires some common Unix tools such as
+      <code>sed</code>, <code>less</code> and <code>groff</code>, you can find
+      these at the <a href="http://gnuwin32.sourceforge.net">GnuWin32</a>
+      project. Please report any bug you find with it to WinZsh.
+    </p>
+    <p>
+      You could also try compiling the <a href=
+      "http://prdownloads.sourceforge.net/mingw/man-1.6-mingw-beta-1-src.tar.gz?download">
+      MinGW man reader</a>, which is supposedly in development but the latest
+      snapshot is dated 2006-03-22.
+    </p>
+    <h4>
+      Supported Operating Systems
+    </h4>
+    <p>
+      WinZsh runs on 32 bit Windows NT based systems. It is known to run well
+      on Windows 2000 &amp; XP, but is currently somewhat unstable on Vista and
+      Windows 7. 64 bit versions of Windows are not currently supported.
+    </p>
+    <h4>
+      Compiling the Source
+    </h4>
+    <ol>
+      <li>Prerequisites:
+        <ul>
+          <li>Currently the source is only known to compile with Microsoft
+          Visual C++ 6.0 (sorry). Note: MSVC9 (the 2008 Express Edition)
+          currently compiles, but throws an exception when running
+          <code>'ls'</code>.
+          </li>
+          <li>
+            <code>Sed</code> and <code>awk</code> are needed to generate some
+            headers, ensure that these are in your path so that make can find
+            them. <code>Sed</code> and <code>{g|m|n}awk</code> from the
+            <a href="http://gnuwin32.sourceforge.net">GnuWin32</a> project work
+            fine.
+          </li>
+        </ul>
+      </li>
+      <li>Download and extract the source.
+      </li>
+      <li>Open a <code>cmd.exe</code> prompt.
+      </li>
+      <li>Run <code>'vcvars32.bat'</code> from your Visual C++ installation.
+      This will setup your environment variables so that Windows can find the
+      compiler tools.
+      </li>
+      <li>
+        <code>'cd'</code> into the <code>'Src'</code> directory.
+      </li>
+      <li>Copy the configuration header file and makefile to the appropriate
+      directories by typing <code>'copy ntport\config.h.winnt
+      ..\config.h'</code> and <code>'copy ntport\Makefile.msvc
+      Makefile'.</code>
+      </li>
+      <li>Compile with <code>'nmake MSVC={6|9}'.</code>
+      </li>
+      <li>To include debugging support, compile with <code>'nmake MSVC={6|9}
+      DBG=1'</code>instead.
+      </li>
+    </ol>
+    <h4>
+      Paths
+    </h4>
+    <ul>
+      <li>All paths must be <code>'/'</code> (forward slash) separated, not
+      <code>'\'</code> (back slash) separated, the same as in Unix.
+      <code>'\'</code> is the shell escape character, also the same as in Unix.
+      </li>
+      <li>Paths should include a drive letter as well, for example
+      <code>'C:/bin'</code>. Of course, this also applies to path variables
+      such as <code>HOME</code> or <code>PATH</code>. If you specify a path
+      without a drive letter, e.g., <code>'/'</code>, <code>'/bin'</code> etc.,
+      WinZsh will interpret this as the root of the current drive, e.g. <code>
+        'C:/'</code>, <code>'C:/bin'</code> if you happen to be in the C:
+        drive, or <code>'D:/'</code>, <code>'D:/bin'</code> if you happen to be
+        in the D: drive. This is not recommended, as the results could be
+        unpredictable. To be sure you get the results you expect, always
+        include the drive letter in the path, or use a variable (such as
+        <code>'$ZSHROOT/bin'</code> if <code>ZSHROOT</code> is set).
+      </li>
+      <li>The path separator in WinZsh is <code>';'</code> (semicolon), since
+      the Unix path separator <code>':'</code> (colon) is already used in the
+      drive letter. This is the same behavior as in Windows, but obviously
+      differs from Unix. Note: in zsh, special path environment variables such
+      as <code>PATH</code> and <code>MANPATH</code> are arrays if referred to
+      in lowercase. For example, you can specify your <code>PATH</code> as
+      <code>'path=(C:/bin C:/Program\ Files/gnuwin32/bin $path)'</code> and
+      avoid the whole path separator issue altogether.
+      </li>
+    </ul>
+    <h4>
+      Known Bugs
+    </h4>
+    <ul>
+      <li>zed does not work too well.
+      </li>
+      <li>binding a key to <code>'xxx-menu-complete'</code> will cause the
+      shell to crash if you type the bound key on an empty line.
+      </li>
+    </ul>
+    <h4>
+      Basic things to know
+    </h4>
+    <ol>
+      <li>Drive changes done with <code>'cd &lt;drive:&gt;'</code> (Or
+      <code>setopt autocd</code> to get DOS-like behavior as a side-effect.)
+      </li>
+      <li>.COM files will need to be executed by specifying the extension
+      (<code>edit.com</code>, instead of just <code>edit</code>).
+      </li><!-- is any of this WinZsh specific? I think so!-->
+      <li>International keyboards should work if you <code>'setopt
+      printeightbit'</code>. Note that this will re-init the keymaps, so you
+      may have to redo some bindkey mappings. (<code>NOREBIND</code> now has no
+      effect whatsoever.)<br />
+        Also, if you change the console font (on NT) from the default raster
+        type to anything else, international characters may not be displayed
+        properly.<br />
+        zsh sets the code-page to 1252 (ansi) when it starts. For international
+        versions (far east for example,) this screws up the console. To avoid
+        the problem, set <code>ZSH_DONTSETCP</code> in the system environment,
+        before zsh starts.
+      </li>
+    </ol>
+    <h4>
+      WinZsh-specific Variables (or custom handling of standard variables)
+    </h4>
+    <dl>
+      <dt>
+        <code>ZSHROOT</code>
+      </dt>
+      <dd>
+        <p>
+          If the variable <code>ZSHROOT</code> is set, it will be prepended to
+          the program name if the program is not found during the normal
+          search. So, if you type <code>'/bin/zsh'</code> (or have that in a
+          shell script), the shell will try:
+        </p>
+        <ol>
+          <li>
+            <code>/bin/zsh</code>
+          </li>
+          <li>
+            <code>/bin/zsh.exe</code>
+          </li>
+          <li>
+            <code>$ZSHROOT/bin/zsh</code>
+          </li>
+          <li>
+            <code>$ZSHROOT/bin/zsh.exe</code>
+          </li>
+        </ol>
+        <p>
+          (Note that a script with a line like <code>#!C:/bin/zsh.exe</code>
+          will not be affected by 3 or 4).
+        </p>
+      </dd>
+      <dt>
+        <code>HOME</code>
+      </dt>
+      <dd>
+        <p>
+          WinZsh sets the <code>HOME</code> directory if it's not already set
+          and <code>ZDOTDIR</code> is not set either. In this case
+          <code>HOME</code> is set to <code>$USERPROFILE</code>.
+        </p>
+        <p>
+          If <code>ZDOTDIR</code> is set and <code>HOME</code> is not set,
+          WinZsh sets home to <code>'youdonthavehomeset'</code>. This is to
+          avoid crashing in places where the shell expects a home directory.
+          Picking a real default would defeat the purpose of not setting home.
+        </p>
+      </dd>
+    </dl>
+    <h4>
+      WinZsh-specific Builtin Commands
+    </h4>
+    <dl>
+      <dt>
+        <code>start</code>
+      </dt>
+      <dd>
+        Like cmd.exe's start
+      </dd>
+      <dt>
+        <code>title</code>
+      </dt>
+      <dd>
+        Like cmd.exe's title
+      </dd>
+      <dt>
+        <code>cls</code>
+      </dt>
+      <dd>
+        Clear entire screen buffer instead of visible window
+      </dd>
+      <dt>
+        <code>ps</code>
+      </dt>
+      <dd>
+        <em>This will likely be removed in the future, use Windows builtins
+        such as <code>tasklist</code> instead.</em><br />
+        list processes. with -w, lists window titles as well.
+      </dd>
+      <dt>
+        <code>shutdown</code>
+      </dt>
+      <dd>
+        <em>This will likely be removed in the future, use Windows builtins
+        such as <code>shutdown</code> instead.</em>
+        <p>
+          shutdown -[r|l|f] now
+        </p>
+        <p>
+          (Even though no time argument is supported, "now" must be specified,
+          EXCEPT with -l .This is to prevent you from accidentally shutting the
+          machine down.) -r reboots, -l logs you off and -f forces apps to
+          terminate.
+        </p>
+        <p>
+          The default action is to shut the machine down.
+        </p>
+      </dd>
+    </dl>
+    <h4>
+      WinZsh-specific Options
+    </h4>
+    <dl>
+      <dt>
+        <code>WINNTIGNORECASE</code>
+      </dt>
+      <dd>
+        Ignore case in completions
+      </dd>
+      <dt>
+        <code>WINNTLAMEPATHFIX</code>
+      </dt>
+      <dd>
+        Convert the <code>PATH</code> environment variable back to
+        <code>'\'</code>-delimited instead of <code>'/'</code>-delimited when
+        each child process is forked.
+      </dd>
+      <dt>
+        <code>WINNTNOASSOCIATIONS</code>
+      </dt>
+      <dd>
+        Do not try applications associated with extensions if
+        <code>exec()</code> fails.
+      </dd>
+      <dt>
+        <code>WINNTCONVERTBACKSLASH</code>
+      </dt>
+      <dd>
+        Convert backslashes to <code>'/'</code> when comparing named
+        directories etc. May be useful if you derive <code>HOME</code> from
+        <code>'\'</code>-delimited environment variables.
+      </dd>
+      <dt>
+        <code>WINNTWAITFORGUIAPPS</code>
+      </dt>
+      <dd>
+        When set, makes the shell wait for win32 GUI apps to terminate instead
+        of spawning them asynchronously.
+      </dd>
+      <dt>
+        <code>WINNTNOQUOTEPROTECT</code>
+      </dt>
+      <dd>
+        Turn off trying to escape quotes <code>(")</code> in a command. While
+        the escaping works with cygnus tools, it does not seem to work with the
+        MKS tools. Whatever side-effects you suffer when you set this option
+        are beyond my means to fix.
+      </dd>
+    </dl>
+    <h4>
+      WinZsh specific handling of Arrow keys, etc. and bindkey
+    </h4>
+    <p>
+      Since windows does not generate codes for the keypad (arrow keys, ins,
+      delete etc.,) you will need to use a special options to bindkey to bind
+      these keys, namely,
+    </p>
+    <p>
+      <code>bindkey -N \\0xx some-funky-function</code>
+    </p>
+    <p>
+      where the numeric code is between 0 and 33.
+    </p>
+    <dl>
+      <dt>
+        The following shows the default bindings for each key:<br />
+        <br />
+      </dt>
+      <dd>
+        /* F1 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F2 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F3 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F4 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F5 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F6 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F7 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F8 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F9 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F10 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F11 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F12 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F13 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F14 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F15 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F16 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F17 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F18 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F19 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F20 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F21 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F22 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F23 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* F24 */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* Pgup */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* Pgdn */ z_undefinedkey,
+      </dd>
+      <dd>
+        /* end */ z_endofddne,
+      </dd>
+      <dd>
+        /* home */ z_beginningofddne,
+      </dd>
+      <dd>
+        /* left-arrow*/ z_backwardchar,
+      </dd>
+      <dd>
+        /* up-arrow */ z_upddneorhistory,
+      </dd>
+      <dd>
+        /* right-arrow */ z_forwardchar,
+      </dd>
+      <dd>
+        /* down-arrow */ z_downddneorhistory,
+      </dd>
+      <dd>
+        /* Ins */ z_overwritemode,
+      </dd>
+      <dd>
+        /* Del */ z_deletechar,
+      </dd>
+    </dl>
+    <p>
+      For example, to bind F-1 to run-help, you would need:
+    </p>
+    <p>
+      <code>bindkey -N \\000 run-help</code>
+    </p>
+    <p>
+      To bind left-arrow:
+    </p>
+    <p>
+      <code>bindkey -N \\034 beginning-of-line</code> (note that \034 is 28
+      decimal)
+    </p>
+  </body>
+</html>

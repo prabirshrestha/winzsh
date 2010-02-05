@@ -1,0 +1,2 @@
+The files in this directory pertain to the standard zsh distribution.
+For WinZsh/WINNT specific files, see the Src/ntport directory.
