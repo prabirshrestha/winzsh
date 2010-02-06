@@ -77,20 +77,20 @@ LDFLAGS = $(LDFLAGS) -debug
 !endif
 !endif
 
-INCLUDES = -I.. -I. -I$(srcdir) -Intport -Id:\mstools\include
+INCLUDES = -I.. -I. -I$(srcdir) -Iwinnt -Id:\mstools\include
 
 NTRES =ZSHLOGO
-NT_SRC = ntport\support.c ntport\bogus.c ntport\dirent.c \
-	 ntport\io.c ntport\fork.c ntport\globals.c ntport\ntb1.c \
-	 ntport\ntb2.c ntport\signal.c ntport\termcap.c ntport\tparam.c \
-	 ntport\console.c ntport\tparse.c ntport\stdio.c ntport\zsh_nt.c\
-	 ntport\ntfunc.c ntport\ps.c
+NT_SRC = winnt/support.c winnt/bogus.c winnt/dirent.c \
+	 winnt/io.c winnt/fork.c winnt/globals.c winnt/ntb1.c \
+	 winnt/ntb2.c winnt/signal.c winnt/termcap.c winnt/tparam.c \
+	 winnt/console.c winnt/tparse.c winnt/stdio.c winnt/zsh_nt.c\
+	 winnt/ntfunc.c winnt/ps.c
 
 NT_OBJ = support.o bogus.o dirent.o io.o fork.o globals.o signal.o \
 	termcap.o tparam.o console.o tparse.o stdio.o zsh_nt.o ntfunc.o ps.o
 NT_BOOKEND1 = ntb1.o
 NT_BOOKEND2 = ntb2.o
-NT_HDRS = ntport\ntport.h ntport\signal.h
+NT_HDRS = winnt/ntport.h winnt/signal.h
 
 COMPILE = $(CC) -c $(INCLUDES) $(CPPFLAGS) $(DEFS) $(CFLAGS)
 LINK    = $(LINK) $(LDFLAGS) -out:$@
@@ -116,7 +116,7 @@ RM = -del
 U = 
 
 # this header file is parsed to generate signal names (signames.h)
-SIGNAL_H = ntport/signal.h #/usr/include/asm/signal.h
+SIGNAL_H = winnt/signal.h #/usr/include/asm/signal.h
 
 # headers included in distribution
 DIST_HDRS = version.h globals.h hashtable.h prototypes.h signals.h \
@@ -162,9 +162,9 @@ DIST = $(DIST_HDRS) $(SRCS) $(AUX)
 # default target
 all: zsh.exe
 
-zsh.exe: $(PROTO) $(OBJS) $(NT_BOOKEND1) $(NT_BOOKEND2) ntport/$(NTRES).res
+zsh.exe: $(PROTO) $(OBJS) $(NT_BOOKEND1) $(NT_BOOKEND2) winnt/$(NTRES).res
 	$(LINK) $(NT_BOOKEND1) $(OBJS) $(NT_BOOKEND2) \
-	$(LIBS) ntport/$(NTRES).res \
+	$(LIBS) winnt/$(NTRES).res \
 	-section:.fusrdata,rw -map:zsh.map
 
 symbols:zsh.exe
@@ -175,9 +175,9 @@ symbols:zsh.exe
 	rebase -b 400000 -x ..\symbols -a zsh.exe
 
 chlog:
-	tcsh -fc "echo \<XMP\> > ntport\\Changelog.html"
-	type ntport\Changelog >> ntport\ChangeLog.html
-	tcsh -fc "echo \</XMP\> >> ntport\\ChangeLog.html"
+	tcsh -fc "echo \<XMP\> > winnt/\Changelog.html"
+	type winnt/Changelog >> winnt/ChangeLog.html
+	tcsh -fc "echo \</XMP\> >> winnt/\ChangeLog.html"
 
 ansi2knr: ansi2knr.o
 	$(LINK) ansi2knr.o
@@ -191,42 +191,42 @@ $(PROTO): makepro.sed
 
 # ========= DEPENDENCIES FOR NT ==========
 
-support.o: ntport\support.c
-	$(COMPILE) -Fo$*.o ntport\$*.c
-bogus.o: ntport\bogus.c
-	$(COMPILE) -Fo$*.o ntport\$*.c
-dirent.o: ntport\dirent.c
-	$(COMPILE) -Fo$*.o ntport\$*.c
-io.o: ntport\io.c
-	$(COMPILE) -Fo$*.o ntport\$*.c
-fork.o: ntport\fork.c
-	$(COMPILE) -Fo$*.o ntport\$*.c
-globals.o: ntport\globals.c
-	$(COMPILE) -Fo$*.o ntport\$*.c
-signal.o: ntport\signal.c
-	$(COMPILE) -Fo$*.o ntport\$*.c
-termcap.o: ntport\termcap.c
-	$(COMPILE) -Fo$*.o ntport\$*.c
-tparam.o: ntport\tparam.c
-	$(COMPILE) -Fo$*.o ntport\$*.c
-tparse.o: ntport\tparse.c
-	$(COMPILE) -Fo$*.o ntport\$*.c
-console.o: ntport\console.c
-	$(COMPILE) -Fo$*.o ntport\$*.c
-stdio.o: ntport\stdio.c
-	$(COMPILE) -Fo$*.o ntport\$*.c
-zsh_nt.o: ntport\zsh_nt.c
-	$(COMPILE) -Fo$*.o ntport\$*.c
-ntfunc.o: ntport\ntfunc.c
-	$(COMPILE) -Fo$*.o ntport\$*.c
-ps.o: ntport\ps.c
-	$(COMPILE) -Fo$*.o ntport\$*.c
-ntb1.o: ntport\ntb1.c
-	$(COMPILE) -Fo$*.o ntport\$*.c
-ntb2.o: ntport\ntb2.c
-	$(COMPILE) -Fo$*.o ntport\$*.c
-ntport/$(NTRES).res: ntport/$(NTRES).rc
-	rc -v -r ntport/$(NTRES).rc
+support.o: winnt/support.c
+	$(COMPILE) -Fo$*.o winnt/$*.c
+bogus.o: winnt/bogus.c
+	$(COMPILE) -Fo$*.o winnt/$*.c
+dirent.o: winnt/dirent.c
+	$(COMPILE) -Fo$*.o winnt/$*.c
+io.o: winnt/io.c
+	$(COMPILE) -Fo$*.o winnt/$*.c
+fork.o: winnt/fork.c
+	$(COMPILE) -Fo$*.o winnt/$*.c
+globals.o: winnt/globals.c
+	$(COMPILE) -Fo$*.o winnt/$*.c
+signal.o: winnt/signal.c
+	$(COMPILE) -Fo$*.o winnt/$*.c
+termcap.o: winnt/termcap.c
+	$(COMPILE) -Fo$*.o winnt/$*.c
+tparam.o: winnt/tparam.c
+	$(COMPILE) -Fo$*.o winnt/$*.c
+tparse.o: winnt/tparse.c
+	$(COMPILE) -Fo$*.o winnt/$*.c
+console.o: winnt/console.c
+	$(COMPILE) -Fo$*.o winnt/$*.c
+stdio.o: winnt/stdio.c
+	$(COMPILE) -Fo$*.o winnt/$*.c
+zsh_nt.o: winnt/zsh_nt.c
+	$(COMPILE) -Fo$*.o winnt/$*.c
+ntfunc.o: winnt/ntfunc.c
+	$(COMPILE) -Fo$*.o winnt/$*.c
+ps.o: winnt/ps.c
+	$(COMPILE) -Fo$*.o winnt/$*.c
+ntb1.o: winnt/ntb1.c
+	$(COMPILE) -Fo$*.o winnt/$*.c
+ntb2.o: winnt/ntb2.c
+	$(COMPILE) -Fo$*.o winnt/$*.c
+winnt/$(NTRES).res: winnt/$(NTRES).rc
+	rc -v -r winnt/$(NTRES).rc
 
 # ========== DEPENDENCIES FOR INSTALLING ==========
 
@@ -321,7 +321,7 @@ mostlyclean:
 
 clean: mostlyclean
 	$(RM)  signames.h _*.c *.pro
-	cd ntport
+	cd winnt
 	$(RM) *.res
 	cd ..
 cleanall: clean
