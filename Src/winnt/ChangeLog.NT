@@ -1,5 +1,55 @@
+3.0.5NT0.78.1
+2010-02-06  Tim Ayres  <timothy.j.ayres@gmail.com>
+
+	* version.h: zsh-3.0.5NT0.78.1 released
+
+	* ntport/,winnt/: rename ntport/ directory to winnt/, change all
+	  references.
+
+	* many: Add complete zsh 3.0.5 sources
+
+	* winnt/CONTIBUTORS.NT,winnt/ChangeLog.NT: renamed to avoid
+	  name collision with zsh files.
+    
+	* winnt/LICENSE.NT.HTML,winnt/README.NT.HTML: the HTML document
+	  is now the master, text versions will be generated at release
+	  by html2text. Rewrite README.NT.HTML, expand some sections,
+	  correct errors.
+
+	* WINNT.README.1ST: add file to identify location of WINNT
+	  files.
+
+        * TAGS, _exrc,hashtable.c.orig,testcomp,winnt/Changelog.html,
+	  winnt/TAGS: remove unused files.
+
+        * winnt/ntbin.c,winnt/ntfunc.c: rename ntbin.c to ntfunc.c to better
+	  align with tcsh sources.
+
+	* winnt/globals.c: port improved code to determine if an app
+	  is console or gui. From tcsh V6.17.00 win32/globals.c. This also
+	  fixes a compilation error with MSVC9.
+
+	* winnt/fork.c, winnt/tc.alloc.c: split tc.alloc.c back into
+	  a separate file from fork.c for ease of maintenance.
+
+	* config.h,Src/winnt/config.h.winnt: move config.h to 
+	  Src/winnt/config.h.winnt.
+
+        * Makefile.in,builtin.c,cond.c,exec.c,glob.c,globals.h,hashtable.c,
+	  hashtable.h,init.c,jobs.c,makepro.sed,params.c,rlimits.awk,
+	  signals.c,subst.c,system.h,utils.c,watch.c,zle.h,zle_bindings.c,
+	  zle_main.c,zle_misc.c,zle_refresh.c,zle_tricky.c,zle_vi.c,zsh.h:
+	  compare SRC with original zsh 3.0.5 and zsh 3.0.0. Identifiy all
+	  places where code has changed, cleanup add add #ifdef WINNT statements
+	  where necessary. Incorporated some zsh 3.0.5 changes which were not
+	  incorporated in the original sync with the 3.0.5 sources.
+    
+        * winnt/StartupFiles/zshenv,winnt/StartupFiles/zshrc: update
+          WinZsh specific startup files. Note: these could use a lot
+          more testing and inputs!
+
 3.0.5-NT-0.78
-Thu Jan 28 00:04:38 2010  Tim Ayres  <timothy.j.ayres@gmail.com>
+2010-01-28  Tim Ayres  <timothy.j.ayres@gmail.com>
 
 	* This release is functionally equivalent to 3.0.5-nt-sniff-4.1p2_pre6.
 	  Changes and bugfixes by Martin Oberhuber <martin.oberhuber@windriver.com>
@@ -8,26 +58,26 @@ Thu Jan 28 00:04:38 2010  Tim Ayres  <timothy.j.ayres@gmail.com>
 	  change history:
 
 	* sniff-4.1p2_pre6
-	  Thu Jan 02 11:15:00 2003  Martin Oberhuber  <martin.oberhuber@windriver.com>
+	  2003-01-02  Martin Oberhuber  <martin.oberhuber@windriver.com>
 
 		* winnt/support.c: on Windows, the command /bin/sh is always
 		  replaced by the zsh executable itself.
 		  This is to support scripts with #!/bin/sh.
 
 	* sniff-4.1p2_pre3
-	  Thu Nov 21 14:52:50 2002  Martin Oberhuber  <martin.oberhuber@windriver.com>
+	  2002-11-21  Martin Oberhuber  <martin.oberhuber@windriver.com>
 
 		* winnt/support.c: Fix problem calling programs in pathes with two spaces
 
 	* sniff-4.1p1
-	  Thu Oct 10 15:16:04 2002  Martin Oberhuber  <martin.oberhuber@windriver.com>
+	  2002-10-10  Martin Oberhuber  <martin.oberhuber@windriver.com>
 
 		* winnt/support.c: Cleanup heap corruption when quoting long argument lists
 
 		* winnt/support.c: $USER returns correct NT username instead of 'bogus'
 
 	* sniff-4.1
-	  Thu Sep 12 14:20:10 2002  Martin Oberhuber  <martin.oberhuber@windriver.com>
+	  2002-09-12  Martin Oberhuber  <martin.oberhuber@windriver.com>
 
 		* winnt/globals.c: Fix dprintf buffer overflow with long argument lists
 
@@ -45,7 +95,7 @@ Thu Jan 28 00:04:38 2010  Tim Ayres  <timothy.j.ayres@gmail.com>
 		* system.h: Comment out **environ
 
 3.0.5-NT-0.77
-Mon Jan 25 20:30:28 2010  Tim Ayres  <timothy.j.ayres@gmail.com>
+2010-01-25  Tim Ayres  <timothy.j.ayres@gmail.com>
 
 	* Development restarted and hosted at
 	  http://sourceforge.net/projects/zsh-nt/
@@ -74,40 +124,40 @@ Mon Jan 25 20:30:28 2010  Tim Ayres  <timothy.j.ayres@gmail.com>
 	  specified, so it is best to remove this anyway.
 
 beta 0.76
-Sat Jan 27 19:01:40 2001  Amol Deshpande  <amold@AMOLDHOME>
+2001-01-27  Amol Deshpande  <amold@AMOLDHOME>
 
 	* last release. Change icon to new icon supplied by Mark Robinson
 	  nice README.html from Bill Quirk
 
 beta 0.75
-Wed Jun 14 14:47:46 2000  Amol Deshpande  <amold@SKYNYRD>
+2000-06-14  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/dirent.c: Fix serious bug in wildcard expansion on Win9x
 
 beta 0.74
-Mon Jan 31 14:53:06 2000  Amol Deshpande  <amold@SKYNYRD>
+2000-01-31  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: fixed bug in converting '\'s in $HOME
 	  to '/'s.
 
 beta 0.73
-Mon Jan 17 11:55:15 2000  Amol Deshpande  <amold@SKYNYRD>
+2000-01-17  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: fixed crash in long arglist introduced by
 	  0.70
 
 beta 0.72
-Tue Jan 11 08:28:29 2000  Amol Deshpande  <amold@SKYNYRD>
+2000-01-11  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: Fixed memory corruption on Win9x
 
 beta 0.71
-Mon Jan 10 11:49:39 2000  Amol Deshpande  <amold@SKYNYRD>
+2000-01-10  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/stdio.c: Fix bug in inheritance of file handles.
 
 beta 0.69,0.70
-Fri Dec 17 11:53:19 1999  Amol Deshpande  <amold@SKYNYRD>
+1999-12-17  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: Fixed bug in argv[0] of spawned argument. Might
 	  have manifested as applications in ZSHROOT failing to spawn
@@ -116,232 +166,232 @@ Fri Dec 17 11:53:19 1999  Amol Deshpande  <amold@SKYNYRD>
 	  if you see unexpected quoting of "
 
 beta 0.68
-Mon Sep 27 11:20:24 1999  Amol Deshpande  <amold@SKYNYRD>
+1999-09-27  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: support paths > 1024 characters.
 
 beta 0.67
-Tue Sep 07 10:05:02 1999  Amol Deshpande  <amold@SKYNYRD>
+1999-09-07  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/io.c: Fix bug that affected FPATH/autoload
 
 beta 0.65
-Fri Aug 27 11:41:58 1999  Amol Deshpande  <amold@SKYNYRD>
+1999-08-27  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/dirent.c: Fix completion with drive letters in string.
 
 beta 0.64
-Fri Aug 27 11:04:11 1999  Amol Deshpande  <amold@SKYNYRD>
+1999-08-27  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/io.c: Unfix Win95 spurious linefeed fix for Windows 98.
 
 beta 0.63
-Wed May 19 16:21:37 1999  Amol Deshpande  <amold@SKYNYRD>
+1999-05-19  Amol Deshpande  <amold@SKYNYRD>
 
 	* exec.c, misc: VC 6.0 compliation errors. Disable optmizations
 	  in functions that call fork() to avoid losing global variables
 	  that might be in registers.
 
 beta 0.62
-Tue Apr 13 17:06:12 1999  Amol Deshpande  <amold@SKYNYRD>
+1999-04-13  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c, zle_misc.c: Keep server name in prompt
  	  if %C is specified and pwd is UNC.
 
 beta 0.61
-Tue Mar 23 12:17:50 1999  Amol Deshpande  <amold@SKYNYRD>
+1999-03-23  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: bug fix for previous fix.
 
 beta 0.60
-Sat Feb 13 17:49:14 1999  Amol Deshpande  <amold@SKYNYRD>
+1999-02-13  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c,winnt/ntbin.c: Fix lame arg-concatenation in
  	  exec and start paths. commands with large argument strings should
 	  now execute *much* faster.
 
 beta 0.57
-Tue Feb 02 18:09:39 1999  Amol Deshpande  <amold@SKYNYRD>
+1999-02-02  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/ntbin.c: fixed bug that improperly passed arguments
 	  to applications launched by windows "shell" associations.
 	  For example, .bat files.
 
 beta 0.55
-Mon Oct 26 11:09:44 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-10-26  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/ntbin.c: start builtin will not use '/' for option
  	  flags. only '-' will work.
 
 beta 0.54
-Fri Oct 16 12:52:08 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-10-16  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: added WINNTWAITFORGUIAPPS option.
 
 beta 0.53
-Mon Oct 12 12:31:59 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-10-12  Amol Deshpande  <amold@SKYNYRD>
 
 	* init.c: look for "zshrc" as well as ".zshrc"
 
 beta 0.52
-Mon Sep 28 17:31:08 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-09-28  Amol Deshpande  <amold@SKYNYRD>
 
 	* utils.c: attempt to ignore case while correcting spelling
  	  if WINNTIGNORECASE is set.
 
 beta 0.51
-Thu Sep 17 13:48:27 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-09-17  Amol Deshpande  <amold@SKYNYRD>
 
 	* hashtable.c,winnt/support.c: filenames without extensions and
  	  *only* files with extensions specified in the PATHEXT variable
  	  will be hashed. The default extensions are ".com;.exe;.cmd;.bat"
 
 beta 0.50
-Wed Sep 16 15:58:56 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-09-16  Amol Deshpande  <amold@SKYNYRD>
 
 	* hashtable.c: added hashing for external exes without
 	  extension. bogus spelling corrections should be reduced.
 
 beta 0.49
-Tue Sep 15 11:09:31 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-09-15  Amol Deshpande  <amold@SKYNYRD>
 
 	* support.c: The shell will automatically set TERM to vt100
  	  if it's not set in the environment. There should be no need
 	  to set the variable explicitly any more.
 
 beta 0.48
-Mon Aug 03 17:47:08 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-08-03  Amol Deshpande  <amold@SKYNYRD>
 
 	* support.c: Fixed bug in converting paths to '/'-delimited
 
 beta 0.47
-Mon Aug 03 16:59:38 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-08-03  Amol Deshpande  <amold@SKYNYRD>
 
 	* utils.c: Fixed bug in applying previous patch. If %~ wasn't
 	  working, this should fix it.
 
 beta 0.46
-Sat Jul 18 14:36:10 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-07-18  Amol Deshpande  <amold@SKYNYRD>
 
 	* utils.c,globals.h,zsh.h: patch from dominik for
 	  winntconvertbackslash.
 
 beta 0.45
-Mon Jun 29 11:30:55 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-06-29  Amol Deshpande  <amold@SKYNYRD>
 
 	* utils.c: patch from dominik vogt for honoring winntignorecase
  	  in %~ prompt.
 
 beta 0.44
-Mon Jun 22 11:19:12 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-06-22  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c,winnt/io.c: moved some startup code around.
 	  Fixed spurious linefeeds on win95
 
 beta 0.43
-Tue Jun 09 17:25:29 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-06-09  Amol Deshpande  <amold@SKYNYRD>
 
 	* builtin.c,winnt/io.c: Fix for the read builtin not
  	  echoing characters
 
 beta 0.429
-Thu Jun 04 17:43:54 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-06-04  Amol Deshpande  <amold@SKYNYRD>
 
 	* utils.c: Fixed %~ prompt spec.
 
 beta 0.428
-Thu Jun 04 16:50:21 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-06-04  Amol Deshpande  <amold@SKYNYRD>
 
 	* builtin.c: Fixed problems with the setting of PWD.
 
 beta 0.427
-Thu May 28 14:31:28 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-05-28  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: Fix to let apps with spaces in their path
 	  run. c:\program files\myapp.exe , for example.
 
 beta 0.426
-Wed May 27 10:46:10 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-05-27  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: Fixed stupid command buffer overflow
  	  problem. If you crashed while grepping through a bunch of
 	  files, this should fix it.
 
 beta 0.425
-Fri May 22 08:55:10 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-05-22  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: Fixed bug in parsing args to child processes.
 
 beta 0.424
-Sun May 17 13:18:21 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-05-17  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: Fixed bug that caused zsh to spawn a new
 	  console if $path contained a component '/'.
 
 beta 0.423
-Fri May 15 16:08:17 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-05-15  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/ntbin.c: winntlamepathfix now works with the 'start'
 	  builtin.
 
 beta 0.421
-Mon Apr 06 16:18:20 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-04-06  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c,winnt/fork.c: Fixed bug in heap initialization for
 	  forked children that crashed the child process.
 
 beta 0.42
-Sun Apr 05 13:36:49 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-04-05  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: Put in code to fix the case of a directory
  	  you cd into. This is extremely expensive and really silly, so
 	  it may become optional in the future.
 
 beta 0.41
-Sat Apr 04 15:27:10 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-04-04  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: Fixed bug that restricted command line
  	  length
 
 beta 0.401
-Thu Mar 26 08:21:21 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-03-26  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: Fix to stop home from being re-set in child
 	  if unset in parent. Also HOME will not be set by zsh if ZDOTDIR
 	  is set.
 
 beta 0.395
-Tue Mar 24 09:36:27 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-03-24  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/fork.c,winnt/support.c: Fixed bugs in inheriting
 	  environment variables (most notably PATH), and crashes
 	  related to the same.
 
 beta 0.392
-Tue Mar 17 17:57:39 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-03-17  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: Fixed bug that caused ZSHROOT to be
 	  ignored.
 
 beta 0.391
-Thu Mar 05 18:17:52 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-03-05  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/io.c: Fix for some problems with autoload
 
 beta 0.39
-Thu Mar 05 10:46:21 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-03-05  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: Fixed bug that should have crashed the
  	  shell every time on startup on win95.
 
 beta 0.381
-Mon Feb 23 13:28:53 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-02-23  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: Fix to prevent excessively long
 	  command lines from crashing the shell.
 
 beta 0.38
-Mon Feb 23 09:46:12 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-02-23  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: Restructured execve() to make it
  	  faster. winntlamepathfix removed. command names will be
@@ -349,40 +399,40 @@ Mon Feb 23 09:46:12 1998  Amol Deshpande  <amold@SKYNYRD>
 	  on.
 
 beta 0.37
-Thu Feb 12 10:13:54 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-02-12  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/ps.c: Fixed ps to not require psapi.dll, but use it
  	  if it's present.
 
 beta 0.36
-Sun Feb 01 11:21:17 1998  Amol Deshpande  <amold@SALEMS_LOT>
+1998-02-01  Amol Deshpande  <amold@SALEMS_LOT>
 
 	* exec.c: Fixed bug where external commands were not being
 	  listed in completions.
 
 beta 0.35
-Mon Jan 12 09:05:54 1998  Amol Deshpande  <amold@SKYNYRD>
+1998-01-12  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/ps.c: Fixed crash when psapi.dll is not present.
 
 beta 0.34
-Tue Dec 30 10:01:33 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-12-30  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/ps.c: Added shutdown builtin. See README for details.
 
 beta 0.33
-Sun Dec 21 14:07:19 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-12-21  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/ps.c: Added ps builtin. With -w, lists window
 	  titles as well.
 
 beta 0.32
-Wed Dec 17 14:10:16 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-12-17  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/io.c: Fixed output redirection bugs (probably)
 
 beta 0.31
-Tue Dec 02 12:34:18 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-12-02  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: added option winntnoassociations to
  	  prevent starting notepad(say) unexpectedly.
@@ -391,7 +441,7 @@ Tue Dec 02 12:34:18 1997  Amol Deshpande  <amold@SKYNYRD>
 	  See README for details.
 
 beta 0.29
-Mon Nov 17 09:32:24 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-11-17  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c,winnt/ntbin.c: Added support to start
 	  associated apps when you try to 'start' or execute
@@ -399,14 +449,14 @@ Mon Nov 17 09:32:24 1997  Amol Deshpande  <amold@SKYNYRD>
 	  with foo.txt.
 
 beta 0.28
-Wed Oct 22 17:12:35 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-10-22  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/console.c: Fixed console so that the code page is
 	  not changed when the environment variable ZSH_DONTSETCP
 	  is set.
 
 beta 0.27
-Wed Oct 15 09:36:36 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-10-15  Amol Deshpande  <amold@SKYNYRD>
 
 	* zle_main.c: Cleaned up implementation of 8-bit characters.
  	  International keyboards should now work just by setting
@@ -414,7 +464,7 @@ Wed Oct 15 09:36:36 1997  Amol Deshpande  <amold@SKYNYRD>
 	  Also hacked in support for Arrow keys, ins.,delete etc.
 
 beta 0.26
-Fri Oct 10 10:49:55 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-10-10  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: Added winntlamepathfix, winntlameargfix opts.
  	  When set, they convert '/'s in the  path and the external
@@ -424,32 +474,32 @@ Fri Oct 10 10:49:55 1997  Amol Deshpande  <amold@SKYNYRD>
 
 
 beta 0.25
-Wed Oct 08 14:56:58 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-10-08  Amol Deshpande  <amold@SKYNYRD>
 
 	* zle_tricky.c: Fixed bug that caused matches in completion
 	  to be printed twice.
 
 beta 0.24
-Mon Oct 06 16:26:33 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-10-06  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/stdio.c: stat() replacement to handle UNC names
 
 beta 0.23
-Mon Oct 06 10:37:11 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-10-06  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c,lex.c: Fixes for $home like C:\, and
  	  for lexer problems in child processes.
 	  Updated source to 3.0.5
 
 beta 0.22
-Mon Sep 01 14:53:41 1997  Amol Deshpande  <amold@SALEMS_LOT>
+1997-09-01  Amol Deshpande  <amold@SALEMS_LOT>
 
 	* glob.c, zle_tricky.c: Changes for winntignorecase. Based on
 	  the OS/2 version of zsh-3.0.0. Thanks to Tamura Kent for
 	  pointing me to it.
 
 beta 0.211, 0.212
-Thu Aug 21 15:14:14 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-08-21  Amol Deshpande  <amold@SKYNYRD>
 
 	* exec.c,winnt/stdio.c: Fix for autocd. Drive changes can
 	  now me made like DOS if autocd is set.
@@ -460,17 +510,17 @@ Thu Aug 21 15:14:14 1997  Amol Deshpande  <amold@SKYNYRD>
 	  user.
 
 beta 0.20
-Wed Aug 06 14:14:49 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-08-06  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: Fix for fix for dir names with spaces.
 
 beta 0.19
-Mon Jul 28 09:26:10 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-07-28  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/signal.c: fix for shell hang when child exit(-1)ed.
 
 beta 0.18
-Thu Jul 24 09:26:28 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-07-24  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/console.c: Fixes for console scroll messing up display.
 
@@ -480,32 +530,32 @@ Thu Jul 24 09:26:28 1997  Amol Deshpande  <amold@SKYNYRD>
 	* winnt/support.c: Fix for dir names with spaces in $PATH
 
 beta 0.17
-Mon Jul 14 09:03:20 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-07-14  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/support.c: Make "forked" child ignore ctrl-c so that it
 	  dies only if real child process dies.
 
 beta 0.16
-Fri Jul 11 10:45:58 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-07-11  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/console.c: Fix for eol not working properly.
 
 	* utils.c: Fix for echo "$PATH" printing nothing.
 
 beta 0.15
-Tue Jul 08 20:15:19 1997  Amol Deshpande  <amold@SALEMS_LOT>
+1997-07-08  Amol Deshpande  <amold@SALEMS_LOT>
 
 	* glob.c: Fix for ls **/*.c etc.
 
 beta 0.14
-Mon Jun 16 13:54:35 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-06-16  Amol Deshpande  <amold@SKYNYRD>
 
 	* utils.c: Fix for cd ~foo where foo is a param.
  	  Also replaced 'D:...' from %C prompt format (See beta-0.09 below)
 	  with just (D:).
 
 beta 0.12
-Sun Jun 15 11:56:36 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-06-15  Amol Deshpande  <amold@SKYNYRD>
 
 	* params.c: Simplified exporting of enviroment variables by
 	  punting them to SetEnvironmentVariable.
@@ -513,48 +563,49 @@ Sun Jun 15 11:56:36 1997  Amol Deshpande  <amold@SKYNYRD>
 	* winnt/ntbin.c: Added "title" builtin.
 
 beta-0.11
-Fri Jun 13 11:33:06 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-06-13  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/io.c: Fixes for crlf translation. Should fix long compctls
 	  in your .zshrc, for example.
 
 beta-0.10
-Thu Jun 12 19:33:07 1997  Amol Deshpande  <amold@SALEMS_LOT>
+1997-06-12  Amol Deshpande  <amold@SALEMS_LOT>
 
 	* winnt/signal.c, winnt/io.c: Fixed problem where ^C would not
  	  be seen until another key was hit
 
 beta-0.09
-Thu Jun 12 17:26:59 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-06-12  Amol Deshpande  <amold@SKYNYRD>
 
 	* zle_misc.c: Put code in to prepend '<drive>:...' if prompt format
 	  C is used. e.g., prompt='%3C>' will print the trailing 3 components
 	  of the path, prefixed by 'C:...'(for example).
 
 beta-0.08
-Wed Jun 11 09:12:05 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-06-11  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/ntbin.c: Added "start" builtin. Also integrated dirent
  	  support for enumerating shares. 'cd //server/<tab>' will complete
 	  from the list of shares on the server.
 
 beta-0.07
-Tue Apr 15 17:06:30 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-04-15  Amol Deshpande  <amold@SKYNYRD>
 
 	* params.c: fix for path not inheriting properly (hopefully)
 
 beta-0.06
-Tue Apr 15 15:30:11 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-04-15  Amol Deshpande  <amold@SKYNYRD>
 
 	* builtin.c: fixes for 'cd /' or 'cd /foo'
 
 beta-0.05
-Sat Apr 12 10:00:21 1997  Amol Deshpande  <amold@SALEMS_LOT>
+1997-04-12  Amol Deshpande  <amold@SALEMS_LOT>
 
 	* Added International support. If NOREBIND is not set in the environment,
 	  AND meta bindings are not in effect (which means don't do bindkey -m),
 	  international keyboards should work.
 
-Tue Mar 25 09:59:19 1997  Amol Deshpande  <amold@SKYNYRD>
+1997-03-25  Amol Deshpande  <amold@SKYNYRD>
 
 	* winnt/stdio.c : Fixed append redir bugs
+
