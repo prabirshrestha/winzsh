@@ -1247,7 +1247,7 @@ cd_try_chdir(char *pfix, char *dest)
     if (buf2[0] == '/')
 		return (chdir(unmeta(buf)) == -1) ? NULL : ztrdup(buf2);
 #else
-    // fix cd /. -amol 4/14/97
+    /* fix cd /. -amol 1997-04-14 NT-0.06
     {
 	char drive ='A' + _getdrive()-1;
 	if (buf2[0] == '\\')

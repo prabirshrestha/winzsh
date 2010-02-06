@@ -1034,6 +1034,9 @@ putpromptchar(int doprint, int endchar)
 		    }
 		if (*ss == '/' && ss[1] && (ss != buf3))
 		    ss++;
+/* 1997-06-12 NT-0.09 Put code in to prepend '<drive>:...' if prompt format
+ * C is used. e.g., prompt='%3C>' will print the trailing 3 components
+ * of the path, prefixed by 'C:...'(for example).                     */
 #ifdef WINNT
 		if (0){
 			char tmp[5]={'(',0,0,')',0};

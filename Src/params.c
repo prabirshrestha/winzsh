@@ -1825,6 +1825,8 @@ zgetenv(char *name)
 }
 
 /* Change the value of an existing environment variable */
+/* 1997-06-15 NT-0.12 Simplified exporting of enviroment variables by
+ * punting them to SetEnvironmentVariable.    */
 
 /**/
 char *
