@@ -3,8 +3,7 @@
 <!--
 
 WinZsh README
-Version 3.05-NT-078
-Date: 2010-02-02
+Date: 2010-02-06
 
 -->
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -27,18 +26,13 @@ Date: 2010-02-02
       Zsh (non WinZsh-specific) Documentation
     </h4>
     <p>
-      The zsh man pages are now included with the WinZsh distribution. If you
-      prefer documentation in info or html format, you can download it from one
-      of the zsh mirror sites listed at <a href=
-      "http://www.zsh.org/">http://www.zsh.org/</a>. Select the "doc" package
-      for the appropriate version of zsh. For example, for the current version
-      of WinZsh based on zsh 3.0.5, from <a href=
-      "http://www.zsh.org/pub/old/">http://www.zsh.org/pub/old/</a> select the
-      <code>zsh-3.0.5-doc.tar.gz</code> package.
+      The original zsh documentation is included with the WinZsh distribution
+      in the following formats: man pages, info, and html. It can be found in
+      the <code>usr/man</code>, <code>usr/info</code>, and
+      <code>usr/doc/zsh-$ZSH_VERSION/html-docs</code> directories respectively
+      of the binary distribution, or in the <code>Doc</code> directory in the
+      source.
     </p>
-    <h4>
-      Man page reader
-    </h4>
     <p>
       If you do not have a man page reader, you can use the included
       <code>man</code> zsh script, originally written by Wu Yongwei for
@@ -46,10 +40,8 @@ Date: 2010-02-02
       work in WinZsh. Note: this script requires some common Unix tools such as
       <code>sed</code>, <code>less</code> and <code>groff</code>, you can find
       these at the <a href="http://gnuwin32.sourceforge.net">GnuWin32</a>
-      project. Please report any bug you find with it to WinZsh.
-    </p>
-    <p>
-      You could also try compiling the <a href=
+      project. Please report any bugs you find with it to WinZsh, not to MSYS
+      or MinGW. You could also try compiling the <a href=
       "http://prdownloads.sourceforge.net/mingw/man-1.6-mingw-beta-1-src.tar.gz?download">
       MinGW man reader</a>, which is supposedly in development but the latest
       snapshot is dated 2006-03-22.
@@ -95,8 +87,7 @@ Date: 2010-02-02
       </li>
       <li>Copy the configuration header file and makefile to the appropriate
       directories by typing <code>'copy winnt\config.h.winnt
-      ..\config.h'</code> and <code>'copy winnt\Makefile.msvc
-      Makefile'.</code>
+      ..\config.h'</code> and <code>'copy winnt\Makefile.msvc Makefile'.</code>
       </li>
       <li>Compile with <code>'nmake MSVC={6|9}'.</code>
       </li>

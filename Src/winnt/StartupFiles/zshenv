@@ -1,0 +1,31 @@
+#
+# $Id: zshenv,v 2.0 1996/05/02 22:57:04 hzoli Exp $
+#
+# Generic .zshenv file for zsh 2.7
+# Contains modifications to make WinZsh work better
+# these have not been fully tested
+#
+# .zshenv is sourced on all invocations of the
+# shell, unless the -f option is set.  It should
+# contain commands to set the command search path,
+# plus other important environment variables.
+# .zshenv should not contain commands that product
+# output or assume the shell is attached to a tty.
+#
+
+# Set the location where you installed WinZsh
+export ZSHROOT=C:/winzsh
+
+# Add entries to your PATH
+# Note: path (lowercase) is an array, PATH (UPPERCASE) is a string.
+# Can only export UPPERCASE
+path=("$ZSHROOT"/bin
+	C:/gnuwin32/bin
+	$path .)
+export PATH
+
+# Set the SHELL variable, some programs look for this
+export SHELL=zsh
+
+# Set your HOME path if it isn't already set or you don't want the default
+#export HOME=C:/
