@@ -111,7 +111,7 @@ evalcond(Cond c)
 	    return (mode & 0111) || S_ISDIR(mode);
 	}
 #endif /* WINNT */
-	return (doaccess(c->left, X_OK)); /* WINNT patch? */
+	return doaccess(c->left, X_OK);
     case 'z':
 	return (!strlen(c->left));
 #ifndef WINNT

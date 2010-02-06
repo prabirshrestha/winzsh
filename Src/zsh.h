@@ -35,6 +35,7 @@
 #include <config.h>
 #include <system.h>
 
+/* exec.c */
 #ifndef WINNT
 # define ABSOLUTEP(p)	(*(p) == '/')
 #else

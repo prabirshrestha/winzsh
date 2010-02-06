@@ -34,8 +34,8 @@
 #define execerr() if (!forked) { lastval = 1; return; } else _exit(1)
 	
 
-static LinkList args INIT_ZERO; /* WINNT change */
-static int doneps4 INIT_ZERO; /* WINNT change */
+static LinkList args INIT_ZERO;
+static int doneps4 INIT_ZERO;
 
 /* parse string into a list */
 
@@ -181,7 +181,7 @@ zexecve(char *pth, char **argv)
 		    if (execvebuf[1] == '!') {
 			for (t0 = 0; t0 != ct; t0++)
 			    if (execvebuf[t0] == '\n')
-/* WINNT Q: is this a patch, or should this be an ifdef? I think patch */
+/* WINNT patch to original zsh source */
 				/*
 				execvebuf[t0] = '\0';
 				*/
@@ -253,7 +253,7 @@ void
 execute(Cmdnam not_used_yet, int dash)
 {
     Cmdnam cn;
-    static LinkList exargs INIT_ZERO; /* WINNT change */
+    static LinkList exargs INIT_ZERO;
     char buf[MAXCMDLEN], buf2[MAXCMDLEN];
     char *s, *z, *arg0;
     char **argv, **pp;
@@ -296,7 +296,7 @@ execute(Cmdnam not_used_yet, int dash)
 	_exit(1);
     }
     for (s = arg0; *s; s++)
-	if (ABSOLUTEP(s)) { //(*s == '/') { /* WINNT change */
+	if (ABSOLUTEP(s)) { /* (*s == '/') { WINNT mod, see zsh.h */
 	    errno = zexecve(arg0, argv);
 	    if (arg0 == s || unset(PATHDIRS) ||
 		(arg0[0] == '.' && (arg0 + 1 == s ||
@@ -318,7 +318,7 @@ execute(Cmdnam not_used_yet, int dash)
 		    ee = zexecve(arg0, argv);
 		    if (isgooderr(ee, *pp))
 			eno = ee;
-		} else if (!ABSOLUTEP(*pp)) { //(**pp != '/') { /* WINNT change */
+		} else if (!ABSOLUTEP(*pp)) { /* (**pp != '/') { WINNT mod, see zsh.h */
 		    z = buf;
 		    strucpy(&z, *pp);
 		    *z++ = '/';

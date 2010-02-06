@@ -257,7 +257,7 @@ struct timezone {
 #include <termcap.h>
 #endif
 
-#ifdef GWINSZ_IN_SYS_IOCTL /* WINNT change, patch? no, this is the same in 3.0.0*/
+#if defined(GWINSZ_IN_SYS_IOCTL) || defined(CLOBBERS_TYPEAHEAD)
 # include <sys/ioctl.h>
 #endif
 #ifdef WINSIZE_IN_PTEM
@@ -387,20 +387,6 @@ struct timezone {
 #endif
 #if !defined(RLIMIT_VMEM) && defined(RLIMIT_AS)
 # define RLIMIT_VMEM RLIMIT_AS
-#endif
-
-/* WINNT change */
-/* RLIM_T is the type for system calls involving resource limits     */
-/* Eventually the following will be replaced by a check in configure */
-
-#if defined(BSD4_4) && (BSD > 199300)
-# define RLIM_T_IS_QUAD_T
-#endif
-
-#ifdef RLIM_T_IS_QUAD_T
-# define RLIM_T quad_t
-#else
-# define RLIM_T long
 #endif
 
 /* DIGBUFSIZ is the length of a buffer which can hold the -LONG_MAX-1 *

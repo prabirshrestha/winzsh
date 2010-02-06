@@ -40,7 +40,6 @@
 # define EXTERN extern
 #endif
 
-
 #if defined (WINNT)
 #ifndef GLOBALS
 #undef INIT_ZERO

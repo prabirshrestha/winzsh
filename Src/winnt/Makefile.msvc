@@ -174,11 +174,6 @@ symbols:zsh.exe
 	@echo The address given to rebase should match the image base
 	rebase -b 400000 -x ..\symbols -a zsh.exe
 
-chlog:
-	tcsh -fc "echo \<XMP\> > winnt/\Changelog.html"
-	type winnt/Changelog >> winnt/ChangeLog.html
-	tcsh -fc "echo \</XMP\> >> winnt/\ChangeLog.html"
-
 ansi2knr: ansi2knr.o
 	$(LINK) ansi2knr.o
 

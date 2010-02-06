@@ -185,9 +185,9 @@ scrollwindow(int tline)
     sen = s + winw;					\
 }
 
-#if defined( TIOCGWINSZ) || defined(WINNT) /* WINNT change */
+#if defined(TIOCGWINSZ) || defined(WINNT)
 int winchanged;			/* window size changed */
-#endif
+#endif /* TIOCGWINSZ || WINNT */
 
 int cleareol,			/* clear to end-of-line (if can't cleareod) */
     clearf = 0,			/* alwayslastprompt used immediately before */
@@ -244,13 +244,13 @@ refresh(void)
     if (resetneeded) {
 	onumscrolls = 0;
 	setterm();
-#if defined( TIOCGWINSZ) || defined(WINNT) /* WINNT change */
+#if defined(TIOCGWINSZ) || defined(WINNT)
 	if (winchanged) {
 	    moveto(0, 0);
 	    t0 = olnct;		/* this is to clear extra lines even when */
 	    winchanged = 0;	/* the terminal cannot TCCLEAREOD	  */
 	}
-#endif
+#endif /* TIOCGWINSZ || WINNT */
 	resetvideo();
 	resetneeded = 0;	/* unset */
 	oput_rpmpt = 0;		/* no right-prompt currently on screen */

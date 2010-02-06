@@ -3687,9 +3687,6 @@ bin_alias(char *name, char **argv, char *ops, int func)
 
 /* limit: set or show resource limits.  The variable hard indicates *
  * whether `hard' or `soft' resource limits are being set/shown.    */
-/* WINNT Q: why is the type changed from rlim_t to RLIM_T, and ZSH_NLIMITS *
- * changed to RLIM_NLIMITS? */
-
 
 /**/
 int
@@ -3702,7 +3699,7 @@ bin_limit(char *nam, char **argv, char *ops, int func)
 #else
     char *s;
     int hard, limnum, lim;
-    RLIM_T val; /* WINNT change */
+    rlim_t val;
     int ret = 0;
 
     hard = ops['h'];
@@ -3717,7 +3714,7 @@ bin_limit(char *nam, char **argv, char *ops, int func)
 	/* Search for the appropriate resource name.  When a name matches (i.e. *
 	 * starts with) the argument, the lim variable changes from -1 to the   *
 	 * number of the resource.  If another match is found, lim goes to -2.  */
-	for (lim = -1, limnum = 0; limnum < RLIM_NLIMITS; limnum++) /* WINNT change */
+	for (lim = -1, limnum = 0; limnum < ZSH_NLIMITS; limnum++)
 	    if (!strncmp(recs[limnum], s, strlen(s))) {
 		if (lim != -1)
 		    lim = -2;
@@ -3842,7 +3839,7 @@ bin_unlimit(char *nam, char **argv, char *ops, int func)
 	     * matches (i.e. starts with) the argument, the lim variable  *
 	     * changes from -1 to the number of the resource.  If another *
 	     * match is found, lim goes to -2.                            */
-	    for (lim = -1, limnum = 0; limnum < RLIM_NLIMITS; limnum++) /* WINNT change */
+	    for (lim = -1, limnum = 0; limnum < ZSH_NLIMITS; limnum++)
 		if (!strncmp(recs[limnum], *argv, strlen(*argv))) {
 		    if (lim != -1)
 			lim = -2;
@@ -3982,7 +3979,7 @@ bin_ulimit(char *name, char **argv, char *ops, int func)
 	    res = RLIMIT_FSIZE;
 	if (strcmp(*argv, "unlimited")) {
 	    /* set limit to specified value */
-	    RLIM_T limit; /* WINNT change */
+	    rlim_t limit;
 
 	    limit = ZSTRTORLIMT(*argv, NULL, 10);
 	    /* scale appropriately */
@@ -4062,10 +4059,10 @@ void
 showlimits(int hard, int lim)
 {
     int rt;
-    RLIM_T val; /* WINNT change */
+    rlim_t val;
 
     /* main loop over resource types */
-    for (rt = 0; rt != RLIM_NLIMITS; rt++) /* WINNT change */
+    for (rt = 0; rt != ZSH_NLIMITS; rt++)
 	if (rt == lim || lim == -1) {
 	    /* display limit for resource number rt */
 	    printf("%-16s", recs[rt]);
@@ -4111,7 +4108,7 @@ showlimits(int hard, int lim)
 void
 printulimit(int lim, int hard, int head)
 {
-    RLIM_T limit; /* WINNT change */
+    rlim_t limit;
 
     /* get the limit in question */
     limit = (hard) ? limits[lim].rlim_max : limits[lim].rlim_cur;
@@ -5091,9 +5088,6 @@ bin_read(char *name, char **args, char *ops, int func)
 	buf = bptr = (char *)zalloc(bsiz = 64);
 	/* get input, a character at a time */
 	while (!gotnl) {
-#ifdef WINNT
-		break;
-#endif /* WINNT */
 	    c = zread();
 	    /* \ at the end of a line indicates a continuation *
 	     * line, except in raw mode (-r option)            */
