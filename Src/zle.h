@@ -41,11 +41,10 @@
 #undef INIT_ZERO_STRUCT
 #define INIT_ZERO
 #define INIT_ZERO_STRUCT
-#endif ZLEGLOBALS
-#endif WINNT
+#endif /* ZLEGLOBALS */
+#endif /* WINNT */
 
 #ifdef ZLE
-
 
 /* size of line buffer */
 ZLEXTERN int linesz INIT_ZERO;
@@ -456,5 +455,5 @@ extern struct zlecmd zlecmds[] ;
 #undef INIT_ZERO_STRUCT
 #define INIT_ZERO =0
 #define INIT_ZERO_STRUCT ={0}
-#endif ZLEGLOBALS
-#endif WINNT
+#endif /* ZLEGLOBALS */
+#endif /* WINNT */

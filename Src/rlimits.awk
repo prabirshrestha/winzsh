@@ -7,12 +7,26 @@
 # NB: On SunOS 4.1.3 - user-functions don't work properly, also \" problems
 # Without 0 + hacks some nawks compare numbers as strings
 #
+
+#removed in WINNT
+#BEGIN {limidx = 0}
+
+#ifndef WINNT uncomment the next line
+#/^[\t ]*(#[\t ]*define[\t _]*RLIMIT_[A-Z]*[\t ]*[0-9][0-9]*|RLIMIT_[A-Z]*,[\t ]*)/ {
+#else WINNT uncomment the next line
 /^[\t ]*#[\t ]*define[\t _]*RLIMIT_[A-Z]*[\t ]*[0-9][0-9]*/ { 
+#endif
     limindex = index($0, "RLIMIT_")
     limtail = substr($0, limindex, 80)
     split(limtail, tmp)
     limnam = substr(tmp[1], 8, 20)
     limnum = tmp[2]
+    # in this case I assume GNU libc resourcebits.h - comment out for WINNT
+#    if (limnum == "") {
+#	limnum = limidx++
+#	sub (",", "", limnam)
+#    }
+
     limrev[limnam] = limnum
     if (lim[limnum] == "") {
 	lim[limnum] = limnam
@@ -21,6 +35,7 @@
 	    if (limnam == "RSS")     { msg[limnum] = "resident" }
 	    if (limnam == "VMEM")    { msg[limnum] = "vmemorysize" }
 	    if (limnam == "NOFILE")  { msg[limnum] = "descriptors" }
+#	    if (limnam == "OFILE")   { msg[limnum] = "descriptors" } removed in WINNT
 	    if (limnam == "CORE")    { msg[limnum] = "coredumpsize" }
 	    if (limnam == "STACK")   { msg[limnum] = "stacksize" }
 	    if (limnam == "DATA")    { msg[limnum] = "datasize" }
@@ -38,6 +53,10 @@
     split(limtail, tmp)
     nlimits = tmp[2]
 }
+# in case of GNU libc - comment out for WINNT
+#/^[\t ]*RLIM_NLIMITS[\t ]*=[\t ]*RLIMIT_NLIMITS/ {
+#    nlimits = limidx
+#}
 
 END {
     if (limrev["MEMLOCK"] != "") {
@@ -46,7 +65,12 @@ END {
     }
     ps = "%s"
 
+#ifndef WINNT
+#    printf("%s\n%s\n\n", "/** rlimits.h                                 **/", "/** architecture-customized limits for zsh **/")
+#    printf("#define ZSH_NLIMITS %d\n\nstatic char *recs[ZSH_NLIMITS+1] = {\n", 0 + nlimits)
+#else
     printf("%s\n%s\n\n%s\n", "/** rlimits.h                                 **/", "/** architecture-customized limits for zsh **/", "static char *recs[RLIM_NLIMITS+1] = {")
+#endif
 
     for (i = 0; i < 0 + nlimits; i++)
 	if (msg[i] == "") {

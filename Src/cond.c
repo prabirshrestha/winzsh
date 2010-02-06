@@ -67,7 +67,7 @@ evalcond(Cond c)
 #ifndef WINNT
     case 'b':
 	return (S_ISBLK(dostat(c->left)));
-#endif WINNT
+#endif /* WINNT */
     case 'c':
 	return (S_ISCHR(dostat(c->left)));
     case 'd':
@@ -79,7 +79,7 @@ evalcond(Cond c)
 	return (!!(dostat(c->left) & S_ISGID));
     case 'k':
 	return (!!(dostat(c->left) & S_ISVTX));
-#endif WINNT
+#endif /* WINNT */
     case 'n':
 	return (!!strlen(c->left));
     case 'o':
@@ -87,7 +87,7 @@ evalcond(Cond c)
 #ifndef WINNT
     case 'p':
 	return (S_ISFIFO(dostat(c->left)));
-#endif WINNT
+#endif /* WINNT */
     case 'r':
 	return (doaccess(c->left, R_OK));
     case 's':
@@ -101,7 +101,7 @@ evalcond(Cond c)
 #ifndef WINNT
     case 'u':
 	return (!!(dostat(c->left) & S_ISUID));
-#endif WINNT
+#endif /* WINNT */
     case 'w':
 	return (doaccess(c->left, W_OK));
     case 'x':
@@ -110,15 +110,15 @@ evalcond(Cond c)
 	    unsigned short mode = dostat(c->left);
 	    return (mode & 0111) || S_ISDIR(mode);
 	}
-#endif WINNT
-	return (doaccess(c->left, X_OK));
+#endif /* WINNT */
+	return (doaccess(c->left, X_OK)); /* WINNT patch? */
     case 'z':
 	return (!strlen(c->left));
 #ifndef WINNT
     case 'h':
     case 'L':
 	return (S_ISLNK(dolstat(c->left)));
-#endif WINNT
+#endif /* WINNT */
     case 'O':
 	return ((st = getstat(c->left)) && st->st_uid == geteuid());
     case 'G':

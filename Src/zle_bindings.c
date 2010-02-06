@@ -626,6 +626,7 @@ int vicmdbind[128] =
     /* ~ */ z_viswapcase,
     /* ^? */ z_vibackwardchar,
 };
+#ifdef WINNT
 int ntvirtualbind[24 + 8 + 2] =
 {
     /* F1 */ z_undefinedkey,
@@ -663,3 +664,4 @@ int ntvirtualbind[24 + 8 + 2] =
     /* Ins */ z_overwritemode,
     /* Del */ z_deletechar,
 };
+#endif /* WINNT */

@@ -61,7 +61,7 @@
 #ifndef WINNT
 #include <pwd.h>
 #include <grp.h>
-#endif WINNT
+#endif /* WINNT */
 #include <ctype.h>
 #include <sys/stat.h>
 #include <signal.h>
@@ -191,7 +191,7 @@ struct timezone {
 #undef WCOREDUMP
 #undef WIFSTOPPED
 #undef WSTOPSIG
-#endif WINNT
+#endif /* WINNT */
 #endif
 
 /* missing macros for wait/waitpid/wait3 */
@@ -236,7 +236,11 @@ struct timezone {
 # else
 #  include <termios.h>
 # endif
+# ifdef _POSIX_VDISABLE
+#  define VDISABLEVAL _POSIX_VDISABLE
+# else
 # define VDISABLEVAL 0
+# endif
 # define HAS_TIO 1
 #else    /* not TERMIOS */
 # ifdef HAVE_TERMIO_H
@@ -247,13 +251,13 @@ struct timezone {
 #  include <sgtty.h>
 # endif  /* HAVE_TERMIO_H  */
 #endif   /* HAVE_TERMIOS_H */
-#endif WINNT
+#endif /* WINNT */
 
 #ifdef HAVE_TERMCAP_H
 #include <termcap.h>
 #endif
 
-#ifdef GWINSZ_IN_SYS_IOCTL
+#ifdef GWINSZ_IN_SYS_IOCTL /* WINNT change, patch? no, this is the same in 3.0.0*/
 # include <sys/ioctl.h>
 #endif
 #ifdef WINSIZE_IN_PTEM
@@ -278,7 +282,7 @@ struct timezone {
 # include <utmp.h>
 # define STRUCT_UTMP struct utmp
 #endif
-#endif WINNT
+#endif /* WINNT */
  
 #if !defined (UTMP_FILE) && defined (_PATH_UTMP)        /* 4.4BSD.  */
 # define UTMP_FILE _PATH_UTMP
@@ -385,6 +389,7 @@ struct timezone {
 # define RLIMIT_VMEM RLIMIT_AS
 #endif
 
+/* WINNT change */
 /* RLIM_T is the type for system calls involving resource limits     */
 /* Eventually the following will be replaced by a check in configure */
 
@@ -483,7 +488,10 @@ struct timezone {
 # define R_OK 4
 #endif
 
-// extern char **environ;     /* environment variable list */
+/* environ does not exist on Windows */
+#ifndef WINNT
+extern char **environ;     /* environment variable list */
+#endif /* WINNT */
 
 /* These variables are sometimes defined in, *
  * and needed by, the termcap library.       */

@@ -181,7 +181,7 @@ setterm(void)
 #endif
 
     settyinfo(&ti);
-#endif WINNT
+#endif /* WINNT */
 }
 
 static char *kungetbuf;
@@ -284,7 +284,7 @@ getkey(int keytmout)
 # endif
 #endif
 	}
-#else WINNT
+#else
 	if (keytmout) {
 	    if (keytimeout > 500)
 		exp100ths = 500;
@@ -298,7 +298,7 @@ getkey(int keytmout)
 		    exp100ths*10) != WAIT_OBJECT_0)
 		    return EOF;
 	}
-#endif WINNT
+#endif /* WINNT */
 	while ((r = read(SHTTY, &cc, 1)) != 1) {
 	    if (r == 0) {
 		/* The test for IGNOREEOF was added to make zsh ignore ^Ds
@@ -327,7 +327,7 @@ getkey(int keytmout)
 #ifndef WINNT
 	    } else if (errno == EWOULDBLOCK) {
 		fcntl(0, F_SETFL, 0);
-#endif WINNT
+#endif /* WINNT */
 	    } else if (errno == EIO && !die) {
 		ret = opts[MONITOR];
 		opts[MONITOR] = 1;
@@ -533,7 +533,7 @@ getkeycmd(void)
     static int hops = 0;
 #ifdef WINNT
     __nt_want_vcode = 1;
-#endif WINNT
+#endif /* WINNT */
 
     cky = NULL;
     if (!keybuf)
@@ -542,7 +542,6 @@ getkeycmd(void)
 
     if ((c = getkey(0)) < 0)
 	return -1;
-
     keybuf[0] = c;
     ret = bindtab[c];
 #ifdef WINNT
@@ -552,7 +551,7 @@ getkeycmd(void)
     	ret = ntvirtualbind[idx];
     }
     __nt_want_vcode = 0;
-#endif WINNT
+#endif /* WINNT */
     if (ret  == z_prefix) {
 	int lastlen = 0, t0 = 1, firstc = c;
 	Key ky;
@@ -687,14 +686,14 @@ initkeybindings(void)
     for (i = 0200; i < 0240; i++)
 #ifndef WINNT
 	emacs_cur_bindtab[i] = viins_cur_bindtab[i] = z_undefinedkey;
-#else WINNT
+#else
 	{
 	    if (!isset(PRINTEIGHTBIT))
 		emacs_cur_bindtab[i] = viins_cur_bindtab[i] = z_undefinedkey;
 	    else
 		emacs_cur_bindtab[i] = viins_cur_bindtab[i] = z_selfinsert;
 	}
-#endif WINNT
+#endif /* WINNT */
     for (i = 0; i < 128; i++)
 	altbindtab[i] = vicmdbind[i];
     for (i = 128; i < 256; i++)
@@ -831,7 +830,7 @@ getkeystring(char *s, int *len, int fromwhere, int *misc)
 			s[3] = '\0';
 			u = s;
 		    }
-		    *t++ = (char)zstrtol(s + (*s == 'x'), &s,
+		    *t++ = (char)zstrtol(s + (*s == 'x'), &s, /* WINNT change, patch? */
 				   (*s == 'x') ? 16 : 8);
 		    if (svchar) {
 			u[3] = svchar;
@@ -943,7 +942,7 @@ bin_bindkey(char *name, char **argv, char *ops, int junc)
 	    zerrnam(name,"-N cannot be combined with other options",NULL,0);
 	    return 1;
 	}
-#endif  WINNT
+#endif  /* WINNT */
 	if (ops['d']) {
 	    /* empty the hash tables for multi-character bindings */
 	    emkeybindtab->emptytable(emkeybindtab);
@@ -969,7 +968,7 @@ bin_bindkey(char *name, char **argv, char *ops, int junc)
 #ifdef WINNT
     if (ops['N'])
     	tab = ntvirtualbind;
-#endif WINNT
+#endif /* WINNT */
 
     /* print bindings to stdout */
     bindout = stdout;

@@ -164,6 +164,7 @@ gethashnode2(HashTable ht, char *nam)
     }
     return NULL;
 }
+
 /* Remove an entry from a hash table.           *
  * If successful, it removes the node from the  *
  * table and returns a pointer to it.  If there *
@@ -558,7 +559,7 @@ hashdir(char **dirp)
 	    cn->u.name = dirp;
 	    cmdnamtab->addnode(cmdnamtab, ztrdup(fn), cn);
 	}
-#else /* WINNT */
+#else
 	if (!cmdnamtab->getnode(cmdnamtab, fn)) {
 	    char *fext;
 	    fext = fn;
@@ -586,9 +587,9 @@ hashdir(char **dirp)
 	    }
 #ifdef ZSH_HASH_DEBUG
 	    printhashtabinfo(cmdnamtab);
-#endif ZSH_HASH_DEBUG
+#endif /* ZSH_HASH_DEBUG */
 	}
-#endif WINNT
+#endif /* WINNT */
     }
     closedir(dir);
 }
@@ -1197,7 +1198,7 @@ fillnameddirtable(HashTable ht)
 	endpwent();
 	allusersadded = 1;
     }
-#endif WINNT
+#endif /* WINNT */
     return;
 }
 

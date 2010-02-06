@@ -858,7 +858,7 @@ viquotedinsert(void)
 #ifndef HAS_TIO
     struct sgttyb sob;
 #endif
-#endif WINNT
+#endif /* WINNT */
 
     spaceinline(1);
     line[cs] = '^';
@@ -869,13 +869,13 @@ viquotedinsert(void)
     sob.sg_flags = (sob.sg_flags | RAW) & ~ECHO;
     ioctl(SHTTY, TIOCSETN, &sob);
 #endif
-#endif WINNT
+#endif /* WINNT */
     c = getkey(0);
 #ifndef WINNT
 #ifndef HAS_TIO
     setterm();
 #endif
-#endif WINNT
+#endif /* WINNT */
     foredel(1);
     if(c < 0)
 	feep();

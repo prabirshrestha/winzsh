@@ -37,7 +37,7 @@
 
 #ifndef WINNT
 # define ABSOLUTEP(p)	(*(p) == '/')
-#else /* WINNT */
+#else
 # define ABSOLUTEP(p)	((p)[0] == '/' || \
 			 (isalpha((p)[0]) && (p)[1] == ':' && (p)[2] == '/'))
 #endif /* WINNT */
@@ -75,7 +75,7 @@ typedef int LV;
 
 #define DEFAULT_IFS	" \t\n\203 "
 
-/* Character tokens */
+/* Character tokens */ /* WINNT change, why don't we want to declare type? */
 #define Pound		( 0x84)
 #define String		( 0x85)
 #define Hat		( 0x86)
@@ -1141,7 +1141,9 @@ enum {
     OVERSTRIKE,
     PATHDIRS,
     POSIXBUILTINS,
+#ifdef WINNT
     PRINTEIGHTBIT,
+#endif /* WINNT */
     PRINTEXITVALUE,
     PRIVILEGED,
     PROMPTCR,
@@ -1173,7 +1175,7 @@ enum {
     WINNTNOASSOCIATIONS,
     WINNTNOQUOTEPROTECT,
     WINNTWAITFORGUIAPPS,
-#endif WINNT
+#endif /* WINNT */
     XTRACE,
     USEZLE,
     OPT_SIZE
@@ -1211,9 +1213,9 @@ struct ttyinfo {
 #ifdef TIOCGWINSZ
     struct winsize winsize;
 #endif
-#else WINNT
+#else
 	int ignore;
-#endif WINNT
+#endif /* WINNT */
 };
 
 /* defines for whether tabs expand to spaces */

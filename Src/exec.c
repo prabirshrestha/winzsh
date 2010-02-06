@@ -34,8 +34,8 @@
 #define execerr() if (!forked) { lastval = 1; return; } else _exit(1)
 	
 
-static LinkList args INIT_ZERO;
-static int doneps4 INIT_ZERO;
+static LinkList args INIT_ZERO; /* WINNT change */
+static int doneps4 INIT_ZERO; /* WINNT change */
 
 /* parse string into a list */
 
@@ -181,6 +181,7 @@ zexecve(char *pth, char **argv)
 		    if (execvebuf[1] == '!') {
 			for (t0 = 0; t0 != ct; t0++)
 			    if (execvebuf[t0] == '\n')
+/* WINNT Q: is this a patch, or should this be an ifdef? I think patch */
 				/*
 				execvebuf[t0] = '\0';
 				*/
@@ -252,7 +253,7 @@ void
 execute(Cmdnam not_used_yet, int dash)
 {
     Cmdnam cn;
-    static LinkList exargs INIT_ZERO;
+    static LinkList exargs INIT_ZERO; /* WINNT change */
     char buf[MAXCMDLEN], buf2[MAXCMDLEN];
     char *s, *z, *arg0;
     char **argv, **pp;
@@ -295,7 +296,7 @@ execute(Cmdnam not_used_yet, int dash)
 	_exit(1);
     }
     for (s = arg0; *s; s++)
-	if (ABSOLUTEP(s)) { //(*s == '/') {
+	if (ABSOLUTEP(s)) { //(*s == '/') { /* WINNT change */
 	    errno = zexecve(arg0, argv);
 	    if (arg0 == s || unset(PATHDIRS) ||
 		(arg0[0] == '.' && (arg0 + 1 == s ||
@@ -317,7 +318,7 @@ execute(Cmdnam not_used_yet, int dash)
 		    ee = zexecve(arg0, argv);
 		    if (isgooderr(ee, *pp))
 			eno = ee;
-		} else if (!ABSOLUTEP(*pp)) { //(**pp != '/') {
+		} else if (!ABSOLUTEP(*pp)) { //(**pp != '/') { /* WINNT change */
 		    z = buf;
 		    strucpy(&z, *pp);
 		    *z++ = '/';
@@ -430,7 +431,7 @@ iscom(char *s)
 #else
     USE(statbuf);
     return (access(us, XD_OK) == 0 );
-#endif WINNT
+#endif /* WINNT */
 }
 
 /**/
@@ -441,7 +442,7 @@ isrelative(char *s)
     if (*s != '/')
 #else
     if ( (*s != '/') && (s[1] && s[1] != ':'))
-#endif /*WINNT */
+#endif /* WINNT */
 	return 1;
     for (; *s; s++)
 	if (*s == '.' && s[-1] == '/' &&
@@ -941,11 +942,11 @@ clobber_open(struct redir *f)
 
 /* close an multio (success) */
 
-/* VC 6.0 uses registers agressively. If a local variable is in a
+/* WINNT: VC 6.0 uses registers agressively. If a local variable is in a
  * register during fork(), it gets lost in the child. There is no cure
  * for this, except to turn off the optimization. -amol 5/19/99
  */
-#pragma optimize("",off)
+#pragma optimize("",off) /* WINNT change */
 /**/
 void
 closemn(struct multio **mfds, int fd)
@@ -979,7 +980,7 @@ closemn(struct multio **mfds, int fd)
     }
     _exit(0);
 }
-#pragma optimize("",on)
+#pragma optimize("",on) /* WINNT change */
 
 /* close all the mnodes (failure) */
 
@@ -1148,7 +1149,7 @@ addvars(LinkList l, int export)
     }
 }
 
-#pragma optimize("",off)
+#pragma optimize("",off) /* WINNT change */
 /**/
 void
 execcmd(Cmd cmd, int input, int output, int how, int last1)
@@ -1585,7 +1586,6 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
 		    fil = open(unmeta(fn->name),
 			       (unset(CLOBBER) && !IS_CLOBBER_REDIR(fn->type)) ?
 			       O_WRONLY | O_APPEND : O_WRONLY | O_APPEND | O_CREAT, 0666);
-		
 		else
 		    fil = clobber_open(fn);
 		if(fil != -1 && IS_ERROR_REDIR(fn->type))
@@ -1763,7 +1763,7 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
 	_exit(lastval);
     fixfds(save);
 }
-#pragma optimize("",on)
+#pragma optimize("",on) /* WINNT change */
 
 /* Arrange to have variables restored. */
 
@@ -1946,7 +1946,7 @@ entersubsh(int how, int cl, int fake)
 	clearjobtab();
 #ifdef WINNT_REPLACE
     times(&shtms);
-#endif WINNT
+#endif /* WINNT */
 }
 
 /* close internal shell fds */
@@ -2046,7 +2046,7 @@ getherestr(struct redir *fn)
 
 /* $(...) */
 
-#pragma optimize("",off)
+#pragma optimize("",off) /* WINNT change */
 /**/
 LinkList
 getoutput(char *cmd, int qt)
@@ -2116,7 +2116,7 @@ getoutput(char *cmd, int qt)
     kill(getpid(), SIGKILL);
     return NULL;
 }
-#pragma optimize("",on)
+#pragma optimize("",on) /* WINNT change */
 
 /* read output of command substitution */
 
@@ -2190,7 +2190,7 @@ parsecmd(char *cmd)
 
 /* =(...) */
 
-#pragma optimize("",off)
+#pragma optimize("",off) /* WINNT change */
 /**/
 char *
 getoutputfile(char *cmd)
@@ -2242,7 +2242,7 @@ getoutputfile(char *cmd)
     kill(getpid(), SIGKILL);
     return NULL;
 }
-#pragma optimize("",on)
+#pragma optimize("",on) /* WINNT change */
 
 #if !defined(PATH_DEV_FD) && defined(HAVE_FIFOS)
 /* get a temporary named pipe */
@@ -2265,7 +2265,7 @@ namedpipe(void)
 
 /* <(...) or >(...) */
 
-#pragma optimize("",off)
+#pragma optimize("",off) /* WINNT change */
 /**/
 char *
 getproc(char *cmd)
@@ -2329,10 +2329,11 @@ getproc(char *cmd)
     return NULL;
 #endif   /* HAVE_FIFOS and PATH_DEV_FD not defined */
 }
-#pragma optimize("",on)
+#pragma optimize("",on) /* WINNT change */
+
 /* > >(...) or < <(...) (does not use named pipes) */
 
-#pragma optimize("",off)
+#pragma optimize("",off) /* WINNT change */
 /**/
 int
 getpipe(char *cmd)
@@ -2354,7 +2355,7 @@ getpipe(char *cmd)
     _exit(lastval);
     return 0;
 }
-#pragma optimize("",on)
+#pragma optimize("",on) /* WINNT change */
 
 /* open pipes with fds >= 10 */
 
@@ -2672,9 +2673,9 @@ getfpfunc(char *s)
 		d = (char *) zcalloc(len + 1);
 #ifndef WINNT
 		if (read(fd, d, len) == len) {
-#else /* WINNT */
+#else
 		if (read(fd, d, len) <= len) {
-#endif /* WINNT*/
+#endif /* WINNT */
 		    close(fd);
 		    d = metafy(d, len, META_REALLOC);
 		    HEAPALLOC {
@@ -2682,9 +2683,9 @@ getfpfunc(char *s)
 		    } LASTALLOC;
 #ifndef WINNT
 		    zfree(d, len + 1);
-#else WINNT
+#else
 		    zfree(d, 0);
-#endif WINNT
+#endif /* WINNT */
 		    return r;
 		} else {
 		    zfree(d, len + 1);
@@ -2714,7 +2715,7 @@ cancd(char *s)
     if (*s != '/') {
 #else
     if ( (*s != '/') && (s[1] && s[1] != ':') ){
-#endif WINNT
+#endif /* WINNT */
 	char sbuf[PATH_MAX], **cp;
 
 	if (cancd2(s))
@@ -2755,7 +2756,7 @@ cancd2(char *s)
 #ifdef WINNT
     if (us[1] && !us[2] && us[1] == ':')
     	return 1;
-#endif WINNT
+#endif /* WINNT */
     return !(access(us, X_OK) || stat(us, &buf) || !S_ISDIR(buf.st_mode));
 }
 

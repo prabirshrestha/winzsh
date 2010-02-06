@@ -468,4 +468,4 @@ bin_log(char *nam, char **argv, char *ops, int func)
     return 0;
 }
 
-#endif WINNT
+#endif /* WINNT */

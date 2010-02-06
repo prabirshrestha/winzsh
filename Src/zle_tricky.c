@@ -216,7 +216,7 @@ foredelreal(int ct)
     i++;
     ll -= ct;
 }
-#endif WINNT
+#endif /* WINNT */
 /* Find out if we have to insert a tab (instead of trying to complete). */
 
 /**/
@@ -1380,7 +1380,7 @@ addmatch(char *s, char *t)
 		    :!strcmp(*pt, s + sl - filell)))
 #else
 		    && !strcmp(*pt, s + sl - filell))
-#endif !WINNT
+#endif /* WINNT */
 		    test = 0;
 
 	    if (!test)
@@ -1410,7 +1410,7 @@ addmatch(char *s, char *t)
 		    if ((test = !strncmp(s, fpre, fpl)))
 			test = !strcmp(e, fsuf);
 		}
-#endif WINNT
+#endif /* WINNT */
 		if (ispattern)
 		    cc = 1;
 	    }
@@ -1479,7 +1479,7 @@ addmatch(char *s, char *t)
 		    if ((test = !strncmp(s, rpre, rpl)))
 			test = !strcmp(e, rsuf);
 		}
-#endif WINNT
+#endif /* WINNT */
 	    }
 	}
 	if (!test && sl < lpl + lsl)
@@ -1498,7 +1498,7 @@ addmatch(char *s, char *t)
 		if ((test = !strncmp(s, lpre, lpl)))
 		    test = !strcmp(e, lsuf);
 	    }
-#endif WINNT
+#endif /* WINNT */
 	    pl = lpl;
 	}
 	if (addwhat == CC_QUOTEFLAG) {
@@ -1514,9 +1514,9 @@ addmatch(char *s, char *t)
 
 #ifndef WINNT
     if (ispattern) {
-#else WINNT
+#else
     if (ispattern || isset(WINNTIGNORECASE)) {
-#endif WINNT
+#endif /* WINNT */
 	t = s;
     } else {
 	t = s += pl;
@@ -1547,7 +1547,7 @@ addmatch(char *s, char *t)
 	    *bp = test;
 	if ((test = isset(WINNTIGNORECASE)?sfxilen(*fm,s):sfxlen(*fm, s)) < *ep)
 	    *ep = test;
-#endif WINNT
+#endif /* WINNT */
     }
 
     /* If we are doing a glob completion we store the whole string in *
@@ -2078,7 +2078,7 @@ gen_matches_files(int dirs, int execs, int all)
 #ifndef WINNT
 		    if ((test = !strncmp(n, fpre, fpl)))
 			test = !strcmp(e, fsuf);
-#else WINNT
+#else
 		    if (!isset(WINNTIGNORECASE)) {
 			if ((test = !strncmp(n, fpre, fpl)))
 			    test = !strcmp(e, fsuf);
@@ -2087,7 +2087,7 @@ gen_matches_files(int dirs, int execs, int all)
 			if ((test = !strnicmp(n, fpre, fpl)))
 			    test = !stricmp(e, fsuf);
 		    }
-#endif WINNT
+#endif /* WINNT */
 		}
 		/* Filename didn't match? */
 		if (!test)
@@ -2735,7 +2735,7 @@ makecomplist(char *s, int incmd, int *delit, int *compadd, int untokenized)
 					    if (isset(WINNTIGNORECASE)?
 					    	stripfx(prpre,p2):
 						strpfx(prpre, p2))
-#endif WINNT
+#endif /* WINNT */
 						addmatch(p2 + pl, NULL);
 				    } else {
 					/* Otherwise ignore the path we *
@@ -3239,7 +3239,7 @@ do_ambiguous(void)
 		fpre ? backdelreal(fpl):backdelreal(lpl);
 		if(fsuf)foredelreal(fsl);
 	}
-#endif WINNT
+#endif /* WINNT */
 	complexpect = 0;
 	if(ab)
 	    inststrlen(firstm, 1, ab);
@@ -3350,7 +3350,7 @@ do_single(char *str)
 		if (fsuf)
 			l-=strlen(fsuf);
 	}
-#endif WINNT
+#endif /* WINNT */
     } else if (ispattern)
 	l = we - wb;
     else
@@ -3380,7 +3380,7 @@ do_single(char *str)
         }
         /* fpre and lpre are quoted. lpl and fpl is non-quoted-length */
     }
-#endif
+#endif /* WINNT */
     /* And than we insert the new string. */
     inststrlen(str, 1, menulen = strlen(str));
 
@@ -3390,7 +3390,7 @@ do_single(char *str)
         foredelreal(fsl2 = strlen(fsuf));
         cs -= fsl2;
     }
-#endif
+#endif /* WINNT */
     /* And move the cursor and adjust the menuend variable. */
     if (menuwe)
 	cs = ccs + menulen;
@@ -3440,7 +3440,7 @@ do_single(char *str)
                     sprintf(p, "%s%s%s",
                             (prpre && *prpre) ? prpre : "./", str, psuf);
                 else
-#endif WINNT
+#endif /* WINNT */
 		sprintf(p, "%s%s%s%s%s",
 			(prpre && *prpre) ? prpre : "./", fpre, str,
 			fsuf, psuf);
@@ -3521,7 +3521,7 @@ stripfx(char *s, char *t)
 	s++, t++;
     return !*s;
 }
-#endif WINNT
+#endif /* WINNT */
 
 /* Return non-zero if s is a suffix of t. */
 
@@ -3546,8 +3546,7 @@ strisfx(char *s, char *t)
 	return !stricmp(t + lt - ls, s);
     return 0;
 }
-#endif WINNT
-
+#endif /* WINNT */
 
 /* Return the length of the common prefix of s and t. */
 
@@ -3572,7 +3571,7 @@ pfxilen(char *s, char *t)
 	s++, t++, i++;
     return i;
 }
-#endif WINNT
+#endif /* WINNT */
 
 /* Return the length of the common suffix of s and t. */
 
@@ -3607,7 +3606,7 @@ sfxilen(char *s, char *t)
     } else
 	return 0;
 }
-#endif WINNT
+#endif /* WINNT */
 
 /* This is used to print the explanation string. *
  * It returns the number of lines printed.       */
@@ -3720,7 +3719,7 @@ listmatches(void)
 	     ( (ispattern || isset(WINNTIGNORECASE)) ? 0 :
 #else
 	     (ispattern ? 0 :
-#endif WINNT
+#endif /* WINNT */
 	      (!(haswhat & HAS_MISC) ? nfpl + nfsl : nlpl + nlsl))) > longest)
 	    longest = cl;
     if (of)
@@ -3805,7 +3804,7 @@ listmatches(void)
                         sprintf(pb, "%s%s",
                                 (prpre && *prpre) ? prpre : "./", *ap);
                     } else
-#endif WINNT
+#endif /* WINNT */
 		    {
 			nicezputs(fpre, shout);
 			nicezputs(*ap, shout);
@@ -3846,12 +3845,12 @@ listmatches(void)
                     nicezputs(*ap, shout);
                     if (!isset(WINNTIGNORECASE)) nicezputs(fsuf, shout);
                     t2 = niceztrlen(*ap) + (isset(WINNTIGNORECASE) ? 0 : nfpl+nfsl);
-#else !WINNT
+#else
 		    nicezputs(fpre, shout);
 		    nicezputs(*ap, shout);
 		    nicezputs(fsuf, shout);
 		    t2 = nfpl + niceztrlen(*ap) + nfsl;
-#endif !WINNT
+#endif /* WINNT */
 		} else {
 #ifdef WINNT
                     if (!isset(WINNTIGNORECASE)) nicezputs(lpre, shout);
@@ -3863,7 +3862,7 @@ listmatches(void)
 		    nicezputs(*ap, shout);
 		    nicezputs(lsuf, shout);
 		    t2 = nlpl + niceztrlen(*ap) + nlsl;
-#endif !WINNT
+#endif /* WINNT */
 		}
 		for (t0 = colsz; t0 && *ap; t0--, ap++);
 		if (*ap)

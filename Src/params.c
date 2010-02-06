@@ -95,6 +95,7 @@ createparamtable(void)
 #ifndef WINNT
 	setsparam("TMPPREFIX", ztrdup(DEFAULT_TMPPREFIX));
 #else
+	/* It looks like we are setting TMP to TEMP here. */
 	{
 	    char temp[PATH_MAX];
 	    char *ptr = getenv("TEMP");
@@ -102,7 +103,7 @@ createparamtable(void)
 		sprintf(temp,"%s/",ptr);
 	    setsparam("TMPPREFIX", ztrdup(ptr?temp:DEFAULT_TMPPREFIX));
 	}
-#endif WINNT
+#endif /* WINNT */
 	setsparam("TIMEFMT", ztrdup(DEFAULT_TIMEFMT));
 	setsparam("WATCHFMT", ztrdup(DEFAULT_WATCHFMT));
 	setsparam("HOST", ztrdup(hostnam));
@@ -1791,7 +1792,7 @@ arrfixenv(char *s, char **t)
     u = zjoin(t, ':');
 #else
     u = zjoin(t, t == path?';':':');
-#endif WINNT
+#endif /* WINNT */
     len_s = strlen(s);
     pm = (Param) paramtab->getnode(paramtab, s);
     if (isset(ALLEXPORT))
@@ -1833,7 +1834,7 @@ replenv(char *e, char *value)
     int len_value;
 #ifdef WINNT
     char *p1,p2[256];
-#endif WINNT
+#endif /* WINNT */
 
     for (ep = environ; *ep; ep++)
 	if (*ep == e) {
@@ -1841,8 +1842,7 @@ replenv(char *e, char *value)
 		 *s && (*s++ != Meta || *s++ != 32); len_value++);
 	    s = e;
 #ifndef WINNT
-	    while (*s++ != '=')
-	    	;
+	    while (*s++ != '=');
 #else
 	    p1 = &p2[0];
 	    while(*s != '=') {
@@ -1850,18 +1850,18 @@ replenv(char *e, char *value)
 	    }
 	    s++;
 	    *p1 = 0;
-#endif WINNT
+#endif /* WINNT */
 	    *ep = (char *) zrealloc(e, s - e + len_value + 1);
 	    s = s - e + *ep - 1;
 #ifdef WINNT
 	    p1 = s+1;
-#endif WINNT
+#endif /* WINNT */
 	    while (*s++)
 		if ((*s = *value++) == Meta)
 		    *s = *value++ ^ 32;
 #ifdef WINNT
 	    (void)SetEnvironmentVariable(p2,p1);
-#endif WINNT
+#endif /* WINNT */
 	    return *ep;
 	}
     return NULL;
@@ -1920,7 +1920,7 @@ addenv(char *name, char *value)
     ep = environ + num_env;
 #ifdef WINNT
     (void)SetEnvironmentVariable(name,value);
-#endif WINNT
+#endif /* WINNT */
     *ep = mkenvstr(name, value);
     *(ep + 1) = NULL;
     return *ep;
@@ -1936,7 +1936,7 @@ delenv(char *x)
     char **ep;
 #ifdef WINNT
     char *p1,*p3,p2[256];
-#endif WINNT
+#endif /* WINNT */
 
     for (ep = environ; *ep; ep++) {
 	if (*ep == x)
@@ -1949,7 +1949,7 @@ delenv(char *x)
     	*p3++ = *p1++;
     *p3 = 0;
     (void)SetEnvironmentVariable(p2,NULL);
-#endif WINNT
+#endif /* WINNT */
     if (*ep)
 	for (; (ep[0] = ep[1]); ep++);
 }

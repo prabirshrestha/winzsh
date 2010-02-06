@@ -52,7 +52,7 @@ dtime(struct timeval *dt, struct timeval *t1, struct timeval *t2)
 #else
 	dt->tv_usec += 1000000;
 	dt->tv_sec -= 1;
-#endif WINNT
+#endif /* WINNT */
     }
     return dt;
 }
@@ -742,7 +742,7 @@ printtime(struct timeval *real, struct timeinfo *ti, char *desc)
 #else
     percent      =  100 * (ti->ut + ti->st)
 	/ (clktck * real->tv_sec + clktck * real->tv_usec / 1000000);
-#endif WINNT
+#endif /* WINNT */
 
     if (!(s = getsparam("TIMEFMT")))
 	s = DEFAULT_TIMEFMT;
@@ -826,7 +826,7 @@ shelltime(void)
     ti.ut = buf.tms_cutime;
     ti.st = buf.tms_cstime;
     printtime(dtime(&dtimeval, &shtimer, &now), &ti, "children");
-#endif !WINNT
+#endif /* WINNT */
 }
 
 /* see if jobs need printing */

@@ -47,8 +47,8 @@
 #undef INIT_ZERO_STRUCT
 #define INIT_ZERO
 #define INIT_ZERO_STRUCT
-#endif GLOBALS
-#endif WINNT
+#endif /* GLOBALS */
+#endif /* WINNT */
  
 #ifdef GLOBALS
 int redirtab[TRINANG - OUTANG + 1] =
@@ -118,7 +118,7 @@ EXTERN int tok, tokfd INIT_ZERO;
  
 EXTERN int lexstop INIT_ZERO;
 
-EXTERN struct heredocs *hdocs INIT_ZERO;
+EXTERN struct heredocs *hdocs INIT_ZERO_STRUCT;
  
 /* suppress error messages */
  
@@ -557,7 +557,7 @@ EXTERN int cmdoutval INIT_ZERO;
  
 /* Stack to save some variables before executing a signal handler function */
 
-EXTERN struct execstack *exstack INIT_ZERO;
+EXTERN struct execstack *exstack INIT_ZERO_STRUCT;
 
 /* Array describing the state of each signal: an element contains *
  * 0 for the default action or some ZSIG_* flags ored together.   */
@@ -775,7 +775,9 @@ struct option optns[OPT_SIZE] = {
     {"overstrike", 		0,    0,    0},
     {"pathdirs", 		'Q',  0,    0},
     {"posixbuiltins",		0,    0,    OPT_EMULATE|OPT_BOURNE},
+#ifdef WINNT
     {"printeightbit", 		0,  0,    0},
+#endif /* WINNT */
     {"printexitvalue", 		'1',  0,    0},
     {"privileged", 		'p',  'p',  OPT_SPECIAL},
     {"promptcr", 		x'V', 0,    OPT_ALL},
@@ -807,7 +809,7 @@ struct option optns[OPT_SIZE] = {
     {"winntnoassociations",	0,  0,  0},
     {"winntnoquoteprotect",	0,  0,  0},
     {"winntwaitforguiapps",	0,  0,  0},
-#endif WINNT
+#endif /* WINNT */
     {"xtrace", 			'x',  'x',  0},
     {"zle", 			'Z',  0,    OPT_SPECIAL},
 };
@@ -821,5 +823,5 @@ EXTERN short int typtab[256] INIT_ZERO_STRUCT;
 #undef INIT_ZERO_STRUCT
 #define INIT_ZERO =0
 #define INIT_ZERO_STRUCT ={0}
-#endif GLOBALS
-#endif WINNT
+#endif /* GLOBALS */
+#endif /* WINNT */

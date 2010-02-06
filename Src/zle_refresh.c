@@ -185,7 +185,7 @@ scrollwindow(int tline)
     sen = s + winw;					\
 }
 
-#if defined( TIOCGWINSZ) || defined(WINNT)
+#if defined( TIOCGWINSZ) || defined(WINNT) /* WINNT change */
 int winchanged;			/* window size changed */
 #endif
 
@@ -231,9 +231,9 @@ refresh(void)
    or may not work */
     oxtabs = ((SGTTYFLAG & SGTABTYPE) == SGTABTYPE);
 
-#else WINNT
+#else
     oxtabs = 0;
-#endif WINNT
+#endif /* WINNT */
     cleareol = 0;		/* unset */
     more_start = more_end = 0;	/* unset */
     if (isset(SINGLELINEZLE) || lines < 3
@@ -244,7 +244,7 @@ refresh(void)
     if (resetneeded) {
 	onumscrolls = 0;
 	setterm();
-#if defined( TIOCGWINSZ) || defined(WINNT)
+#if defined( TIOCGWINSZ) || defined(WINNT) /* WINNT change */
 	if (winchanged) {
 	    moveto(0, 0);
 	    t0 = olnct;		/* this is to clear extra lines even when */

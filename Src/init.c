@@ -50,7 +50,7 @@ main(int argc, char **argv)
 		dprintf("damn 0x%08x\n",GetExceptionCode());
 		return 1;
 	};
-#endif WINNT
+#endif /* WINNT */
 
     global_permalloc();
 
@@ -58,13 +58,13 @@ main(int argc, char **argv)
 
 #ifndef WINNT
     if (!(zsh_name = strrchr(argv[0], '/')))
-#else WINNT
+#else
     if (!(zsh_name = strrchr(argv[0], '/')) && 
     	!(zsh_name = strrchr(argv[0], '\\')) &&
     	!(zsh_name = strchr(argv[0],':'))
 //    	!(argv[0][1] ==':')
 	)
-#endif WINNT
+#endif /* WINNT */
 	zsh_name = argv[0];
     else
 	zsh_name++;
@@ -109,7 +109,7 @@ main(int argc, char **argv)
 	zerrnam("zsh", (!islogin) ? "use 'exit' to exit."
 		: "use 'logout' to logout.", NULL, 0);
     }
-    return 0;
+    return 0; /* WINNT change, patch I think */
 }
 
 /* keep executing lists until EOF found */
@@ -304,7 +304,7 @@ init_io(void)
 {
 #ifndef WINNT
     long ttpgrp;
-#endif WINNT
+#endif /* WINNT */
     static char outbuf[BUFSIZ], errbuf[BUFSIZ];
 
 #ifdef RSH_BUG_WORKAROUND
@@ -374,7 +374,7 @@ init_io(void)
 	} else
 	    opts[USEZLE] = 0;
     }
-#endif WINNT
+#endif /* WINNT */
 
 #ifdef JOB_CONTROL
     /* If interactive, make the shell the foreground process */
@@ -556,7 +556,7 @@ setupvals(void)
     path[4] = NULL;
 #else
 	set_default_path(path);
-#endif WINNT
+#endif /* WINNT */
 
     cdpath   = mkarray(NULL);
     manpath  = mkarray(NULL);
@@ -687,7 +687,7 @@ setupvals(void)
 
 #ifndef WINNT_REPLACE
     times(&shtms);
-#endif WINNT_REPLACE
+#endif /* WINNT_REPLACE */
 }
 
 /* Initialize signal handling */
@@ -878,7 +878,9 @@ sourcehome(char *s)
 {
     char buf[PATH_MAX];
     char *h;
+#ifdef WINNT
     int rc;
+#endif /* WINNT */
 
     if (emulation == EMULATE_SH || emulation == EMULATE_KSH ||
 	!(h = getsparam("ZDOTDIR")))
@@ -888,13 +890,15 @@ sourcehome(char *s)
 	return;
     }
     sprintf(buf, "%s/%s", h, s);
+#ifndef WINNT
+    source(buf);
+#else
     rc = source(buf);
-#ifdef WINNT
     if ( (rc == 1) && (s[0] == '.') && (s[1] != '\0') ) {
     	sprintf(buf,"%s/%s",h,s+1);
 	source(buf);
     }
-#endif WINNT
+#endif /* WINNT */
 }
 
 /**/

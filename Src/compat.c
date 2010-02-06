@@ -122,7 +122,7 @@ zgetcwd(void)
 	if (forward_slash_get_cwd(buf3,PATH_MAX)) {
 		return ztrdup(buf3);
 	}
-#endif WINNT
+#endif /* WINNT */
     holdintr();
     buf2[0] = '\0';
     buf0[0] = '/';
@@ -131,6 +131,7 @@ zgetcwd(void)
 	rootino = sbuf.st_ino;
 	rootdev = sbuf.st_dev;
     }
+
     if (stat(".", &sbuf) < 0) {
 	noholdintr();
 	return ztrdup(".");

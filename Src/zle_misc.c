@@ -388,7 +388,7 @@ quotedinsert(void)
     sob.sg_flags = (sob.sg_flags | RAW) & ~ECHO;
     ioctl(SHTTY, TIOCSETN, &sob);
 #endif
-#endif WINNT
+#endif /* WINNT */
     c = getkey(0);
 #ifndef HAS_TIO
     setterm();
@@ -1059,7 +1059,7 @@ putpromptchar(int doprint, int endchar)
 				stradd(tmp);
 			}
 		}
-#endif !WINNT
+#endif /* WINNT */
 		stradd(ss);
 		break;
 	    case 'h':
@@ -1304,7 +1304,7 @@ putpromptchar(int doprint, int endchar)
 	    }
 	} else if (doprint) {
 	    addbufspc(1);
-	    pputc((char)(*fm == Meta ? *++fm ^ 32 : *fm));
+	    pputc((char)(*fm == Meta ? *++fm ^ 32 : *fm)); /* WINNT change, patch? */
 	}
     }
 

@@ -38,9 +38,9 @@ exists(char *s)
 
 #ifndef WINNT
     return access(us,0) == 0 || readlink(us,NULL,0) == 0;
-#else WINNT
+#else
     return access(us,0) == 0 ;
-#endif WINNT
+#endif /* WINNT */
 }
 
 static int mode;		/* != 0 if we are parsing glob patterns */
@@ -655,14 +655,14 @@ insert(char *s)
 #ifndef WINNT
 	    if (gf_follow) {
 		if (!S_ISLNK(mode) || stat(unmeta(s), &buf2))
-		if (stat(unmeta(s), &buf2))
+/*		if (stat(unmeta(s), &buf2)) /* WINNT change, patch? will comment out for now */
 		    memcpy(&buf2, &buf, sizeof(buf));
 		statted = 2;
 		mode = buf2.st_mode;
 	    }
 #else
 		;
-#endif WINNT
+#endif /* WINNT */
 	    if (gf_listtypes || S_ISDIR(mode)) {
 		int ll = strlen(s);
 
@@ -692,7 +692,7 @@ insert(char *s)
 			if (!S_ISLNK(buf.st_mode) || stat(unmeta(s), &buf2))
 #else
 			if (stat(unmeta(s), &buf2))
-#endif WINNT
+#endif /* WINNT */
 			    memcpy(&buf2, &buf, sizeof(buf));
 			statted = 2;
 		    }
@@ -742,7 +742,7 @@ file_type(mode_t filemode)
 #ifndef WINNT
     case S_IFBLK:
 	return '#';
-#endif WINNT
+#endif /* WINNT */
 #ifdef S_IFLNK
     case S_IFLNK:
 	return /* (access(pbuf, F_OK) == -1) ? '&' :*/ '@';
@@ -1518,7 +1518,7 @@ scanner(Complist q)
 	{
 	    ;
 	}
-#endif WINNT
+#endif /* WINNT */
     if ((closure = q->closure))	/* (foo/)# - match zero or more dirs */
 	if (q->closure == 2)	/* (foo/)## - match one or more dirs */
 	    q->closure = 1;
@@ -1580,7 +1580,7 @@ scanner(Complist q)
 		     || (glob_suf && (isset(WINNTIGNORECASE)?
 		     		!strisfx(glob_suf, fn):!strsfx(glob_suf, fn)) )
 		     )
-#endif WINNT
+#endif /* WINNT */
 		    )
 		    continue;
 		if (domatch(fn, c, gf_noglobdots)) {
@@ -1864,7 +1864,7 @@ doesmatch(Comp c)
 		:*pptr == *pat) {
 #else
 	if (*pptr == *pat) {
-#endif WINNT
+#endif /* WINNT */
 	    /* just plain old characters */
 	    pptr++;
 	    pat++;
@@ -2315,7 +2315,7 @@ qualisdev(struct stat *buf, long junk)
     return junk == S_IFBLK || junk == S_IFCHR;
 #else
     return  junk == S_IFCHR;
-#endif WINNT
+#endif /* WINNT */
 }
 
 /* block special file? */
@@ -2327,9 +2327,9 @@ qualisblk(struct stat *buf, long junk)
     junk = buf->st_mode & S_IFMT;
 #ifndef WINNT
     return junk == S_IFBLK;
-#else WINNT
+#else
 	return 0;
-#endif WINNT
+#endif /* WINNT */
 }
 
 /* character special file? */
