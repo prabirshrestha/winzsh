@@ -113,6 +113,78 @@ zfork(void)
     return pid;
 }
 
+/*
+ *   Allen Edeln gebiet ich Andacht,
+ *   Hohen und Niedern von Heimdalls Geschlecht;
+ *   Ich will list_pipe's Wirken kuenden
+ *   Die aeltesten Sagen, der ich mich entsinne...
+ *
+ * In most shells, if you do something like:
+ *
+ *   cat foo | while read a; do grep $a bar; done
+ *
+ * the shell forks and executes the loop in the sub-shell thus created.
+ * In zsh this traditionally executes the loop in the current shell, which
+ * is nice to have if the loop does something to change the shell, like
+ * setting parameters or calling builtins.
+ * Putting the loop in a sub-shell makes live easy, because the shell only
+ * has to put it into the job-structure and then treats it as a normal
+ * process. Suspending and interrupting is no problem then.
+ * Some years ago, zsh either couldn't suspend such things at all, or
+ * it got really messed up when users tried to do it. As a solution, we
+ * implemented the list_pipe-stuff, which has since then become a reason
+ * for many nightmares.
+ * Pipelines like the one above are executed by the functions in this file
+ * which call each other (and sometimes recursively). The one above, for
+ * example would lead to a function call stack roughly like:
+ *
+ *  execlist->execpline->execcmd->execwhile->execlist->execpline
+ *
+ * (when waiting for the grep, ignoring execpline2 for now). At this time,
+ * zsh has build two job-table entries for it: one for the cat and one for
+ * the grep. If the user hits ^Z at this point (and jobbing is used), the 
+ * shell is notified that the grep was suspended. The list_pipe flag is
+ * used to tell the execpline where it was waiting that it was in a pipeline
+ * with a shell construct at the end (which may also be a shell function or
+ * several other things). When zsh sees the suspended grep, it forks to let
+ * the sub-shell execute the rest of the while loop. The parent shell walks
+ * up in the function call stack to the first execpline. There it has to find
+ * out that it has just forked and then has to add information about the sub-
+ * shell (its pid and the text for it) in the job entry of the cat. The pid
+ * is passed down in the list_pipe_pid variable.
+ * But there is a problem: the suspended grep is a child of the parent shell
+ * and can't be adopted by the sub-shell. So the parent shell also has to 
+ * keep the information about this process (more precisely: this pipeline)
+ * by keeping the job table entry it created for it. The fact that there
+ * are two jobs which have to be treated together is remembered by setting
+ * the STAT_SUPERJOB flag in the entry for the cat-job (which now also
+ * contains a process-entry for the whole loop -- the sub-shell) and by
+ * setting STAT_SUBJOB in the job of the grep-job. With that we can keep
+ * sub-jobs from being displayed and we can handle an fg/bg on the super-
+ * job correctly. When the super-job is continued, the shell also wakes up
+ * the sub-job. But then, the grep will exit sometime. Now the parent shell
+ * has to remember not to try to wake it up again (in case of another ^Z).
+ * It also has to wake up the sub-shell (which suspended itself immediately
+ * after creation), so that the rest of the loop is executed by it.
+ * But there is more: when the sub-shell is created, the cat may already
+ * have exited, so we can't put the sub-shell in the process group of it.
+ * In this case, we put the sub-shell in the process group of the parent
+ * shell and in any case, the sub-shell has to put all commands executed
+ * by it into its own process group, because only this way the parent
+ * shell can control them since it only knows the process group of the sub-
+ * shell. Of course, this information is also important when putting a job
+ * in the foreground, where we have to attach its process group to the
+ * controlling tty.
+ * All this is made more difficult because we have to handle return values
+ * correctly. If the grep is signaled, its exit status has to be propagated
+ * back to the parent shell which needs it to set the exit status of the
+ * super-job. And of course, when the grep is signaled (including ^C), the
+ * loop has to be stopped, etc.
+ * The code for all this is distributed over three files (exec.c, jobs.c,
+ * and signals.c) and none of them is a simple one. So, all in all, there
+ * may still be bugs, but considering the complexity (with race conditions,
+ * signal handling, and all that), this should probably be expected.
+ */
 
 int list_pipe = 0, simple_pline = 0;
 
@@ -127,7 +199,7 @@ static char list_pipe_text[JOBTEXTSIZE];
 int
 execcursh(Cmd cmd)
 {
-    if (!list_pipe)
+    if (!list_pipe && thisjob != list_pipe_job)
 	deletejob(jobtab + thisjob);
     execlist(cmd->u.list, 1, cmd->flags & CFLAG_EXEC);
     cmd->u.list = NULL;
@@ -182,14 +254,9 @@ zexecve(char *pth, char **argv)
 		    if (execvebuf[1] == '!') {
 			for (t0 = 0; t0 != ct; t0++)
 			    if (execvebuf[t0] == '\n')
-/* WINNT patch to original zsh source */
-				/*
-				execvebuf[t0] = '\0';
-				*/
 				break;
 			while(inblank(execvebuf[t0]))
 				execvebuf[t0--]='\0';
-				/* end patch*/
 			execvebuf[POUNDBANGLIMIT] = '\0';
 			for (ptr = execvebuf + 2; *ptr && *ptr == ' '; ptr++);
 			for (ptr2 = ptr; *ptr && *ptr != ' '; ptr++);
@@ -518,11 +585,19 @@ execlist(List list, int dont_change_job, int exiting)
     Sublist slist;
     static int donetrap;
     int ret, cj;
-    int old_pline_level, old_list_pipe;
+    int old_pline_level, old_list_pipe, oldlineno;
+    /*
+     * ERREXIT only forces the shell to exit if the last command in a &&
+     * or || fails.  This is the case even if an earlier command is a
+     * shell function or other current shell structure, so we have to set
+     * noerrexit here if the sublist is not of type END.
+     */
+    int oldnoerrexit = noerrexit;
 
     cj = thisjob;
     old_pline_level = pline_level;
     old_list_pipe = list_pipe;
+    oldlineno = lineno;
 
     if (sourcelevel && unset(SHINSTDIN))
 	pline_level = list_pipe = 0;
@@ -538,6 +613,8 @@ execlist(List list, int dont_change_job, int exiting)
 
 	/* Loop through code followed by &&, ||, or end of sublist. */
 	while (slist) {
+	    if (!oldnoerrexit)
+		noerrexit = (slist->type != END);
 	    switch (slist->type) {
 	    case END:
 		/* End of sublist; just execute, ignoring status. */
@@ -581,6 +658,8 @@ execlist(List list, int dont_change_job, int exiting)
 	}
 sublist_done:
 
+	noerrexit = oldnoerrexit;
+
 	if (sigtrapped[SIGDEBUG])
 	    dotrap(SIGDEBUG);
 
@@ -607,6 +686,7 @@ sublist_done:
 
     pline_level = old_pline_level;
     list_pipe = old_list_pipe;
+    lineno = oldlineno;
     if (dont_change_job)
 	thisjob = cj;
 }
