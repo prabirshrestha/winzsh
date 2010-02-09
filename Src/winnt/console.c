@@ -371,16 +371,25 @@ void NT_MoveToLineOrCharAbs(int where,int line) {
 	}
 
 }
-int nt_getsize(int * lins, int * cols) {
-	CONSOLE_SCREEN_BUFFER_INFO scrbuf;
-	HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+int nt_getlines(int * lins) {
+        CONSOLE_SCREEN_BUFFER_INFO scrbuf;
+        HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 
-	if(!GetConsoleScreenBufferInfo(hStdout, &scrbuf) ) {
-		;
-	}
-	*lins = scrbuf.srWindow.Bottom -scrbuf.srWindow.Top+1 ;
-	*cols = scrbuf.srWindow.Right -scrbuf.srWindow.Left +1;
-	return 1;
+        if(!GetConsoleScreenBufferInfo(hStdout, &scrbuf) ) {
+                ;
+        }
+        *lins = scrbuf.srWindow.Bottom -scrbuf.srWindow.Top+1 ;
+        return 1;
+}
+int nt_getcolumns(int * cols) {
+        CONSOLE_SCREEN_BUFFER_INFO scrbuf;
+        HANDLE hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+
+        if(!GetConsoleScreenBufferInfo(hStdout, &scrbuf) ) {
+                ;
+        }
+        *cols = scrbuf.srWindow.Right -scrbuf.srWindow.Left +1;
+        return 1;
 }
 void nt_move_cursor(int cursor, int line) {
 

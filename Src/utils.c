@@ -1,11 +1,9 @@
 /*
- * $Id: utils.c,v 2.61 1996/10/15 20:16:35 hzoli Exp $
- *
  * utils.c - miscellaneous utilities
  *
  * This file is part of zsh, the Z shell.
  *
- * Copyright (c) 1992-1996 Paul Falstad
+ * Copyright (c) 1992-1997 Paul Falstad
  * All rights reserved.
  *
  * Permission is hereby granted, without written agreement and without
@@ -208,10 +206,9 @@ nicechar(int c)
     return buf;
 }
 
-#if 0
 /* Output a string's visible representation. */
 
-/**/
+#if 0 /**/
 void
 nicefputs(char *s, FILE *f)
 {
@@ -306,7 +303,7 @@ xsymlinks(char *s, int flag)
 {
     char **pp, **opp;
     char xbuf2[PATH_MAX*2], xbuf3[PATH_MAX*2];
-    int t0;
+    int t0, ret = 0;
 
     opp = pp = slashsplit(s);
     for (; *pp; pp++) {
@@ -526,7 +523,6 @@ getnameddir(char *name)
 {
     Param pm;
     char *str;
-    struct passwd *pw;
     Nameddir nd;
 
     /* Check if it is already in the named directory table */
@@ -550,7 +546,10 @@ getnameddir(char *name)
 	return str;
     }
 
+#ifdef HAVE_GETPWNAM
+    {
     /* Retrieve an entry from the password table/database for this user. */
+	struct passwd *pw;
     if ((pw = getpwnam(name))) {
 	char *dir = xsymlink(pw->pw_dir);
 	adduserdir(name, dir, ND_USERNAME, 1);
@@ -558,6 +557,8 @@ getnameddir(char *name)
 	zsfree(dir);
 	return str;
     }
+    }
+#endif /* HAVE_GETPWNAM */
 
     /* There are no more possible sources of directory names, so give up. */
     return NULL;
@@ -729,10 +730,10 @@ checkmailpath(char **s)
 	    }
 	} else {
 	    if (st.st_size && st.st_atime <= st.st_mtime &&
-		st.st_mtime > lastmailcheck)
+		st.st_mtime > lastmailcheck) {
 		if (!u) {
-		    fprintf(stderr, "You have new mail.\n");
-		    fflush(stderr);
+		    fprintf(shout, "You have new mail.\n");
+		    fflush(shout);
 		} else {
 		    char *usav = underscore;
 
@@ -741,17 +742,18 @@ checkmailpath(char **s)
 			u = dupstring(u);
 			if (! parsestr(u)) {
 			    singsub(&u);
-			    zputs(u, stderr);
-			    fputc('\n', stderr);
-			    fflush(stderr);
+			    zputs(u, shout);
+			    fputc('\n', shout);
+			    fflush(shout);
 			}
 			underscore = usav;
 		    } LASTALLOC;
 		}
+	    }
 	    if (isset(MAILWARNING) && st.st_atime > st.st_mtime &&
 		st.st_atime > lastmailcheck && st.st_size) {
-		fprintf(stderr, "The mail in %s has been read.\n", unmeta(*s));
-		fflush(stderr);
+		fprintf(shout, "The mail in %s has been read.\n", unmeta(*s));
+		fflush(shout);
 	    }
 	}
 	*v = c;
@@ -873,76 +875,154 @@ settyinfo(struct ttyinfo *ti)
 extern winchanged;
 #endif
 
-/* check the size of the window and adjust if necessary. *
- * The value of from:					 *
- *   0: called from update_job or setupvals		 *
- *   1: called from the SIGWINCH handler		 *
- *   2: the user have just changed LINES manually	 *
- *   3: the user have just changed COLUMNS manually      */
-
-/**/
-void
-adjustwinsize(int from)
+static int
+adjustlines(int signalled)
 {
-    int oldcols = columns, oldrows = lines;
+    int oldlines = lines;
 
 #ifdef TIOCGWINSZ
-    static int userlines, usercols;
-
-    if (SHTTY == -1)
-	return;
-
-    if (from == 2)
-	userlines = lines > 0;
-    if (from == 3)
-	usercols = columns > 0;
-
-    if (!ioctl(SHTTY, TIOCGWINSZ, (char *)&shttyinfo.winsize)) {
-	if (!userlines)
-	    lines = shttyinfo.winsize.ws_row;
-	if (!usercols)
-	    columns = shttyinfo.winsize.ws_col;
-    }
-#endif   /* TIOCGWINSZ */
+    if (signalled || lines <= 0)
+	lines = shttyinfo.winsize.ws_row;
+    else
+	shttyinfo.winsize.ws_row = lines;
+#endif /* TIOCGWINSZ */
 #ifdef WINNT
-    static int userlines, usercols;
-    extern int winchanged;
-    extern void nt_getsize(int*,int*);
+    static int userlines;
+    extern void nt_getlines(int*);
 
-    if (SHTTY == -1)
-	return;
-
-    if (from == 2)
+    if (signalled == 2)
 	userlines = lines > 0;
-    if (from == 3)
-	usercols = columns > 0;
     
-    nt_getsize(&lines,&columns);
+    nt_getlines(&lines);
 #endif /* WINNT */
-
-    if (lines <= 0)
+    if (lines <= 0) {
+	DPUTS(signalled, "BUG: Impossible TIOCGWINSZ rows");
 	lines = tclines > 0 ? tclines : 24;
-    if (columns <= 0)
-	columns = tccolumns > 0 ? tccolumns : 80;
+    }
+
     if (lines > 2)
 	termflags &= ~TERM_SHORT;
     else
 	termflags |= TERM_SHORT;
+
+    return (lines != oldlines);
+}
+
+static int
+adjustcolumns(int signalled)
+{
+    int oldcolumns = columns;
+
+#ifdef TIOCGWINSZ
+    if (signalled || columns <= 0)
+	columns = shttyinfo.winsize.ws_col;
+    else
+	shttyinfo.winsize.ws_col = columns;
+#endif /* TIOCGWINSZ */
+#ifdef WINNT
+    static int usercols;
+    extern void nt_getcolumns(int*);
+
+    if (signalled == 3)
+	usercols = columns > 0;
+    
+    nt_getcolumns(&columns); 
+#endif /* WINNT */
+    if (columns <= 0) {
+	DPUTS(signalled, "BUG: Impossible TIOCGWINSZ cols");
+	columns = tccolumns > 0 ? tccolumns : 80;
+    }
+
     if (columns > 2)
 	termflags &= ~TERM_NARROW;
     else
 	termflags |= TERM_NARROW;
 
+    return (columns != oldcolumns);
+}
+
+/* check the size of the window and adjust if necessary. *
+ * The value of from:					 *
+ *   0: called from update_job or setupvals		 *
+ *   1: called from the SIGWINCH handler		 *
+ *   2: called from the LINES parameter callback	 *
+ *   3: called from the COLUMNS parameter callback	 */
+
+/**/
+void
+adjustwinsize(int from)
+{
+    static int getwinsz = 1;
+    int resetzle = 0;
+
+    if (getwinsz || from == 1) {
 #ifdef TIOCGWINSZ
-    if (from >= 2) {
-	shttyinfo.winsize.ws_row = lines;
-	shttyinfo.winsize.ws_col = columns;
+    int ttyrows = shttyinfo.winsize.ws_row;
+    int ttycols = shttyinfo.winsize.ws_col;
+
+    if (SHTTY == -1)
+	return;
+	if (ioctl(SHTTY, TIOCGWINSZ, (char *)&shttyinfo.winsize) == 0) {
+	    resetzle = (ttyrows != shttyinfo.winsize.ws_row ||
+			ttycols != shttyinfo.winsize.ws_col);
+	    if (from == 0 && resetzle && ttyrows && ttycols)
+		from = 1; /* Signal missed while a job owned the tty? */
+	    ttyrows = shttyinfo.winsize.ws_row;
+	    ttycols = shttyinfo.winsize.ws_col;
+	} else {
+	    /* Set to unknown on failure */
+	    shttyinfo.winsize.ws_row = 0;
+	    shttyinfo.winsize.ws_col = 0;
+	    resetzle = 1;
+	}
+#else
+	resetzle = from == 1;
+#endif   /* TIOCGWINSZ */
+#ifdef WINNT
+    if (SHTTY == -1)
+	return;
+#endif /* WINNT */
+    } /* else
+	 return; */
+
+    switch (from) {
+    case 0:
+    case 1:
+	getwinsz = 0;
+	/* Calling setiparam() here calls this function recursively, but  *
+	 * because we've already called adjustlines() and adjustcolumns() *
+	 * here, recursive calls are no-ops unless a signal intervenes.   *
+	 * The commented "else return;" above might be a safe shortcut,   *
+	 * but I'm concerned about what happens on race conditions; e.g., *
+	 * suppose the user resizes his xterm during `eval $(resize)'?    */
+	if (adjustlines(from) && zgetenv("LINES"))
+	    setiparam("LINES", lines);
+	if (adjustcolumns(from) && zgetenv("COLUMNS"))
+	    setiparam("COLUMNS", columns);
+	getwinsz = 1;
+	break;
+    case 2:
+	resetzle = adjustlines(0);
+	break;
+    case 3:
+	resetzle = adjustcolumns(0);
+	break;
+    }
+
+#ifdef TIOCGWINSZ
+    if (interact && from >= 2 &&
+	(shttyinfo.winsize.ws_row != ttyrows ||
+	 shttyinfo.winsize.ws_col != ttycols)) {
+	/* shttyinfo.winsize is already set up correctly */
 	ioctl(SHTTY, TIOCSWINSZ, (char *)&shttyinfo.winsize);
     }
-#endif
+#endif /* TIOCGWINSZ */
 
-    if (zleactive && (from >= 2 || oldcols != columns || oldrows != lines)) {
-	resetneeded = winchanged = 1;
+    if (zleactive && resetzle) {
+#ifdef TIOCGWINSZ
+	winchanged =
+#endif /* TIOCGWINSZ */
+	    resetneeded = 1;
 	refresh();
     }
 }
