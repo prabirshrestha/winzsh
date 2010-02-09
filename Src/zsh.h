@@ -815,20 +815,20 @@ struct param {
     union {
 	char **arr;		/* value if declared array   (PM_ARRAY)   */
 	char *str;		/* value if declared string  (PM_SCALAR)  */
-	long val;		/* value if declared integer (PM_INTEGER) */
+	zlong val;		/* value if declared integer (PM_INTEGER) */
     } u;
 
     /* pointer to function to set value of this parameter */
     union {
 	void (*cfn) _((Param, char *));
-	void (*ifn) _((Param, long));
+	void (*ifn) _((Param, zlong));
 	void (*afn) _((Param, char **));
     } sets;
 
     /* pointer to function to get value of this parameter */
     union {
 	char *(*cfn) _((Param));
-	long (*ifn) _((Param));
+	zlong (*ifn) _((Param));
 	char **(*afn) _((Param));
     } gets;
 
@@ -1166,9 +1166,7 @@ enum {
     OVERSTRIKE,
     PATHDIRS,
     POSIXBUILTINS,
-#ifdef WINNT
     PRINTEIGHTBIT,
-#endif /* WINNT */
     PRINTEXITVALUE,
     PRIVILEGED,
     PROMPTCR,
@@ -1319,14 +1317,19 @@ struct ttyinfo {
 
 #include "ztype.h"
 
-#define cmdpush(X) if (!(cmdsp >= 0 && cmdsp < 256)) {;} else cmdstack[cmdsp++]=(X)
+#define cmdpush(X) do { \
+		       if (cmdsp >= 0 && cmdsp < 256) \
+			   cmdstack[cmdsp++] = (X); \
+		   } while (0)
 #ifdef DEBUG
-# define cmdpop()  if (cmdsp <= 0) { \
+# define cmdpop()  do { \
+		       if (cmdsp <= 0) { \
 			fputs("BUG: cmdstack empty\n", stderr); \
 			fflush(stderr); \
-		   } else cmdsp--
+		       } else cmdsp--; \
+		   } while (0)
 #else
-# define cmdpop()   if (cmdsp <= 0) {;} else cmdsp--
+# define cmdpop()  do { if (cmdsp > 0) cmdsp--; } while (0)
 #endif
 
 #define CS_FOR          0
@@ -1400,10 +1403,11 @@ struct ttyinfo {
 /****************/
 
 #ifdef DEBUG
-# define DPUTS(X,Y) if (!(X)) {;} else dputs(Y)
-# define MUSTUSEHEAP(X) if (useheap) {;} else \
-		fprintf(stderr, "BUG: permanent allocation in %s\n", X), \
-		fflush(stderr)
+# define DPUTS(X,Y) do { if ((X)) dputs(Y); } while (0)
+# define MUSTUSEHEAP(X) do { if (useheap == 0) { \
+		    fprintf(stderr, "BUG: permanent allocation in %s\n", X); \
+		    fflush(stderr); \
+		} } while (0)
 #else
 # define DPUTS(X,Y)
 # define MUSTUSEHEAP(X)
