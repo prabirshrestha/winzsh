@@ -240,6 +240,7 @@ parseargs(char **argv)
 
     /* loop through command line options (begins with "-" or "+") */
     while (*argv && (**argv == '-' || **argv == '+')) {
+	char *args = *argv;
 	action = (**argv == '-');
 	if(!argv[0][1])
 	    *argv = "--";
@@ -272,6 +273,14 @@ parseargs(char **argv)
 		    zerr("no such option: %s", *argv, 0);
 		else
 		    dosetopt(optno, action, 1);
+		break;
+	    } else if (isspace(**argv)) {
+		/* zsh's typtab not yet set, have to use ctype */
+		while (*++*argv)
+		    if (!isspace(**argv)) {
+			zerr("bad option string: `%s'", args, 0);
+			exit(1);
+		    }
 		break;
 	    } else {
 	    	if (!(optno = optlookupc(**argv))) {
@@ -357,15 +366,46 @@ init_io(void)
     if (isatty(0)) {
 	zsfree(ttystrname);
 	if ((ttystrname = ztrdup(ttyname(0))))
-	    SHTTY = movefd(open(ttystrname, O_RDWR));
+	    SHTTY = movefd(open(ttystrname, O_RDWR | O_NOCTTY));
+	/*
+	 * xterm, rxvt and probably all terminal emulators except
+	 * dtterm on Solaris 2.6 & 7 have a bug. Applications are
+	 * unable to open /dev/tty or /dev/pts/<terminal number here>
+	 * because something in Sun's STREAMS modules doesn't like
+	 * it. The open() call fails with EBUSY which is not even
+	 * listed as a possibility in the open(2) man page.  So we'll
+	 * try to outsmart The Company.  -- <dave@srce.hr>
+	 *
+	 * Presumably there's no harm trying this on any OS, given that
+	 * isatty(0) worked but opening the tty didn't.  Possibly we won't
+	 * get the tty read/write, but it's the best we can do -- pws
+	 *
+	 * Try both stdin and stdout before trying /dev/tty. -- Bart
+	 */
+#if defined(HAVE_FCNTL_H) && defined(F_GETFL)
+#define rdwrtty(fd)	((fcntl(fd, F_GETFL) & O_RDWR) == O_RDWR)
+#else
+#define rdwrtty(fd)	1
+#endif
+	if (SHTTY == -1 && rdwrtty(0)) {
+	    SHTTY = movefd(dup(0));
+	}
     }
-    if (SHTTY == -1 && (SHTTY = movefd(open("/dev/tty", O_RDWR))) != -1) {
+    if (SHTTY == -1 && isatty(1) && rdwrtty(1) &&
+	(SHTTY = movefd(dup(1))) != -1) {
 	zsfree(ttystrname);
-	ttystrname = ztrdup("/dev/tty");
+	ttystrname = ztrdup(ttyname(1));
+    }
+    if (SHTTY == -1 &&
+	(SHTTY = movefd(open("/dev/tty", O_RDWR | O_NOCTTY))) != -1) {
+	zsfree(ttystrname);
+	ttystrname = ztrdup(ttyname(SHTTY));
     }
     if (SHTTY == -1) {
 	zsfree(ttystrname);
 	ttystrname = ztrdup("");
+    } else if (!ttystrname) {
+	ttystrname = ztrdup("/dev/tty");
     }
 
     /* We will only use zle if shell is interactive, *
@@ -540,6 +580,7 @@ setupvals(void)
     int i;
 #endif
 
+    lineno = 1;
     noeval = 0;
     curhist = 0;
     histsiz = DEFAULT_HISTSIZE;
@@ -601,8 +642,8 @@ setupvals(void)
     zoptind = 1;
     schedcmds = NULL;
 
-    ppid  = (long) getppid();
-    mypid = (long) getpid();
+    ppid  = (zlong) getppid();
+    mypid = (zlong) getpid();
     term  = ztrdup("");
 
     /* The following variable assignments cause zsh to behave more *
@@ -768,7 +809,7 @@ run_init_scripts(void)
 	    char *s = getsparam("ENV");
 	    if (islogin)
 		sourcehome(".profile");
-	    noerrs = 1;
+	    noerrs = 2;
 	    if (s && !parsestr(s)) {
 		singsub(&s);
 		noerrs = 0;
