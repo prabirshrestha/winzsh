@@ -1,6 +1,4 @@
 /*
- * $Id: builtin.c,v 2.95 1996/10/16 22:47:53 hzoli Exp $
- *
  * builtin.c - builtin commands
  *
  * This file is part of zsh, the Z shell.
@@ -541,7 +539,7 @@ bin_fg(char *name, char **argv, char *ops, int func)
         /* If you immediately type "exit" after "jobs", this      *
          * will prevent zexit from complaining about stopped jobs */
 	stopmsg = 2;
-    if (!*argv)
+    if (!*argv) {
 	/* This block handles all of the default cases (no arguments).  bg,
 	fg and disown act on the current job, and jobs and wait act on all the
 	jobs. */
@@ -569,6 +567,7 @@ bin_fg(char *name, char **argv, char *ops, int func)
 		if (job != thisjob && jobtab[job].stat)
 		    waitjob(job, SIGINT);
 	    return 0;
+	}
 	}
 
     /* Defaults have been handled.  We now have an argument or two, or three...
@@ -635,6 +634,13 @@ bin_fg(char *name, char **argv, char *ops, int func)
 		fflush(shout);
 		if (func != BIN_WAIT) {		/* fg */
 		    thisjob = job;
+		    if ((jobtab[job].stat & STAT_SUPERJOB) &&
+			((!jobtab[job].procs->next ||
+			  WIFEXITED(jobtab[job].procs->status) ||
+			  WIFSIGNALED(jobtab[job].procs->status))) &&
+			jobtab[jobtab[job].other].gleader)
+			attachtty(jobtab[jobtab[job].other].gleader);
+		    else
 		    attachtty(jobtab[job].gleader);
 		}
 	    }
@@ -2634,11 +2640,17 @@ bin_fc(char *nam, char **argv, char *ops, int func)
 		if (!editor)
 		    editor = DEFAULT_FCEDIT;
 
-		if (fcedit(editor, fil))
+		if (fcedit(editor, fil)) {
 		    if (stuff(fil))
 			zwarnnam("fc", "%e: %s", s, errno);
-		    else
+		    else {
+			if (delayrem)
+			    remhist();
+			delayrem = 0;
+			loop(0,1);
 			retval = lastval;
+		    }
+		}
 	    }
 	}
 	unlink(fil);
@@ -2838,6 +2850,118 @@ fcedit(char *ename, char *fn)
 
 /**** parameter builtins ****/
 
+/* function to set a single parameter */
+
+/**/
+int
+typeset_single(char *cname, char *pname, Param pm, int func, int on, int off, int roff, char *value)
+{
+    int usepm, tc;
+
+    on &= ~PM_ARRAY;
+
+    /* use the existing pm? */
+    usepm = pm && !(pm->flags & PM_UNSET);
+
+    /* Always use an existing pm if special at current locallevel */
+    if (pm && (pm->flags & PM_SPECIAL) && pm->level == locallevel)
+	usepm = 1;
+
+    /*
+     * Don't use a non-special existing param if
+     *   - the local level has changed, and
+     *   - the function is not `export'.
+     */
+    if (usepm && !(pm->flags & PM_SPECIAL) &&
+	locallevel != pm->level && func != BIN_EXPORT)
+	usepm = 0;
+
+    /* attempting a type conversion? */
+    if ((tc = usepm && (((off & pm->flags) | (on & ~pm->flags)) & PM_INTEGER)
+	 && !(pm->flags & PM_SPECIAL)))
+	usepm = 0;
+
+    if (usepm) {
+	if (pm->flags & PM_SPECIAL) {
+	    func = 0;
+	    on = (PM_TYPE(pm->flags) == PM_INTEGER) ?
+		(on &= ~(PM_LEFT | PM_RIGHT_B | PM_RIGHT_Z | PM_UPPER)) :
+		(on & ~PM_INTEGER);
+	    off &= ~PM_INTEGER;
+	}
+	if (pm->level) {
+	    if ((on & PM_EXPORTED) && !(on &= ~PM_EXPORTED) && !off)
+		return 1;
+	}
+	if (!on && !roff && !value) {
+	    paramtab->printnode((HashNode)pm, 0);
+	    return 0;
+	}
+	if ((on & PM_UNIQUE) && !(pm->flags & PM_READONLY & ~off)) {
+	    Param apm;
+	    if (PM_TYPE(pm->flags) == PM_ARRAY)
+		uniqarray((*pm->gets.afn) (pm));
+	    else if (PM_TYPE(pm->flags) == PM_SCALAR && pm->ename &&
+		     (apm = (Param) paramtab->getnode(paramtab, pm->ename)))
+		uniqarray((*apm->gets.afn) (apm));
+	}
+	pm->flags = (pm->flags | on) & ~off;
+	/* This auxlen/pm->ct stuff is a nasty hack. */
+	if ((on & (PM_LEFT | PM_RIGHT_B | PM_RIGHT_Z | PM_INTEGER)) &&
+	    auxlen)
+	    pm->ct = auxlen;
+	if (PM_TYPE(pm->flags) != PM_ARRAY) {
+	    if (pm->flags & PM_EXPORTED) {
+		if (!pm->env)
+		    pm->env = addenv(pname, value ? value : getsparam(pname));
+	    } else if (pm->env) {
+		delenv(pm->env);
+		zsfree(pm->env);
+		pm->env = NULL;
+	    }
+	    if (value)
+		setsparam(pname, ztrdup(value));
+	}
+	return 0;
+    }
+
+    /*
+     * We're here either because we're creating a new parameter,
+     * or we're adding a parameter at a different local level,
+     * or we're converting the type of a parameter.  In the
+     * last case only, we need to delete the old parameter.
+     */
+    if (tc) {
+	if (pm->flags & PM_READONLY) {
+	    on |= ~off & PM_READONLY;
+	    pm->flags &= ~PM_READONLY;
+	}
+	if (!value)
+	    value = dupstring(getsparam(pname));
+	/* pname may point to pm->nam which is about to disappear */
+	pname = dupstring(pname);
+	unsetparam_pm(pm, 0);
+    } else if (locallist && func != BIN_EXPORT) {
+	PERMALLOC {
+	    addlinknode(locallist, ztrdup(pname));
+	} LASTALLOC;
+    }
+    /*
+     * Create a new node for a parameter with the flags in `on' minus the
+     * readonly flag
+     */
+    pm = createparam(ztrdup(pname), on & ~PM_READONLY);
+    DPUTS(!pm, "BUG: parameter not created");
+    pm->ct = auxlen;
+    if (func != BIN_EXPORT)
+	pm->level = locallevel;
+    if (value)
+	setsparam(pname, ztrdup(value));
+    pm->flags |= (on & PM_READONLY);
+
+    return 0;
+}
+
 /* declare, export, integer, local, readonly, typeset */
 
 /**/
@@ -2849,7 +2973,7 @@ bin_typeset(char *name, char **argv, char *ops, int func)
     Comp com;
     char *optstr = "iLRZlurtxU";
     int on = 0, off = 0, roff, bit = PM_INTEGER;
-    int initon, initoff, of, i;
+    int i;
     int returnval = 0, printflags = 0;
 
     /* hash -f is really the builtin `functions' */
@@ -2859,11 +2983,12 @@ bin_typeset(char *name, char **argv, char *ops, int func)
     /* Translate the options into PM_* flags.   *
      * Unfortunately, this depends on the order *
      * these flags are defined in zsh.h         */
-    for (; *optstr; optstr++, bit <<= 1)
-	if (ops[*optstr] == 1)
+    for (; *optstr; optstr++, bit <<= 1) {
+	if (ops[*(unsigned char *)optstr] == 1)
 	    on |= bit;
-	else if (ops[*optstr] == 2)
+	else if (ops[*(unsigned char *)optstr] == 2)
 	    off |= bit;
+    }
     roff = off;
 
     /* Sanity checks on the options.  Remove conficting options. */
@@ -2895,7 +3020,11 @@ bin_typeset(char *name, char **argv, char *ops, int func)
 
     /* With the -m option, treat arguments as glob patterns */
     if (ops['m']) {
+	MUSTUSEHEAP("typeset -m");
 	while ((asg = getasg(*argv++))) {
+	    LinkList pmlist = newlinklist();
+	    LinkNode pmnode;
+
 	    tokenize(asg->name);   /* expand argument */
 	    if (!(com = parsereg(asg->name))) {
 		untokenize(asg->name);
@@ -2903,133 +3032,44 @@ bin_typeset(char *name, char **argv, char *ops, int func)
 		returnval = 1;
 		continue;
 	    }
-	    /* If no options or values are given, display all *
-	     * parameters matching the glob pattern.          */
-	    if (!(on || roff || asg->value)) {
-		scanmatchtable(paramtab, com, 0, 0, paramtab->printnode, 0);
-		continue;
-	    }
-	    /* Since either options or values are given, we search   *
-	     * through the parameter table and change all parameters *
-	     * matching the glob pattern to have these flags and/or  *
-	     * value.                                                */
+	    /*
+	     * Search through the parameter table and change all parameters
+	     * matching the glob pattern to have these flags and/or value.
+	     * Bad news:  if the parameter gets altered, e.g. by
+	     * a type conversion, then paramtab can be shifted around,
+	     * so we need to store the parameters to alter on a separate
+	     * list for later use.	     
+	     */
 	    for (i = 0; i < paramtab->hsize; i++) {
-		for (pm = (Param) paramtab->nodes[i]; pm; pm = (Param) pm->next) {
-		    if (domatch(pm->nam, com, 0)) {
-			/* set up flags if we have any */
-			if (on || roff) {
-			    if (PM_TYPE(pm->flags) == PM_ARRAY && (on & PM_UNIQUE) &&
-				!(pm->flags & PM_READONLY & ~off))
-				uniqarray((*pm->gets.afn) (pm));
-			    pm->flags = (pm->flags | on) & ~off;
-			    if (PM_TYPE(pm->flags) != PM_ARRAY) {
-				if ((on & (PM_LEFT | PM_RIGHT_B | PM_RIGHT_Z | PM_INTEGER)) && auxlen)
-				    pm->ct = auxlen;
-				/* did we just export this? */
-				if ((pm->flags & PM_EXPORTED) && !pm->env) {
-				    pm->env = addenv(pm->nam, (asg->value) ? asg->value : getsparam(pm->nam));
-				} else if (!(pm->flags & PM_EXPORTED) && pm->env) {
-				/* did we just unexport this? */
-				    delenv(pm->env);
-				    zsfree(pm->env);
-				    pm->env = NULL;
+		for (pm = (Param) paramtab->nodes[i]; pm;
+		     pm = (Param) pm->next) {
+		    if (pm->flags & PM_UNSET)
+		continue;
+		    if (domatch(pm->nam, com, 0))
+			addlinknode(pmlist, pm);
 				}
 			    }
-			}
-			/* set up a new value if given */
-			if (asg->value) {
-			    setsparam(pm->nam, ztrdup(asg->value));
-			}
-		    }
-		}
+	    for (pmnode = firstnode(pmlist); pmnode; incnode(pmnode)) {
+		pm = (Param) getdata(pmnode);
+		if (typeset_single(name, pm->nam, pm, func, on, off, roff,
+				   asg->value))
+		    returnval = 1;
 	    }
 	}
 	return returnval;
     }
 
-    /* Save the values of on, off, and func */
-    initon = on;
-    initoff = off;
-    of = func;
-
     /* Take arguments literally.  Don't glob */
     while ((asg = getasg(*argv++))) {
-	/* restore the original values of on, off, and func */
-	on = initon;
-	off = initoff;
-	func = of;
-	on &= ~PM_ARRAY;
-
 	/* check if argument is a valid identifier */
 	if (!isident(asg->name)) {
 	    zerr("not an identifier: %s", asg->name, 0);
 	    returnval = 1;
 	    continue;
 	}
-	if ((pm = (Param) paramtab->getnode(paramtab, asg->name))) {
-	    if (pm->flags & PM_SPECIAL) {
-		func = 0;
-		on = (PM_TYPE(pm->flags) == PM_INTEGER) ?
-		    (on &= ~(PM_LEFT | PM_RIGHT_B | PM_RIGHT_Z | PM_UPPER)) :
-		    (on & ~PM_INTEGER);
-		off &= ~PM_INTEGER;
-	    }
-	    if (pm->level) {
-		if ((on & PM_EXPORTED) && !(on &= ~PM_EXPORTED) && !off)
-		    return 1;
-	    }
-	}
-	bit = 0;    /* flag for switching int<->not-int */
-	if (pm && !(pm->flags & PM_UNSET) && ((((locallevel == pm->level) || func == BIN_EXPORT)
-		&& !(bit = ((off & pm->flags) | (on & ~pm->flags)) & PM_INTEGER)) || (pm->flags & PM_SPECIAL))) {
-	    /* if no flags or values are given, just print this parameter */
-	    if (!on && !roff && !asg->value) {
-		paramtab->printnode((HashNode) pm, 0);
-		continue;
-	    }
-	    if (PM_TYPE(pm->flags) == PM_ARRAY && (on & PM_UNIQUE) &&
-		!(pm->flags & PM_READONLY & ~off))
-		uniqarray((*pm->gets.afn) (pm));
-	    pm->flags = (pm->flags | on) & ~off;
-	    if ((on & (PM_LEFT | PM_RIGHT_B | PM_RIGHT_Z | PM_INTEGER)) && auxlen)
-		pm->ct = auxlen;
-	    if (PM_TYPE(pm->flags) != PM_ARRAY) {
-		if (pm->flags & PM_EXPORTED) {
-		    if (!pm->env)
-			pm->env = addenv(asg->name, (asg->value) ? asg->value : getsparam(asg->name));
-		} else if (pm->env) {
-		    delenv(pm->env);
-		    zsfree(pm->env);
-		    pm->env = NULL;
-		}
-		if (asg->value)
-		    setsparam(asg->name, ztrdup(asg->value));
-	    }
-	} else {
-	    if (bit) {
-		if (pm->flags & PM_READONLY) {
-		    on |= ~off & PM_READONLY;
-		    pm->flags &= ~PM_READONLY;
-		}
-		if (!asg->value)
-		    asg->value = dupstring(getsparam(asg->name));
-		unsetparam(asg->name);
-	    } else if (locallist && func != BIN_EXPORT) {
-		PERMALLOC {
-		    addlinknode(locallist, ztrdup(asg->name));
-		} LASTALLOC;
-	    }
-	    /* create a new node for a parameter with the *
-	     * flags in `on' minus the readonly flag      */
-	    pm = createparam(ztrdup(asg->name), on & ~PM_READONLY);
-	    DPUTS(!pm, "BUG: parameter not created");
-	    pm->ct = auxlen;
-	    if (func != BIN_EXPORT)
-		pm->level = locallevel;
-	    if (asg->value)
-		setsparam(asg->name, ztrdup(asg->value));
-	    pm->flags |= (on & PM_READONLY);
-	}
+	typeset_single(name, asg->name,
+		       (Param) paramtab->getnode(paramtab, asg->name),
+		       func, on, off, roff, asg->value);
     }
     return returnval;
 }
@@ -3045,7 +3085,7 @@ bin_functions(char *name, char **argv, char *ops, int func)
     Comp com;
     Shfunc shf;
     int i, returnval = 0;
-    int on = 0, off = 0;
+    int on = 0, off = 0, pflags = 0;
 
     /* Do we have any flags defined? */
     if (ops['u'] || ops['t']) {
@@ -3065,11 +3105,15 @@ bin_functions(char *name, char **argv, char *ops, int func)
 	return 1;
     }
 
+    if (ops['f'] == 2 || ops['+'])
+	pflags |= PRINT_NAMEONLY;
+
     /* If no arguments given, we will print functions.  If flags *
      * are given, we will print only functions containing these  *
      * flags, else we'll print them all.                         */
     if (!*argv) {
-	scanhashtable(shfunctab, 1, on|off, DISABLED, shfunctab->printnode, 0);
+	scanhashtable(shfunctab, 1, on|off, DISABLED, shfunctab->printnode,
+		      pflags);
 	return 0;
     }
 
@@ -3082,7 +3126,8 @@ bin_functions(char *name, char **argv, char *ops, int func)
 	    if ((com = parsereg(*argv))) {
 		/* with no options, just print all functions matching the glob pattern */
 		if (!(on|off)) {
-		    scanmatchtable(shfunctab, com, 0, DISABLED, shfunctab->printnode, 0);
+		    scanmatchtable(shfunctab, com, 0, DISABLED,
+				   shfunctab->printnode, pflags);
 		} else {
 		/* apply the options to all functions matching the glob pattern */
 		    for (i = 0; i < shfunctab->hsize; i++) {
@@ -3109,7 +3154,7 @@ bin_functions(char *name, char **argv, char *ops, int func)
 		shf->flags = (shf->flags | (on & ~PM_UNDEFINED)) & ~off;
 	    else
 		/* no flags, so just print */
-		shfunctab->printnode((HashNode) shf, 0);
+		shfunctab->printnode((HashNode) shf, pflags);
 	} else if (on & PM_UNDEFINED) {
 	    /* Add a new undefined (autoloaded) function to the *
 	     * hash table with the corresponding flags set.     */
@@ -3740,7 +3785,7 @@ bin_limit(char *nam, char **argv, char *ops, int func)
 	     * together more than one of these.  It's easier to understand from *
 	     * the code:                                                        */
 	    val = ZSTRTORLIMT(s, &s, 10);
-	    if (*s)
+	    if (*s) {
 		if ((*s == 'h' || *s == 'H') && !s[1])
 		    val *= 3600L;
 		else if ((*s == 'm' || *s == 'M') && !s[1])
@@ -3750,6 +3795,7 @@ bin_limit(char *nam, char **argv, char *ops, int func)
 		else {
 		    zwarnnam("limit", "unknown scaling factor: %s", s, 0);
 		    return 1;
+		}
 		}
 	}
 # ifdef RLIMIT_NPROC
@@ -3821,11 +3867,12 @@ bin_unlimit(char *nam, char **argv, char *ops, int func)
     /* Without arguments, remove all limits. */
     if (!*argv) {
 	for (limnum = 0; limnum != RLIM_NLIMITS; limnum++) {
-	    if (hard)
+	    if (hard) {
 		if (euid && current_limits[limnum].rlim_max != RLIM_INFINITY)
 		    ret++;
 		else
 		    limits[limnum].rlim_max = RLIM_INFINITY;
+	    }
 	    else
 		limits[limnum].rlim_cur = limits[limnum].rlim_max;
 	}
@@ -3855,13 +3902,13 @@ bin_unlimit(char *nam, char **argv, char *ops, int func)
 		return 1;
 	    }
 	    /* remove specified limit */
-	    if (hard)
+	    if (hard) {
 		if (euid && current_limits[lim].rlim_max != RLIM_INFINITY) {
 		    zwarnnam(nam, "can't remove hard limits", NULL, 0);
 		    ret++;
 		} else
 		    limits[lim].rlim_max = RLIM_INFINITY;
-	    else
+	    } else
 		limits[lim].rlim_cur = limits[lim].rlim_max;
 	    if (ops['s'] && zsetlimit(lim, nam))
 		ret++;
@@ -3966,11 +4013,12 @@ bin_ulimit(char *name, char **argv, char *ops, int func)
 	    }
 	}
 	if (!*argv || **argv == '-') {
-	    if (res < 0)
+	    if (res < 0) {
 		if (*argv || nres)
 		    continue;
 		else
 		    res = RLIMIT_FSIZE;
+	    }
 	    resmask |= 1 << res;
 	    nres++;
 	    continue;
@@ -4091,9 +4139,15 @@ showlimits(int hard, int lim)
 	    else
 		printf("%qdkB\n", val / 1024L);
 # else
+#  ifdef RLIM_T_IS_UNSIGNED
+		printf("%luMB\n", val / (1024L * 1024L));
+            else
+		printf("%lukB\n", val / 1024L);
+#  else
 		printf("%ldMB\n", val / (1024L * 1024L));
             else
 		printf("%ldkB\n", val / 1024L);
+#  endif /* RLIM_T_IS_UNSIGNED */
 # endif /* RLIM_T_IS_QUAD_T */
 	}
 }
@@ -4196,8 +4250,21 @@ printulimit(int lim, int hard, int head)
     /* display the limit */
     if (limit == RLIM_INFINITY)
 	printf("unlimited\n");
-    else
-	printf("%ld\n", (long)limit);
+    else {
+# ifdef RLIM_T_IS_QUAD_T
+	printf("%qd\n", limit);
+# else
+#  ifdef RLIM_T_IS_LONG_LONG
+	printf("%lld\n", limit);
+#  else
+#   ifdef RLIM_T_IS_UNSIGNED
+	printf("%lu\n", limit);
+#   else
+	printf("%ld\n", limit);
+#   endif /* RLIM_T_IS_UNSIGNED */
+#  endif /* RLIM_T_IS_LONG_LONG */
+# endif /* RLIM_T_IS_QUAD_T */
+    }
 }
 #endif /* HAVE_GETRLIMIT */
 
@@ -4793,6 +4860,8 @@ int
 bin_emulate(char *nam, char **argv, char *ops, int func)
 {
     emulate(*argv, ops['R']);
+    if (ops['L'])
+	dosetopt(LOCALOPTIONS, 1, 0);
     return 0;
 }
 
@@ -4804,12 +4873,7 @@ bin_eval(char *nam, char **argv, char *ops, int func)
 {
     List list;
 
-    inpush(zjoin(argv, ' '), 0, NULL);
-    strinbeg();
-    stophist = 2;
-    list = parse_list();
-    strinend();
-    inpop();
+    list = parse_string(zjoin(argv, ' '), 0);
     if (!list) {
 	errflag = 0;
 	return 1;
@@ -5187,12 +5251,13 @@ bin_read(char *name, char **args, char *ops, int func)
 	    }
 	    if (c == EOF || (c == '\n' && !zbuf))
 		break;
-	    if (!bslash && isep(c) && bptr == buf)
+	    if (!bslash && isep(c) && bptr == buf) {
 		if (iwsep(c))
 		    continue;
 		else if (!first) {
 		    first = 1;
 		    continue;
+		}
 		}
 	    bslash = c == '\\' && !bslash && !ops['r'];
 	    if (bslash)
@@ -5246,7 +5311,7 @@ zread(void)
     char cc, retry = 0;
 
     /* use zbuf if possible */
-    if (zbuf)
+    if (zbuf) {
 	/* If zbuf points to anything, it points to the next character in the
 	buffer.  This may be a null byte to indicate EOF.  If reading from the
 	buffer, move on the buffer pointer. */
@@ -5254,6 +5319,7 @@ zread(void)
 	    return zbuf++, STOUC(*zbuf++ ^ 32);
 	else
 	    return (*zbuf) ? STOUC(*zbuf++) : EOF;
+    }
     for (;;) {
 	/* read a character from readfd */
 #ifndef WINNT
@@ -5549,7 +5615,7 @@ bin_trap(char *name, char **argv, char *ops, int func)
     arg = *argv++;
     if (!*arg)
 	l = NULL;
-    else if (!(l = parse_string(arg))) {
+    else if (!(l = parse_string(arg, 0))) {
 	zwarnnam(name, "couldn't parse trap command", NULL, 0);
 	return 1;
     }
@@ -5591,7 +5657,7 @@ bin_ttyctl(char *name, char **argv, char *ops, int func)
 int
 bin_let(char *name, char **argv, char *ops, int func)
 {
-    long val = 0;
+    zlong val = 0;
 
     while (*argv)
 	val = matheval(*argv++);

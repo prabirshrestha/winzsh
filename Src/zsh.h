@@ -1,6 +1,4 @@
 /*
- * $Id: zsh.h,v 2.49 1996/10/15 20:16:35 hzoli Exp $
- *
  * zsh.h - standard header file
  *
  * This file is part of zsh, the Z shell.
@@ -33,6 +31,31 @@
  * using -I. -I$srcdir will use ./config.h rather than $srcdir/config.h *
  * (which it would do because it found this file in $srcdir).           */
 #include <config.h>
+
+/*
+ * Our longest integer type:  will be a 64 bit either if long already is,
+ * or if we found some alternative such as long long.
+ * Currently we only define this to be longer than a long if --enable-lfs
+ * was given.  That enables internal use of 64-bit types even if
+ * no actual large file support is present.
+ *
+ * This comes before system.h, where we use SIZEOF_ZLONG for
+ * defining the digit buffer size.
+ */
+#ifdef ZSH_64_BIT_TYPE
+# define SIZEOF_ZLONG 8
+typedef ZSH_64_BIT_TYPE zlong;
+#ifdef ZSH_64_BIT_UTYPE
+typedef ZSH_64_BIT_UTYPE zulong;
+#else
+typedef unsigned zlong zulong;
+#endif
+#else
+# define SIZEOF_ZLONG SIZEOF_LONG
+typedef long zlong;
+typedef unsigned long zulong;
+#endif
+
 #include <system.h>
 
 /* exec.c */
@@ -214,6 +237,7 @@ enum {
 #define INP_HIST      (1<<2)	/* expanding history                       */
 #define INP_CONT      (1<<3)	/* continue onto previously stacked input  */
 #define INP_ALCONT    (1<<4)	/* stack is continued from alias expn.     */
+#define INP_LINENO    (1<<5)    /* update line number                      */
 
 /* Flags for metafy */
 #define META_REALLOC	0

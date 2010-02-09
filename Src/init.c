@@ -1,6 +1,4 @@
 /*
- * $Id: init.c,v 2.46 1996/10/15 20:16:35 hzoli Exp $
- *
  * init.c - main loop and initialization routines
  *
  * This file is part of zsh, the Z shell.
@@ -91,12 +89,12 @@ main(int argc, char **argv)
 
     for (;;) {
 	do
-	    loop(1);
+	    loop(1,0);
 	while (tok != ENDINPUT);
 	if (!(isset(IGNOREEOF) && interact)) {
 #if 0
 	    if (interact)
-		fputs(islogin ? "logout\n" : "exit\n", stderr);
+		fputs(islogin ? "logout\n" : "exit\n", shout);
 #endif
 	    zexit(lastval, 0);
 	    continue;
@@ -116,7 +114,7 @@ main(int argc, char **argv)
 
 /**/
 void
-loop(int toplevel)
+loop(int toplevel, int justonce)
 {
     List list;
 #ifdef DEBUG
@@ -137,13 +135,27 @@ loop(int toplevel)
 	lexinit();              /* initialize lexical state */
 	if (!(list = parse_event())) {	/* if we couldn't parse a list */
 	    hend();
-	    if (tok == ENDINPUT && !errflag)
+	    if ((tok == ENDINPUT && !errflag) || justonce)
 		break;
 	    continue;
 	}
 	if (hend()) {
 	    int toksav = tok;
+	    List prelist;
 
+	    if (toplevel && (prelist = getshfunc("preexec")) != &dummy_list) {
+		Histent he = gethistent(curhist);
+		LinkList args;
+		PERMALLOC {
+		    args = newlinklist();
+		    addlinknode(args, "preexec");
+		    if (he && he->text)
+			addlinknode(args, he->text);
+		} LASTALLOC;
+		doshfunc(prelist, args, 0, 1);
+		freelinklist(args, (FreeFunc) NULL);
+		errflag = 0;
+	    }
 	    if (stopmsg)	/* unset 'you have stopped jobs' flag */
 		stopmsg--;
 	    execlist(list, 0, 0);
@@ -169,6 +181,8 @@ loop(int toplevel)
 		dotrap(SIGEXIT);
 	    exit(lastval);
 	}
+	if (justonce)
+	    break;
     }
     popheap();
 }
@@ -844,13 +858,13 @@ source(char *s)
     SHIN = tempfd;
     bshin = fdopen(SHIN, "r");
     subsh  = 0;
-    lineno = 0;
+    lineno = 1;
     loops  = 0;
     dosetopt(SHINSTDIN, 0, 1);
     scriptname = s;
 
     sourcelevel++;
-    loop(0);			/* loop through the file to be sourced        */
+    loop(0, 0);			/* loop through the file to be sourced        */
     sourcelevel--;
     fclose(bshin);
     fdtable[SHIN] = 0;

@@ -33,50 +33,67 @@
 
 /**/
 void
-zwarnnam(char *cmd, char *fmt, char *str, int num)
-{
-    int waserr;
-
-    waserr = errflag;
-    zerrnam(cmd, fmt, str, num);
-    errflag = waserr;
-}
-
-/**/
-void
 zerr(char *fmt, char *str, int num)
 {
-    if (errflag || noerrs)
+    if (errflag || noerrs) {
+	if (noerrs < 2)
+	    errflag = 1;
 	return;
+    }
+    zwarn(fmt, str, num);
     errflag = 1;
-    trashzle();
-    /*
-     * scriptname is set when sourcing scripts, so that we get the
-     * correct name instead of the generic name of whatever
-     * program/script is running.
-     */
-    nicezputs(isset(SHINSTDIN) ? "zsh" :
-	      scriptname ? scriptname : argzero, stderr);
-    fputs(": ", stderr);
-    zerrnam(NULL, fmt, str, num);
 }
 
 /**/
 void
 zerrnam(char *cmd, char *fmt, char *str, int num)
 {
-    if (cmd) {
+    if (errflag || noerrs)
+	return;
+
+    zwarnnam(cmd, fmt, str, num);
+    errflag = 1;
+}
+
+/**/
+void
+zwarn(char *fmt, char *str, int num)
+{
+    if (errflag || noerrs)
+	return;
+    trashzle();
+    /*
+     * scriptname is set when sourcing scripts, so that we get the
+     * correct name instead of the generic name of whatever
+     * program/script is running.  It's also set in shell functions,
+     * so test locallevel, too.
+     */
+    nicezputs((isset(SHINSTDIN) && !locallevel) ? "zsh" :
+	      scriptname ? scriptname : argzero, stderr);
+    fputs(": ", stderr);
+    zerrmsg(fmt, str, num);
+}
+
+/**/
+void
+zwarnnam(char *cmd, char *fmt, char *str, int num)
+{
 	if (errflag || noerrs)
 	    return;
-	errflag = 1;
 	trashzle();
-	if(unset(SHINSTDIN)) {
+    if (unset(SHINSTDIN) || locallevel) {
 	    nicezputs(scriptname ? scriptname : argzero, stderr);
 	    fputs(": ", stderr);
 	}
 	nicezputs(cmd, stderr);
 	fputs(": ", stderr);
+    zerrmsg(fmt, str, num);
     }
+
+/**/
+void
+zerrmsg(char *fmt, char *str, int num)
+{
     while (*fmt)
 	if (*fmt == '%') {
 	    fmt++;
@@ -85,12 +102,12 @@ zerrnam(char *cmd, char *fmt, char *str, int num)
 		nicezputs(str, stderr);
 		break;
 	    case 'l': {
-		char sav;
+		char *s;
 		num = metalen(str, num);
-		sav = str[num];
-		str[num] = '\0';
-		nicezputs(str, stderr);
-		str[num] = sav;
+		s = halloc(num + 1);
+		memcpy(s, str, num);
+		s[num] = '\0';
+		nicezputs(s, stderr);
 		break;
 	    }
 	    case 'd':
@@ -124,8 +141,8 @@ zerrnam(char *cmd, char *fmt, char *str, int num)
 	    putc(*fmt == Meta ? *++fmt ^ 32 : *fmt, stderr);
 	    fmt++;
 	}
-    if (unset(SHINSTDIN) && lineno)
-	fprintf(stderr, " [%ld]\n", lineno);
+    if ((unset(SHINSTDIN) || locallevel) && lineno)
+	fprintf(stderr, " [%ld]\n", (long)lineno);
     else
 	putc('\n', stderr);
     fflush(stderr);
@@ -180,6 +197,8 @@ nicechar(int c)
     if (isprint(c))
 	goto done;
     if (c & 0x80) {
+	if (isset(PRINTEIGHTBIT))
+	    goto done;
 	*s++ = '\\';
 	*s++ = 'M';
 	*s++ = '-';
@@ -342,15 +361,14 @@ xsymlinks(char *s, int flag)
 	    metafy(xbuf3, t0, META_NOALLOC);
 	    if (*xbuf3 == '/') {
 		strcpy(xbuf, "");
-		if (xsymlinks(xbuf3 + 1, flag))
-		    return 1;
-	    } else if (xsymlinks(xbuf3, flag))
-		return 1;
+		ret = xsymlinks(xbuf3 + 1, flag);
+	    } else
+		ret = xsymlinks(xbuf3, flag);
 	    zsfree(*pp);
 	}
     }
     free(opp);
-    return 0;
+    return ret;
 }
 
 /* expand symlinks in s, and remove other weird things */
@@ -364,7 +382,7 @@ xsymlink(char *s)
     if (*s != '/')
 	return NULL;
     *xbuf = '\0';
-    if (xsymlinks(s + 1, 1))
+    if (!xsymlinks(s + 1, 1))
 	return ztrdup(s);
     if (!*xbuf)
 	return ztrdup("/");
@@ -393,9 +411,15 @@ fprintdir(char *s, FILE *f)
  * or NIS/NIS+ database.                                 */
 
 /**/
+uid_t cached_uid;
+/**/
+char *cached_username;
+
+/**/
 char *
 get_username(void)
 {
+#ifdef HAVE_GETPWUID
     struct passwd *pswd;
     uid_t current_uid;
  
@@ -408,6 +432,9 @@ get_username(void)
 	else
 	    cached_username = ztrdup("");
     }
+#else /* !HAVE_GETPWUID */
+    cached_uid = getuid();
+#endif /* !HAVE_GETPWUID */
     return cached_username;
 }
 
@@ -1211,15 +1238,15 @@ skipparens(char inpar, char outpar, char **s)
    return level;
 }
 
-/* Convert string to long.  This function (without the z) *
+/* Convert string to zlong.  This function (without the z) *
  * is contained in the ANSI standard C library, but a lot *
  * of them seem to be broken.                             */
 
 /**/
-long
+zlong
 zstrtol(const char *s, char **t, int base)
 {
-    long ret = 0;
+    zlong ret = 0;
     int neg;
 
     while (inblank(*s))
@@ -1230,13 +1257,14 @@ zstrtol(const char *s, char **t, int base)
     else if (*s == '+')
 	s++;
 
-    if (!base)
+    if (!base) {
 	if (*s != '0')
 	    base = 10;
 	else if (*++s == 'x' || *s == 'X')
 	    base = 16, s++;
 	else
 	    base = 8;
+    }
  
     if (base <= 10)
 	for (; *s >= '0' && *s < ('0' + base); s++)
@@ -1260,13 +1288,14 @@ zstrtorlimit(const char *s, char **t, int base)
 {
     rlim_t ret = 0;
  
-    if (!base)
+    if (!base) {
 	if (*s != '0')
 	    base = 10;
 	else if (*++s == 'x' || *s == 'X')
 	    base = 16, s++;
 	else
 	    base = 8;
+    }
  
     if (base <= 10)
 	for (; *s >= '0' && *s < ('0' + base); s++)
@@ -1318,9 +1347,22 @@ setblock_stdin(void)
 
 /**/
 int
+read1char(void)
+{
+    char c;
+
+    while (read(SHTTY, &c, 1) != 1) {
+	if (errno != EINTR || errflag)
+	    return -1;
+    }
+    return STOUC(c);
+}
+
+/**/
+int
 getquery(char *valid_chars)
 {
-    char c, d;
+    int c, d;
     int isem = !strcmp(term, "emacs");
 
 #ifdef FIONREAD
@@ -1340,7 +1382,7 @@ getquery(char *valid_chars)
 	return 'n';
     }
 #endif
-    while (read(SHTTY, &c, 1) == 1) {
+    while ((c = read1char()) >= 0) {
 	if (c == 'Y' || c == '\t')
 	    c = 'y';
 	else if (c == 'N')
@@ -1362,13 +1404,13 @@ getquery(char *valid_chars)
     }
     if (isem) {
 	if (c != '\n')
-	    while (read(SHTTY, &d, 1) == 1 && d != '\n');
+	    while ((d = read1char()) >= 0 && d != '\n');
     } else {
 	settyinfo(&shttyinfo);
 	if (c != '\n' && !valid_chars)
 	    write(2, "\n", 1);
     }
-    return (int)c;
+    return c;
 }
 
 static int d;
@@ -1453,7 +1495,7 @@ spckword(char **s, int hist, int cmd, int ask)
 		return;
 	    guess = dupstring(guess);
 	    ne = noerrs;
-	    noerrs = 1;
+	    noerrs = 2;
 	    singsub(&guess);
 	    noerrs = ne;
 	    if (!guess)
@@ -1583,7 +1625,7 @@ ztrftime(char *buf, int bufsize, char *fmt, struct tm *tm)
 		*buf++ = '0' + tm->tm_sec % 10;
 		break;
 	    case 'y':
-		*buf++ = '0' + tm->tm_year / 10;
+		*buf++ = '0' + (tm->tm_year / 10) % 10;
 		*buf++ = '0' + tm->tm_year % 10;
 		break;
 #ifndef HAVE_STRFTIME
@@ -1752,10 +1794,11 @@ findsep(char **s, char *sep)
 	if (!*t)
 	    return i;
 	if (*(*s)++ == Meta) {
-	    (*s)++;
 #ifdef DEBUG
-	    if (! **s)
+	    if (! *(*s)++)
 		fprintf(stderr, "BUG: unexpected end of string in findsep()\n");
+#else
+	    (*s)++;
 #endif
 	}
     }
@@ -1838,13 +1881,12 @@ char *
 sepjoin(char **s, char *sep)
 {
     char *r, *p, **t;
-    int l, sl, elide = 0;
+    int l, sl;
     char sepbuf[3];
 
     if (!*s)
 	return "";
     if (!sep) {
-	elide = 1;
 	sep = sepbuf;
 	sepbuf[0] = *ifs;
 	sepbuf[1] = *ifs == Meta ? ifs[1] ^ 32 : '\0';
@@ -2280,22 +2322,22 @@ dupnode(int type, void *a, int argnum)
 	return (useheap) ? ((void *) dupstring(a)) :
 	    ((void *) ztrdup(a));
     case NT_LIST | NT_NODE:
-	if (type & NT_HEAP)
+	if (type & NT_HEAP) {
 	    if (useheap)
 		return (void *) duplist(a, (VFunc) dupstruct2);
 	    else
 		return (void *) list2arr(a, (VFunc) dupstruct2);
-	else if (useheap)
+	} else if (useheap)
 	    return (void *) arr2list(a, (VFunc) dupstruct2);
 	else
 	    return (void *) duparray(a, (VFunc) dupstruct2);
     case NT_LIST | NT_STR:
-	if (type & NT_HEAP)
+	if (type & NT_HEAP) {
 	    if (useheap)
 		return (void *) duplist(a, (VFunc) dupstring);
 	    else
 		return (void *) list2arr(a, (VFunc) ztrdup);
-	else if (useheap)
+	} else if (useheap)
 	    return (void *) arr2list(a, (VFunc) dupstring);
 	else
 	    return (void *) duparray(a, (VFunc) ztrdup);
@@ -2755,11 +2797,12 @@ inittyptab(void)
     for (t0 = (int)STOUC(Pound); t0 <= (int)STOUC(Nularg); t0++)
 	typtab[t0] |= ITOK | IMETA;
     for (s = ifs ? ifs : DEFAULT_IFS; *s; s++) {
-	if (inblank(*s))
+	if (inblank(*s)) {
 	    if (s[1] == *s)
 		s++;
 	    else
 		typtab[STOUC(*s)] |= IWSEP;
+	}
 	typtab[STOUC(*s == Meta ? *++s ^ 32 : *s)] |= ISEP;
     }
     for (s = wordchars ? wordchars : DEFAULT_WORDCHARS; *s; s++)
@@ -3381,11 +3424,12 @@ nicezputs(char const *s, FILE *stream)
     int c;
 
     while ((c = *s++)) {
-	if (itok(c))
+	if (itok(c)) {
 	    if (c <= Comma)
 		c = ztokens[c - Pound];
 	    else 
 		continue;
+	}
 	if (c == Meta)
 	    c = *s++ ^ 32;
 	if(fputs(nicechar(c), stream) < 0)
@@ -3404,11 +3448,12 @@ niceztrlen(char const *s)
     int c;
 
     while ((c = *s++)) {
-	if (itok(c))
+	if (itok(c)) {
 	    if (c <= Comma)
 		c = ztokens[c - Pound];
 	    else 
 		continue;
+	}
 	if (c == Meta)
 	    c = *s++ ^ 32;
 	l += strlen(nicechar(STOUC(c)));
@@ -3573,6 +3618,8 @@ dosetopt(int optno, int value, int force)
     }
     if(!force && (optno == INTERACTIVE || optno == SHINSTDIN ||
 	    optno == SINGLECOMMAND)) {
+	if (opts[optno] == value)
+	    return 0;
 	/* it is not permitted to change the value of these options */
 	return -1;
     } else if(!force && optno == USEZLE && value) {

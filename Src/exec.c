@@ -1,6 +1,4 @@
 /*
- * $Id: exec.c,v 2.93 1996/10/15 20:16:35 hzoli Exp $
- *
  * exec.c - command execution
  *
  * This file is part of zsh, the Z shell.
@@ -41,15 +39,18 @@ static int doneps4 INIT_ZERO;
 
 /**/
 List
-parse_string(char *s)
+parse_string(char *s, int ln)
 {
     List l;
+    int oldlineno = lineno;
 
     lexsave();
-    inpush(s, 0, NULL);
+    inpush(s, (ln? INP_LINENO : 0), NULL);
     strinbeg();
     stophist = 2;
+    lineno = ln ? 1 : -1;
     l = parse_list();
+    lineno = oldlineno;
     strinend();
     inpop();
     lexrestore();
@@ -498,7 +499,7 @@ execstring(char *s, int dont_change_job, int exiting)
     List list;
 
     pushheap();
-    if ((list = parse_string(s)))
+    if ((list = parse_string(s, 0)))
 	execlist(list, dont_change_job, exiting);
     popheap();
 }
@@ -2057,7 +2058,7 @@ getoutput(char *cmd, int qt)
     Cmd c;
     Redir r;
 
-    if (!(list = parse_string(cmd)))
+    if (!(list = parse_string(cmd, 0)))
 	return NULL;
     if (list != &dummy_list && !list->right && !list->left->flags &&
 	list->left->type == END && list->left->left->type == END &&
@@ -2181,7 +2182,7 @@ parsecmd(char *cmd)
 	return NULL;
     }
     *str = '\0';
-    if (str[1] || !(list = parse_string(cmd + 2))) {
+    if (str[1] || !(list = parse_string(cmd + 2, 0))) {
 	zerr("parse error in process substitution", NULL, 0);
 	return NULL;
     }
@@ -2679,7 +2680,7 @@ getfpfunc(char *s)
 		    close(fd);
 		    d = metafy(d, len, META_REALLOC);
 		    HEAPALLOC {
-			r = parse_string(d);
+			r = parse_string(d, 1);
 		    } LASTALLOC;
 #ifndef WINNT
 		    zfree(d, len + 1);
