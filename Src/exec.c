@@ -2031,15 +2031,14 @@ entersubsh(int how, int cl, int fake)
 	    if (kill(jobtab[list_pipe_job].gleader, 0) == -1 ||
 		setpgrp(0L, jobtab[list_pipe_job].gleader) == -1) {
 		jobtab[list_pipe_job].gleader =
-		    jobtab[thisjob].gleader = mypgrp;
-		setpgrp(0L, mypgrp);
-
+		    jobtab[thisjob].gleader = (list_pipe_child ? mypgrp : getpid());
+		setpgrp(0L, jobtab[list_pipe_job].gleader);
 		if (how & Z_SYNC)
 		    attachtty(jobtab[thisjob].gleader);
 	    }
 	}
 	else if (!jobtab[thisjob].gleader ||
-		 (setpgrp(0L, jobtab[thisjob].gleader) == -1)) {
+		 setpgrp(0L, jobtab[thisjob].gleader) == -1) {
 	    jobtab[thisjob].gleader = getpid();
 	    if (list_pipe_job != thisjob &&
 		!jobtab[list_pipe_job].gleader)
