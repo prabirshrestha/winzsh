@@ -917,12 +917,11 @@ execpline2(Pline pline, int how, int input, int output, int last1)
 {
     pid_t pid;
     int pipes[2];
-    int oldlineno;
 
     if (breaks || retflag)
 	return;
 
-    oldlineno = lineno;
+    if (pline->left->lineno >= 0)
     lineno = pline->left->lineno;
 
     if (pline_level == 1)
@@ -979,8 +978,6 @@ execpline2(Pline pline, int how, int input, int output, int last1)
 	    subsh_close = -1;
 	}
     }
-
-    lineno = oldlineno;
 }
 
 /* make the argv array */
@@ -1019,12 +1016,14 @@ makecline(LinkList list)
 void
 untokenize(char *s)
 {
-    for (; *s; s++)
-	if (itok(*s))
+    for (; *s; s++) {
+	if (itok(*s)) {
 	    if (*s == Nularg)
 		chuck(s--);
 	    else
 		*s = ztokens[*s - Pound];
+	}
+    }
 }
 
 /* Open a file for writing redicection */
@@ -1376,6 +1375,9 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
 			/* Was this "exec < foobar"? */
 			nullexec = 1;
 			break;
+		    } else if (cmd->vars && nonempty(cmd->vars)) {
+			nullexec = 2;
+			break;
 		    } else if (!nullcmd || !*nullcmd ||
 			       (cflags & BINF_PREFIX)) {
 			zerr("redirection with no command", NULL, 0);
@@ -1561,7 +1563,7 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
 	    closem(2);
 #endif
 	    if (how & Z_ASYNC) {
-		lastpid = (long) pid;
+		lastpid = (zlong) pid;
 	    } else if (!jobtab[thisjob].stty_in_env && nonempty(cmd->vars)) {
 		/* search for STTY=... */
 		while (nonempty(cmd->vars))
@@ -1669,7 +1671,8 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
 		addfd(forked, save, mfds, fn->fd1, fil, 0);
 		/* If this is 'exec < file', read from stdin, *
 		 * not terminal, unless `file' is a terminal. */
-		if (nullexec && fn->fd1 == 0 && isset(SHINSTDIN) && interact)
+		if (nullexec == 1 && fn->fd1 == 0 &&
+		    isset(SHINSTDIN) && interact)
 		    init_io();
 		break;
 	    case CLOSE:
@@ -1728,17 +1731,28 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
 	closemn(mfds, i);
 
     if (nullexec) {
+	if (nullexec == 1) {
+	    /*
+	     * If nullexec is 1 we specifically *don't* restore the original
+	     * fd's before returning.
+	     */
 	for (i = 0; i < 10; i++)
 	    if (save[i] != -2)
 		zclose(save[i]);
+	    return;
+	}
 	/*
-	 * Here we specifically *don't* restore the original fd's
-	 * before returning.
+	 * If nullexec is 2, we have variables to add with the redirections
+	 * in place.
 	 */
-	return;
+	if (cmd->vars)
+	    addvars(cmd->vars, 0);
+	lastval = errflag ? errflag : cmdoutval;
+	if (isset(XTRACE)) {
+	    fputc('\n', stderr);
+	    fflush(stderr);
     }
-
-    if (isset(EXECOPT) && !errflag) {
+    } else if (isset(EXECOPT) && !errflag) {
 	/*
 	 * We delay the entersubsh() to here when we are exec'ing
 	 * the current shell (including a fake exec to run a builtin then
