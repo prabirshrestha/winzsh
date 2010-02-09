@@ -707,7 +707,8 @@ execpline(Sublist l, int how, int last1)
 {
     int ipipe[2], opipe[2];
     int pj, newjob;
-    static int lastwj;
+    int old_simple_pline = simple_pline;
+    static int lastwj, lpforked;
 
     if (!l->left)
 	return lastval = (l->flags & PFLAG_NOT) != 0;
@@ -734,13 +735,17 @@ execpline(Sublist l, int how, int last1)
 	coprocout = opipe[1];
 	fdtable[coprocin] = fdtable[coprocout] = 0;
     }
+    /* This used to set list_pipe_pid=0 unconditionally, but in things
+     * like `ls|if true; then sleep 20; cat; fi' where the sleep was
+     * stopped, the top-level execpline() didn't get the pid for the
+     * sub-shell because it was overwritten. */
     if (!pline_level++) {
 	list_pipe_job = newjob;
+        list_pipe_pid = 0;
 	nowait = 0;
-    }
-    list_pipe_pid = lastwj = 0;
-    if (pline_level == 1)
 	simple_pline = (l->left->type == END);
+    }
+    lastwj = lpforked = 0;
     execpline2(l->left, how, opipe[0], ipipe[1], last1);
     pline_level--;
     if (how & Z_ASYNC) {
@@ -765,7 +770,7 @@ execpline(Sublist l, int how, int last1)
 
 	    lastwj = thisjob = newjob;
 
-	    if (list_pipe)
+	    if (list_pipe || (pline_level && !(how & Z_TIMED)))
 		jn->stat |= STAT_NOPRINT;
 
 	    if (nowait) {
@@ -773,7 +778,13 @@ execpline(Sublist l, int how, int last1)
 		    struct process *pn, *qn;
 
 		    curjob = newjob;
+		    DPUTS(!list_pipe_pid, "invalid list_pipe_pid");
 		    addproc(list_pipe_pid, list_pipe_text);
+
+		    /* If the super-job contains only the sub-shell, the
+		       sub-shell is the group leader. */
+		    if (!jn->procs->next || lpforked == 2)
+			jn->gleader = list_pipe_pid;
 
 		    for (pn = jobtab[jn->other].procs; pn; pn = pn->next)
 			if (WIFSTOPPED(pn->status))
@@ -785,11 +796,13 @@ execpline(Sublist l, int how, int last1)
 		    }
 
 		    jn->stat &= ~(STAT_DONE | STAT_NOPRINT);
-		    jn->stat |= STAT_STOPPED | STAT_CHANGED;
+		    jn->stat |= STAT_STOPPED | STAT_CHANGED | STAT_LOCKED;
 		    printjob(jn, !!isset(LONGLISTJOBS), 1);
 		}
-		else
+		else if (newjob != list_pipe_job)
 		    deletejob(jn);
+		else
+		    lastwj = -1;
 	    }
 
 	    for (; !nowait;) {
@@ -804,8 +817,11 @@ execpline(Sublist l, int how, int last1)
 		    jn->stat & STAT_DONE &&
 		    lastval2 & 0200)
 		    killpg(mypgrp, lastval2 & ~0200);
-		if ((list_pipe || last1) && !list_pipe_child &&
-		    jn->stat & STAT_STOPPED) {
+		if (!list_pipe_child && !lpforked && !subsh &&
+		    (list_pipe || last1 || pline_level) &&
+		    ((jn->stat & STAT_STOPPED) ||
+  		     (list_pipe_job && pline_level &&
+  		      (jobtab[list_pipe_job].stat & STAT_STOPPED)))) {
 		    pid_t pid;
 		    int synch[2];
 
@@ -825,27 +841,41 @@ execpline(Sublist l, int how, int last1)
 		    else if (pid) {
 			char dummy;
 
+			lpforked = 
+			    (killpg(jobtab[list_pipe_job].gleader, 0) == -1 ? 2 : 1);
 			list_pipe_pid = pid;
 			nowait = errflag = 1;
 			breaks = loops;
 			close(synch[1]);
 			read(synch[0], &dummy, 1);
 			close(synch[0]);
+			/* If this job has finished, we leave it as a
+			 * normal (non-super-) job. */
+			if (!(jn->stat & STAT_DONE)) {
 			jobtab[list_pipe_job].other = newjob;
 			jobtab[list_pipe_job].stat |= STAT_SUPERJOB;
 			jn->stat |= STAT_SUBJOB | STAT_NOPRINT;
 			jn->other = pid;
+			}
+			if ((list_pipe || last1) && jobtab[list_pipe_job].procs)
 			killpg(jobtab[list_pipe_job].gleader, SIGSTOP);
 			break;
 		    }
 		    else {
 			close(synch[0]);
 			entersubsh(Z_ASYNC, 0, 0);
-			setpgrp(0L, mypgrp = jobtab[list_pipe_job].gleader);
+			if (jobtab[list_pipe_job].procs) {
+			    if (setpgrp(0L, mypgrp = jobtab[list_pipe_job].gleader)
+				== -1) {
+				setpgrp(0L, mypgrp = getpid());
+			    }
+			} else
+			    setpgrp(0L, mypgrp = getpid());
 			close(synch[1]);
 			kill(getpid(), SIGSTOP);
 			list_pipe = 0;
 			list_pipe_child = 1;
+			opts[INTERACTIVE] = 0;
 			break;
 		    }
 		}
@@ -858,11 +888,13 @@ execpline(Sublist l, int how, int last1)
 
 	    if (list_pipe && (lastval & 0200) && pj >= 0 &&
 		(!(jn->stat & STAT_INUSE) || (jn->stat & STAT_DONE))) {
+		deletejob(jn);
 		jn = jobtab + pj;
-		jn->stat |= STAT_NOPRINT;
-		killjb(jobtab + pj, lastval & ~0200);
+		killjb(jn, lastval & ~0200);
 	    }
-	    if (list_pipe_child || (list_pipe && (jn->stat & STAT_DONE)))
+	    if (list_pipe_child ||
+		((jn->stat & STAT_DONE) &&
+		 (list_pipe || (pline_level && !(jn->stat & STAT_SUBJOB)))))
 		deletejob(jn);
 	    thisjob = pj;
 
@@ -871,7 +903,7 @@ execpline(Sublist l, int how, int last1)
 	    lastval = !lastval;
     }
     if (!pline_level)
-	simple_pline = 0;
+	simple_pline = old_simple_pline;
     return lastval;
 }
 
