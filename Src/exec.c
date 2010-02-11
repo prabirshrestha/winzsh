@@ -2224,9 +2224,12 @@ getoutput(char *cmd, int qt)
 	zclose(pipes[1]);
 	retval = readoutput(pipes[0], qt);
 	fdtable[pipes[0]] = 0;
+#ifdef WINNT
 	child_suspend(0);		/* unblocks */
+#else
 // This was changed in 3.0.6, but this line breaks backticks on WINNT
-//	waitforpid(pid);		/* unblocks */
+	waitforpid(pid);		/* unblocks */
+#endif /* WINNT */
 	lastval = cmdoutval;
 	return retval;
     }
@@ -2602,13 +2605,14 @@ void
 execshfunc(Cmd cmd, Shfunc shf)
 {
     List funcdef;
-    char *nam;
+    char *nam = (char *) peekfirst(cmd->args);
+    char *oldscriptname = scriptname;
     LinkList last_file_list = NULL;
 
     if (errflag)
 	return;
 
-    if (!list_pipe) {
+    if (!list_pipe && thisjob != list_pipe_job) {
 	/* Without this deletejob the process table *
 	 * would be filled by a recursive function. */
 	last_file_list = jobtab[thisjob].filelist;
@@ -2616,10 +2620,15 @@ execshfunc(Cmd cmd, Shfunc shf)
 	deletejob(jobtab + thisjob);
     }
 
+    scriptname = nam;
+
     /* Are we dealing with an autoloaded shell function? */
     if (shf->flags & PM_UNDEFINED) {
-	nam = (char *) peekfirst(cmd->args);
-	if (!(funcdef = getfpfunc(nam))) {
+	++locallevel;
+	funcdef = getfpfunc(nam);
+	--locallevel;
+	if (!funcdef) {
+	    scriptname = oldscriptname;
 	    zerr("function not found: %s", nam, 0);
 	    lastval = 1;
 	} else {
@@ -2642,6 +2651,8 @@ execshfunc(Cmd cmd, Shfunc shf)
 	doshfunc(shf->funcdef, cmd->args, shf->flags, 0);
     if (!list_pipe)
 	deletefilelist(last_file_list);
+
+    scriptname = oldscriptname;
 }
 
 /* execute a shell function */
