@@ -1058,7 +1058,9 @@ clobber_open(struct redir *f)
  * register during fork(), it gets lost in the child. There is no cure
  * for this, except to turn off the optimization. -amol 5/19/99
  */
-#pragma optimize("",off) /* WINNT change */
+#ifdef WINNT
+#pragma optimize("",off)
+#endif /* WINNT */
 /**/
 void
 closemn(struct multio **mfds, int fd)
@@ -1092,7 +1094,9 @@ closemn(struct multio **mfds, int fd)
     }
     _exit(0);
 }
-#pragma optimize("",on) /* WINNT change */
+#ifdef WINNT
+#pragma optimize("",on)
+#endif /* WINNT */
 
 /* close all the mnodes (failure) */
 
@@ -1261,7 +1265,9 @@ addvars(LinkList l, int export)
     }
 }
 
-#pragma optimize("",off) /* WINNT change */
+#ifdef WINNT
+#pragma optimize("",off)
+#endif /* WINNT */
 /**/
 void
 execcmd(Cmd cmd, int input, int output, int how, int last1)
@@ -1890,7 +1896,9 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
 	_exit(lastval);
     fixfds(save);
 }
-#pragma optimize("",on) /* WINNT change */
+#ifdef WINNT
+#pragma optimize("",on)
+#endif /* WINNT */
 
 /* Arrange to have variables restored. */
 
@@ -2172,7 +2180,9 @@ getherestr(struct redir *fn)
 
 /* $(...) */
 
-#pragma optimize("",off) /* WINNT change */
+#ifdef WINNT
+#pragma optimize("",off)
+#endif /* WINNT */
 /**/
 LinkList
 getoutput(char *cmd, int qt)
@@ -2247,7 +2257,9 @@ getoutput(char *cmd, int qt)
     kill(getpid(), SIGKILL);
     return NULL;
 }
-#pragma optimize("",on) /* WINNT change */
+#ifdef WINNT
+#pragma optimize("",on)
+#endif /* WINNT */
 
 /* read output of command substitution */
 
@@ -2326,7 +2338,9 @@ parsecmd(char *cmd)
 
 /* =(...) */
 
-#pragma optimize("",off) /* WINNT change */
+#ifdef WINNT
+#pragma optimize("",off)
+#endif /* WINNT */
 /**/
 char *
 getoutputfile(char *cmd)
@@ -2378,7 +2392,9 @@ getoutputfile(char *cmd)
     kill(getpid(), SIGKILL);
     return NULL;
 }
-#pragma optimize("",on) /* WINNT change */
+#ifdef WINNT
+#pragma optimize("",on)
+#endif /* WINNT */
 
 #if !defined(PATH_DEV_FD) && defined(HAVE_FIFOS)
 /* get a temporary named pipe */
@@ -2401,7 +2417,9 @@ namedpipe(void)
 
 /* <(...) or >(...) */
 
-#pragma optimize("",off) /* WINNT change */
+#ifdef WINNT
+#pragma optimize("",off)
+#endif /* WINNT */
 /**/
 char *
 getproc(char *cmd)
@@ -2465,11 +2483,15 @@ getproc(char *cmd)
     return NULL;
 #endif   /* HAVE_FIFOS and PATH_DEV_FD not defined */
 }
-#pragma optimize("",on) /* WINNT change */
+#ifdef WINNT
+#pragma optimize("",on)
+#endif /* WINNT */
 
 /* > >(...) or < <(...) (does not use named pipes) */
 
-#pragma optimize("",off) /* WINNT change */
+#ifdef WINNT
+#pragma optimize("",off)
+#endif /* WINNT */
 /**/
 int
 getpipe(char *cmd)
@@ -2491,7 +2513,9 @@ getpipe(char *cmd)
     _exit(lastval);
     return 0;
 }
-#pragma optimize("",on) /* WINNT change */
+#ifdef WINNT
+#pragma optimize("",on)
+#endif /* WINNT */
 
 /* open pipes with fds >= 10 */
 
