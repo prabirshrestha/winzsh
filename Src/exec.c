@@ -2225,6 +2225,8 @@ getoutput(char *cmd, int qt)
 	retval = readoutput(pipes[0], qt);
 	fdtable[pipes[0]] = 0;
 	child_suspend(0);		/* unblocks */
+// This was changed in 3.0.6, but this line breaks backticks on WINNT
+//	waitforpid(pid);		/* unblocks */
 	lastval = cmdoutval;
 	return retval;
     }
@@ -2258,7 +2260,12 @@ readoutput(int in, int qt)
     fin = fdopen(in, "r");
     ret = newlinklist();
     ptr = buf = (char *) ncalloc(bsiz = 64);
-    while ((c = fgetc(fin)) != EOF) {
+    while ((c = fgetc(fin)) != EOF || errno == EINTR) {
+	if (c == EOF) {
+	    errno = 0;
+	    clearerr(fin);
+	    continue;
+	}
 	if (imeta(c)) {
 	    *ptr++ = Meta;
 	    c ^= 32;
@@ -2530,7 +2537,7 @@ int
 execarith(Cmd cmd)
 {
     char *e;
-    long val = 0;
+    zlong val = 0;
 
     while ((e = (char *) ugetnode(cmd->args)))
 	val = matheval(e);
