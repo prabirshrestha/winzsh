@@ -1,6 +1,4 @@
 /*
- * $Id: parse.c,v 2.28 1996/10/15 20:16:35 hzoli Exp $
- *
  * parse.c - parser
  *
  * This file is part of zsh, the Z shell.
@@ -33,7 +31,13 @@
 
 #define YYERROR  { tok = LEXERR; return NULL; }
 #define YYERRORV { tok = LEXERR; return; }
-#define COND_ERROR(X,Y) do{zerr(X,Y,0);discard_input();YYERROR}while(0)
+#define COND_ERROR(X,Y) do { \
+  zwarn(X,Y,0); \
+  herrflush(); \
+  if (noerrs != 2) \
+    errflag = 1; \
+  YYERROR \
+} while(0)
 
 #define make_list()     allocnode(N_LIST)
 #define make_sublist()  allocnode(N_SUBLIST)
@@ -45,23 +49,6 @@
 #define make_whilecmd() allocnode(N_WHILE)
 #define make_varnode()  allocnode(N_VARASG)
 #define make_cond()     allocnode(N_COND)
-
-static void
-discard_input(void)
-{
-    errflag = 0;
-    if (isnewlin <= 0) {
-	/* Discard remaining stuff after a parse error. */
-	int c;
-
-	hwbegin(0);
-	while ((c = hgetc()) != '\n' && !lexstop);
-	if (c == '\n')
-	    hungetc('\n');
-	hwend();
-    }
-    errflag = 1;
-}
 
 /*
  * event	: ENDINPUT
@@ -92,7 +79,7 @@ par_event(void)
     }
     if (tok == ENDINPUT)
 	return NULL;
-    if ((sl = par_sublist()))
+    if ((sl = par_sublist())) {
 	if (tok == ENDINPUT) {
 	    l = (List) make_list();
 	    l->type = Z_SYNC;
@@ -115,13 +102,16 @@ par_event(void)
 	    yylex();
 	} else
 	    l = NULL;
+    }
     if (!l) {
 	if (errflag) {
-	    yyerror();
+	    yyerror(0);
 	    return NULL;
 	}
-	yyerror();
-	discard_input();
+	yyerror(1);
+	herrflush();
+	if (noerrs != 2)
+	    errflag = 1;
 	return NULL;
     } else {
 	l->right = par_event();
@@ -140,7 +130,7 @@ parse_list(void)
     yylex();
     ret = par_list();
     if (tok == LEXERR) {
-	yyerror();
+	yyerror(0);
 	return NULL;
     }
     return ret;
@@ -159,7 +149,7 @@ par_list(void)
 
     while (tok == SEPER)
 	yylex();
-    if ((sl = par_sublist()))
+    if ((sl = par_sublist())) {
 	if (tok == SEPER || tok == AMPER || tok == AMPERBANG) {
 	    l = (List) make_list();
 	    l->left = sl;
@@ -175,6 +165,7 @@ par_list(void)
 	    l->left = sl;
 	    l->type = Z_SYNC;
 	}
+    }
     return l;
 }
 
@@ -499,16 +490,12 @@ par_case(Cmd c)
 
 	while (tok == SEPER)
 	    yylex();
-	if (tok == OUTBRACE) {
-	    yylex();
+	if (tok == OUTBRACE)
 	    break;
-	}
 	if (tok != STRING)
 	    YYERRORV;
-	if (!strcmp(tokstr, "esac")) {
-	    yylex();
+	if (!strcmp(tokstr, "esac"))
 	    break;
-	}
 	str = tokstr;
 	incasepat = 0;
 	incmdpos = 1;
@@ -573,16 +560,17 @@ par_case(Cmd c)
 	addlinknode(pats, str);
 	addlinknode(lists, par_list());
 	n++;
-	if ((tok == ESAC && !brflag) || (tok == OUTBRACE && brflag)) {
-	    yylex();
+	if ((tok == ESAC && !brflag) || (tok == OUTBRACE && brflag))
 	    break;
-	}
 	if (tok != DSEMI)
 	    YYERRORV;
 	incasepat = 1;
 	incmdpos = 0;
 	yylex();
     }
+
+    incmdpos = 1;
+    yylex();
 
     cc->pats = (char **)alloc((n + 1) * sizeof(char *));
 
@@ -827,6 +815,8 @@ par_subsh(Cmd c)
 void
 par_funcdef(Cmd c)
 {
+    int oldlineno = lineno;
+    lineno = 0;
     nocorrect = 1;
     incmdpos = 0;
     yylex();
@@ -849,13 +839,17 @@ par_funcdef(Cmd c)
     if (tok == INBRACE) {
 	yylex();
 	c->u.list = par_list();
-	if (tok != OUTBRACE)
+	if (tok != OUTBRACE) {
+	    lineno += oldlineno;
 	    YYERRORV;
+	}
 	yylex();
     } else if (unset(SHORTLOOPS)) {
+	lineno += oldlineno;
 	YYERRORV;
     } else
 	c->u.list = par_list1();
+    lineno += oldlineno;
 }
 
 /*
@@ -944,6 +938,8 @@ par_simple(Cmd c)
 	} else if (IS_REDIROP(tok)) {
 	    par_redir(c->redir);
 	} else if (tok == INOUTPAR) {
+	    int oldlineno = lineno;
+	    lineno = 0;
 	    incmdpos = 1;
 	    cmdpush(CS_FUNCDEF);
 	    yylex();
@@ -954,6 +950,7 @@ par_simple(Cmd c)
 		c->u.list = par_list();
 		if (tok != OUTBRACE) {
 		    cmdpop();
+		    lineno += oldlineno;
 		    YYERROR;
 		}
 		yylex();
@@ -961,6 +958,7 @@ par_simple(Cmd c)
 		c->u.list = (List) expandstruct((struct node *) par_cmd(), N_LIST);
 	    cmdpop();
 	    c->type = FUNCDEF;
+	    lineno += oldlineno;
 	} else
 	    break;
 	isnull = 0;
@@ -1094,13 +1092,14 @@ par_cond_2(void)
 	condlex();
 	return c;
     }
-    if (tok != STRING)
+    if (tok != STRING) {
 	if (tok && tok != LEXERR && condlex == testlex) {
 	    s1 = tokstr;
 	    condlex();
 	    return par_cond_double("-n", s1);
 	} else
 	    YYERROR;
+    }
     s1 = tokstr;
     if (condlex == testlex)
 	dble = (*s1 == '-' && strspn(s1+1, "abcdefghknoprstuwxzLONGS") == 1
@@ -1120,7 +1119,7 @@ par_cond_2(void)
 	c->ntype = NT_SET(N_COND, 1, NT_STR, NT_STR, 0, 0);
 	return c;
     }
-    if (tok != STRING)
+    if (tok != STRING) {
 	if (tok != LEXERR && condlex == testlex) {
 	    if (!dble)
 		return par_cond_double("-n", s1);
@@ -1128,6 +1127,7 @@ par_cond_2(void)
 		return par_cond_double(s1, "1");
 	} else
 	    YYERROR;
+    }
     s2 = tokstr;
     incond++;			/* parentheses do globbing */
     condlex();
@@ -1300,7 +1300,7 @@ par_cond_triple(char *a, char *b, char *c)
 
 /**/
 void
-yyerror(void)
+yyerror(int noerr)
 {
     int t0;
 
@@ -1308,9 +1308,11 @@ yyerror(void)
 	if (!yytext || !yytext[t0] || yytext[t0] == '\n')
 	    break;
     if (t0 == 20)
-	zerr("parse error near `%l...'", yytext, 20);
+	zwarn("parse error near `%l...'", yytext, 20);
     else if (t0)
-	zerr("parse error near `%l'", yytext, t0);
+	zwarn("parse error near `%l'", yytext, t0);
     else
-	zerr("parse error", NULL, 0);
+	zwarn("parse error", NULL, 0);
+    if (!noerr && noerrs != 2)
+	errflag = 1;
 }

@@ -1,6 +1,4 @@
 /*
- * $Id: cond.c,v 2.6 1996/10/15 20:16:35 hzoli Exp $
- *
  * cond.c - evaluate conditional expressions
  *
  * This file is part of zsh, the Z shell.

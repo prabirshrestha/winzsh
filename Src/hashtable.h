@@ -1,6 +1,4 @@
 /*
- * $Id: hashtable.h,v 2.30 1996/10/15 20:16:35 hzoli Exp $
- *
  * hashtable.h - header file for hash table handling code
  *
  * This file is part of zsh, the Z shell.
@@ -290,7 +288,7 @@ struct builtin builtins[] =
     {NULL, "disown", 0, bin_fg, 0, -1, BIN_DISOWN, NULL, NULL},
     {NULL, "echo", BINF_PRINTOPTS | BINF_ECHOPTS, bin_print, 0, -1, BIN_ECHO, "neE", "-"},
     {NULL, "echotc", 0, bin_echotc, 1, -1, 0, NULL, NULL},
-    {NULL, "emulate", 0, bin_emulate, 1, 1, 0, "R", NULL},
+    {NULL, "emulate", 0, bin_emulate, 1, 1, 0, "LR", NULL},
     {NULL, "enable", 0, bin_enable, 0, -1, BIN_ENABLE, "afmr", NULL},
     {NULL, "eval", BINF_PSPECIAL, bin_eval, 0, -1, BIN_EVAL, NULL, NULL},
     {NULL, "exit", BINF_PSPECIAL, bin_break, 0, 1, BIN_EXIT, NULL, NULL},

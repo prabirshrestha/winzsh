@@ -1,6 +1,4 @@
 /*
- * $Id: input.c,v 2.11 1996/10/15 20:16:35 hzoli Exp $
- *
  * input.c - read and store lines of input
  *
  * This file is part of zsh, the Z shell.
@@ -78,8 +76,6 @@ static char *inbufpush;		/* Character at which to re-push alias */
 static int inbufleft;		/* Characters left in current input
 				   stack element */
 
-static int lastc;		/* used as flag that end of line was reached */
-
 
  /* Input must be stacked since the input queue is used by
   * various different parts of the shell.
@@ -154,14 +150,18 @@ shingetline(void)
 int
 ingetc(void)
 {
+    int lastc;
+
     if (lexstop)
-	return lastc = ' ';
+	return ' ';
     for (;;) {
 	if (inbufleft) {
 	    inbufleft--;
 	    inbufct--;
 	    if (itok(lastc = STOUC(*inbufptr++)))
 		continue;
+	    if (((inbufflags & INP_LINENO) || !strin) && lastc == '\n')
+		lineno++;
 	    return lastc;
 	}
 
@@ -178,11 +178,11 @@ ingetc(void)
 	 */
 	if (strin || errflag) {
 	    lexstop = 1;
-	    return lastc = ' ';
+	    return ' ';
 	}
 	/* As a last resort, get some more input */
 	if (inputline())
-	    return lastc = ' ';
+	    return ' ';
     }
 }
 
@@ -195,7 +195,7 @@ inputline(void)
     unsigned char *ingetcline, *ingetcpmptl = NULL, *ingetcpmptr = NULL;
 
     /* If reading code interactively, work out the prompts. */
-    if (interact && isset(SHINSTDIN))
+    if (interact && isset(SHINSTDIN)) {
 	if (!isfirstln)
 	    ingetcpmptl = (unsigned char *)prompt2;
 	else {
@@ -203,6 +203,7 @@ inputline(void)
 	    if (rprompt)
 		ingetcpmptr = (unsigned char *)rprompt;
 	}
+    }
     if (!(interact && isset(SHINSTDIN) && SHTTY != -1 && isset(USEZLE))) {
 	/*
 	 * If not using zle, read the line straight from the input file.
@@ -224,8 +225,20 @@ inputline(void)
 	    free(pptbuf);
 	}
 	ingetcline = (unsigned char *)shingetline();
-    } else
+    } else {
+	/*
+	 * Since we may have to read multiple lines before getting
+	 * a complete piece of input, we tell zle not to restore the
+	 * original tty settings after reading each chunk.  Instead,
+	 * this is done when the history mechanism for the current input
+	 * terminates, which is not until we have the whole input.
+	 * This is supposed to minimise problems on systems that clobber
+	 * typeahead when the terminal settings are altered.
+	 *                     pws 1998/03/12
+	 */	
+	histdone |= HISTFLAG_SETTY;
 	ingetcline = zleread((char *)ingetcpmptl, (char *)ingetcpmptr);
+    }
     if (!ingetcline) {
 	return lexstop = 1;
     }
@@ -241,23 +254,20 @@ inputline(void)
 	zputs((char *)ingetcline, stderr);
 	fflush(stderr);
     }
-    if (*ingetcline && ingetcline[strlen((char *)ingetcline) - 1] == '\n') {
-	/* We've now read a complete line. */
-	lineno++;
-	if (interact && isset(SUNKEYBOARDHACK) && isset(SHINSTDIN) &&
-	    SHTTY != -1 && *ingetcline && ingetcline[1] &&
-	    ingetcline[strlen((char *)ingetcline) - 2] == '`') {
-	    /* Junk an unmatched "`" at the end of the line. */
-	    int ct;
-	    unsigned char *ptr;
+    if (*ingetcline && ingetcline[strlen((char *)ingetcline) - 1] == '\n' &&
+	interact && isset(SUNKEYBOARDHACK) && isset(SHINSTDIN) &&
+	SHTTY != -1 && *ingetcline && ingetcline[1] &&
+	ingetcline[strlen((char *)ingetcline) - 2] == '`') {
+	/* Junk an unmatched "`" at the end of the line. */
+	int ct;
+	unsigned char *ptr;
 
-	    for (ct = 0, ptr = ingetcline; *ptr; ptr++)
-		if (*ptr == '`')
-		    ct++;
-	    if (ct & 1) {
-		ptr[-2] = '\n';
-		ptr[-1] = '\0';
-	    }
+	for (ct = 0, ptr = ingetcline; *ptr; ptr++)
+	    if (*ptr == '`')
+		ct++;
+	if (ct & 1) {
+	    ptr[-2] = '\n';
+	    ptr[-1] = '\0';
 	}
     }
     isfirstch = 1;
@@ -321,6 +331,8 @@ inungetc(int c)
 	    inbufptr--;
 	    inbufct++;
 	    inbufleft++;
+	    if (((inbufflags & INP_LINENO) || !strin) && c == '\n')
+		lineno--;
 	}
 #ifdef DEBUG
         else if (!(inbufflags & INP_CONT)) {
@@ -368,7 +380,7 @@ stuff(char *fn)
 {
     FILE *in;
     char *buf;
-    int len;
+    off_t len;
 
     if (!(in = fopen(unmeta(fn), "r"))) {
 	zerr("can't open %s", fn, 0);
@@ -403,7 +415,7 @@ inerrflush(void)
      * it is only used in the history code, where that is the only
      * completely safe way of discarding input.
      */
-    while ((strin || lastc != '\n') && !lexstop)
+    while (!lexstop && inbufct)
 	ingetc();
 }
 

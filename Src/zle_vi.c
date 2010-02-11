@@ -1,6 +1,4 @@
 /*
- * $Id: zle_vi.c,v 2.11 1996/10/15 20:16:35 hzoli Exp $
- *
  * zle_vi.c - vi-specific functions
  *
  * This file is part of zsh, the Z shell.
@@ -507,6 +505,7 @@ viopenlinebelow(void)
     spaceinline(1);
     line[cs++] = '\n';
     startvitext(1);
+    clearlist = 1;
 }
 
 /**/
@@ -517,6 +516,7 @@ viopenlineabove(void)
     spaceinline(1);
     line[cs] = '\n';
     startvitext(1);
+    clearlist = 1;
 }
 
 /**/
@@ -537,9 +537,7 @@ vioperswapcase(void)
 		line[cs] = tulower(line[cs]);
 	    cs++;
 	}
-	/* go back to the first line of the range */
 	cs = oldcs;
-	vifirstnonblank();
     }
     vichgflag = vilinerange = 0;
 }
@@ -784,6 +782,7 @@ viswapcase(void)
 void
 vicapslockpanic(void)
 {
+    clearlist = 1;
     feep();
     statusline = "press a lowercase key to continue";
     statusll = strlen(statusline);

@@ -1,6 +1,4 @@
 /*
- * $Id: prototypes.h,v 2.5 1996/10/15 20:16:35 hzoli Exp $
- *
  * prototypes.h - prototypes header file
  *
  * This file is part of zsh, the Z shell.

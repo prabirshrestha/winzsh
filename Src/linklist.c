@@ -1,6 +1,4 @@
 /*
- * $Id: linklist.c,v 2.3 1996/10/15 20:16:35 hzoli Exp $
- *
  * linklist.c - linked lists
  *
  * This file is part of zsh, the Z shell.

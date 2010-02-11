@@ -1,6 +1,4 @@
 /*
- * $Id: zle.h,v 2.10 1996/10/15 20:16:35 hzoli Exp $
- *
  * zle.h - header file for line editor
  *
  * This file is part of zsh, the Z shell.
@@ -449,6 +447,7 @@ enum {
 };
 
 extern struct zlecmd zlecmds[] ;
+
 #if defined (WINNT)
 #ifndef ZLEGLOBALS
 #undef INIT_ZERO

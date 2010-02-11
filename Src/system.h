@@ -1,6 +1,4 @@
 /*
- * $Id: system.h,v 2.7 1996/10/15 20:16:35 hzoli Exp $
- *
  * system.h - system configuration header file
  *
  * This file is part of zsh, the Z shell.
@@ -390,9 +388,10 @@ struct timezone {
 #endif
 
 /* DIGBUFSIZ is the length of a buffer which can hold the -LONG_MAX-1 *
+ * (or, with 64-bit support on 32-bit systems, maybe -LONG_LONG_MAX-1) *
  * converted to printable decimal form including the sign and the     *
  * terminating null character. Below 0.30103 > lg 2.                  */
-#define DIGBUFSIZE ((int) (((SIZEOF_LONG * 8) - 1) * 0.30103) + 3)
+#define DIGBUFSIZE ((int) (((SIZEOF_ZLONG * 8) - 1) * 0.30103) + 3)
 
 /* If your stat macros are broken, we will *
  * just undefine them.                     */
@@ -487,3 +486,14 @@ extern char PC, *BC, *UP;
 extern short ospeed;
 #endif
 
+/* Rename some global zsh variables to avoid *
+ * possible name clashes with libc, etc.     */
+
+#define cs zshcs
+#define ll zshll
+#define setterm zsetterm
+#define refresh zrefresh
+
+#ifndef O_NOCTTY
+# define O_NOCTTY 0
+#endif

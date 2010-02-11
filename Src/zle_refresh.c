@@ -1,6 +1,4 @@
 /*
- * $Id: zle_refresh.c,v 2.19 1996/10/15 20:16:35 hzoli Exp $
- *
  * zle_refresh.c - screen update
  *
  * This file is part of zsh, the Z shell.
@@ -222,6 +220,28 @@ refresh(void)
     if (inlist)
 	return;
 
+    if (clearlist && listshown) {
+	if (tccan(TCCLEAREOD)) {
+	    int ovln = vln, ovcs = vcs;
+	    char *nb = nbuf[vln];
+
+	    nbuf[vln] = obuf[vln];
+	    moveto(nlnct, 0);
+	    tcout(TCCLEAREOD);
+	    moveto(ovln, ovcs);
+	    nbuf[vln] = nb;
+	} else {
+	    invalidatelist();
+	    moveto(0, 0);
+	    clearflag = 0;
+	    resetneeded = 1;
+	}
+	listshown = 0;
+	if (showinglist != -2)
+	    showinglist = 0;
+    }
+    clearlist = 0;
+
 #ifdef HAVE_SELECT
     cost = 0;			/* reset */
 #endif
@@ -249,6 +269,7 @@ refresh(void)
 	    moveto(0, 0);
 	    t0 = olnct;		/* this is to clear extra lines even when */
 	    winchanged = 0;	/* the terminal cannot TCCLEAREOD	  */
+	    listshown = 0;
 	}
 #endif /* TIOCGWINSZ || WINNT */
 	resetvideo();
@@ -260,11 +281,13 @@ refresh(void)
 	tsetcap(TCSTANDOUTEND, 0);
 	tsetcap(TCUNDERLINEEND, 0);
 
-        if (!clearflag)
+        if (!clearflag) {
             if (tccan(TCCLEAREOD))
                 tcout(TCCLEAREOD);
             else
                 cleareol = 1;   /* request: clear to end of line */
+	    listshown = 0;
+	}
         if (t0 > -1)
             olnct = t0;
         if (termflags & TERM_SHORT)
@@ -424,7 +447,7 @@ refresh(void)
     /* if old line and new line are different,
        see if we can insert/delete a line to speed up update */
 
-	if (ln < olnct - 1 && !(hasam && vcs == winw) &&
+	if (ln > 0 && ln < olnct - 1 && !(hasam && vcs == winw) &&
 	    nbuf[ln] && obuf[ln] &&
 	    strncmp(nbuf[ln], obuf[ln], 16)) {
 	    if (tccan(TCDELLINE) && obuf[ln + 1] && obuf[ln + 1][0] &&
@@ -794,7 +817,7 @@ moveto(int ln, int cl)
    instead of TCDOWN */
 
     while (ln > vln) {
-	if (vln < vmaxln - 1)
+	if (vln < vmaxln - 1) {
 	    if (ln > vmaxln - 1) {
 		if (tc_downcurs(vmaxln - 1 - vln))
 		    vcs = 0;
@@ -805,6 +828,7 @@ moveto(int ln, int cl)
 		vln = ln;
 		continue;
 	    }
+	}
 	zputc('\r', shout), vcs = 0; /* safety precaution */
 	while (ln > vln) {
 	    zputc('\n', shout);
@@ -812,20 +836,8 @@ moveto(int ln, int cl)
 	}
     }
 
-    if (cl == vcs)
-	return;
-
-/* choose cheapest movements for ttys without multiple movement capabilities -
-   do this now because it's easier (to code) */
-    if (cl <= vcs / 2) {
-	zputc('\r', shout);
-	vcs = 0;
-    }
-    if (vcs < cl)
-	tc_rightcurs(cl);
-    else if (vcs > cl)
-	tc_leftcurs(vcs - cl);
-    vcs = cl;
+    if (cl != vcs)
+       singmoveto(cl);
 }
 
 /**/
@@ -843,16 +855,17 @@ tcmultout(int cap, int multcap, int ct)
     return 0;
 }
 
+/* ct: number of characters to move across */
 /**/
 void
-tc_rightcurs(int cl)
+tc_rightcurs(int ct)
 {
-    int ct,			/* number of characters to move across	    */
+    int cl,			/* ``desired'' absolute horizontal position */
 	i = vcs,		/* cursor position after initial movements  */
 	j;
     char *t;
 
-    ct = cl - vcs;
+    cl = ct + vcs;
 
 /* do a multright if we can - it's the most reliable */
     if (tccan(TCMULTRIGHT)) {
@@ -860,6 +873,13 @@ tc_rightcurs(int cl)
 	return;
     }
 
+/* do an absolute horizontal position if we can */
+    if (tccan(TCHORIZPOS)) {
+	tcoutarg(TCHORIZPOS, cl);
+	return;
+    }
+
+/* XXX: should really check "it" in termcap and use / and % */
 /* try tabs if tabs are non destructive and multright is not possible */
     if (!oxtabs && tccan(TCNEXTTAB) && ((vcs | 7) < cl)) {
 	i = (vcs | 7) + 1;
@@ -1064,23 +1084,21 @@ singmoveto(int pos)
 {
     if (pos == vcs)
 	return;
-    if (pos <= vcs / 2) {
+
+/* choose cheapest movements for ttys without multiple movement capabilities -
+   do this now because it's easier (to code) */
+
+    if ((!tccan(TCMULTLEFT) || pos == 0) && (pos <= vcs / 2)) {
 	zputc('\r', shout);
 	vcs = 0;
     }
-    if (pos < vcs) {
+
+    if (pos < vcs)
 	tc_leftcurs(vcs - pos);
+    else if (pos > vcs)
+	tc_rightcurs(pos - vcs);
+
 	vcs = pos;
-    }
-    if (pos > vcs) {
-	if (tcmultout(TCRIGHT, TCMULTRIGHT, pos - vcs))
-	    vcs = pos;
-	else
-	    while (pos > vcs) {
-		zputc(nbuf[0][vcs], shout);
-		vcs++;
-	    }
-    }
 }
 
 /* generate left and right prompts */

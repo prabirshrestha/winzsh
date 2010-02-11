@@ -1,6 +1,4 @@
 /*
- * $Id: loop.c,v 2.4 1996/10/15 20:16:35 hzoli Exp $
- *
  * loop.c - loop execution
  *
  * This file is part of zsh, the Z shell.
@@ -40,8 +38,6 @@ execfor(Cmd cmd)
     char *str;
     LinkList args;
 
-    loops++;
-    lastval = 0;
     node = cmd->u.forcmd;
     args = cmd->args;
     if (!node->inflag) {
@@ -51,6 +47,8 @@ execfor(Cmd cmd)
 	for (x = pparams; *x; x++)
 	    addlinknode(args, ztrdup(*x));
     }
+    lastval = 0;
+    loops++;
     pushheap();
     while ((str = (char *)ugetnode(args))) {
 	setsparam(node->name, ztrdup(str));

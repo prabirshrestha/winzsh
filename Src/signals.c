@@ -1,6 +1,4 @@
 /*
- * $Id: signals.c,v 2.24 1996/10/15 20:16:35 hzoli Exp $
- *
  * signals.c - signals handling code
  *
  * This file is part of zsh, the Z shell.
@@ -567,7 +565,10 @@ killjb(Job jn, int sig)
  
                 for (pn = jn->procs; pn->next; pn = pn->next)
                     err = kill(pn->pid, sig);
- 
+
+		if (!jobtab[jn->other].procs && pn)
+		    err = kill(pn->pid, sig);
+
                 return err;
             }
  

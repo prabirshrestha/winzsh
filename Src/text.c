@@ -1,6 +1,4 @@
 /*
- * $Id: text.c,v 2.6 1996/10/15 20:16:35 hzoli Exp $
- *
  * text.c - textual representations of syntax trees
  *
  * This file is part of zsh, the Z shell.

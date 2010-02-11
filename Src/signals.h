@@ -1,6 +1,4 @@
 /*
- * $Id: signals.h,v 2.4 1996/10/15 20:16:35 hzoli Exp $
- *
  * signals.h - header file for signals handling code
  *
  * This file is part of zsh, the Z shell.

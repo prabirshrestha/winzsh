@@ -1,6 +1,4 @@
 /*
- * $Id: zle_tricky.c,v 2.82 1996/10/24 10:02:00 hzoli Exp $
- *
  * zle_tricky.c - expansion and completion
  *
  * This file is part of zsh, the Z shell.
@@ -189,10 +187,9 @@ static int shortl, fshortl;
 
 static int amenu;
 
-/* This is used by expandorcompleteprefix to save the position of the *
- * inserted space (so that we can remove it later).                   */
+/* Non-zero if we have to redisplay the list of matches. */
 
-static int remove_at = -1;
+static int showagain = 0;
 
 #ifdef WINNT
 /**/
@@ -522,6 +519,10 @@ docomplete(int lst)
     char *s, *ol;
     int olst = lst, chl = 0, ne = noerrs, ocs;
 
+    if (showagain && validlist)
+	showinglist = -2;
+    showagain = 0;
+
     /* If we are doing a menu-completion... */
 
     if (menucmp && lst != COMP_LIST_EXPAND) {
@@ -606,7 +607,8 @@ docomplete(int lst)
 	    if (*q == Equals) {
 		/* The word starts with `=', see if we can expand it. */
 		q = s + 1;
-		if (cmdnamtab->getnode(cmdnamtab, q) || hashcmd(q, pathchecked))
+		if (cmdnamtab->getnode(cmdnamtab, q) ||
+		    hashcmd(q, pathchecked)) {
 		    if (isset(RECEXACT))
 			lst = COMP_EXPAND;
 		    else {
@@ -617,7 +619,8 @@ docomplete(int lst)
 			for (t0 = cmdnamtab->hsize - 1; t0 >= 0; t0--)
 			    for (hn = cmdnamtab->nodes[t0]; hn;
 				 hn = hn->next) {
-				if (strpfx(q, hn->nam) && (fc = findcmd(hn->nam))) {
+				if (strpfx(q, hn->nam) &&
+				    (fc = findcmd(hn->nam))) {
 				    zsfree(fc);
 				    n++;
 				}
@@ -627,6 +630,7 @@ docomplete(int lst)
 
 			if (n == 1)
 			    lst = COMP_EXPAND;
+		    }
 		    }
 	    }
 	    if (lst == COMP_EXPAND_COMPLETE)
@@ -735,12 +739,14 @@ docomplete(int lst)
 		p = s;
 		if (*p == Tilde || *p == Equals)
 		    p++;
-		for (; *p; p++)
-		    if (itok(*p))
+		for (; *p; p++) {
+		    if (itok(*p)) {
 			if (*p != String && *p != Qstring)
 			    *p = ztokens[*p - Pound];
 			else if (p[1] == Inbrace)
 			    p++, skipparens(Inbrace, Outbrace, &p);
+		    }
+		}
 		docompletion(s, lst, lincmd, 1);
 	    }
 	} else
@@ -788,6 +794,9 @@ int addedx;
 /* 1 if we are completing in a string */
 int instring;
 
+/* 1 if we are completing the prefix */
+static int comppref;
+
 /* This function inserts an `x' in the command line at the cursor position. *
  *                                                                          *
  * Oh, you want to know why?  Well, if completion is tried somewhere on an  *
@@ -797,22 +806,34 @@ int instring;
  * command we are completing and such things).  So we temporarily add a `x' *
  * (any character without special meaning would do the job) at the cursor   *
  * position, than the lexer gives us the word `x' and its beginning and end *
- * positions and we can remove the `x'.                                     */
+ * positions and we can remove the `x'.                                     *
+ *									    *
+ * If we are just completing the prefix (comppref set), we also insert a    *
+ * space after the x to end the word.  We never need to remove the space:   *
+ * anywhere we are able to retrieve a word for completion it will be	    *
+ * discarded as whitespace.  It has the effect of making any suffix	    *
+ * referrable to as the next word on the command line when indexing	    *
+ * from a completion function.                                              */
 
 /**/
 void
 addx(char **ptmp)
 {
+    int addspace = 0;
+
     if (!line[cs] || line[cs] == '\n' ||
 	(iblank(line[cs]) && (!cs || line[cs-1] != '\\')) ||
 	line[cs] == ')' || line[cs] == '`' ||
-	(instring && (line[cs] == '"' || line[cs] == '\''))) {
+	(instring && (line[cs] == '"' || line[cs] == '\'')) ||
+	(addspace = (comppref && !iblank(line[cs])))) {
 	*ptmp = (char *)line;
-	line = (unsigned char *)halloc(strlen((char *)line) + 3);
+	line = (unsigned char *)halloc(strlen((char *)line) + 3 + addspace);
 	memcpy(line, *ptmp, cs);
 	line[cs] = 'x';
-	strcpy((char *)line + cs + 1, (*ptmp) + cs);
-	addedx = 1;
+	if (addspace)
+	    line[cs+1] = ' ';
+	strcpy((char *)line + cs + 1 + addspace, (*ptmp) + cs);
+	addedx = 1 + addspace;
     } else {
 	addedx = 0;
 	*ptmp = NULL;
@@ -976,7 +997,7 @@ get_comp_string(void)
 		tt = tokstr ? dupstring(tokstr) : NULL;
 		/* If we added a `x', remove it. */
 		if (addedx && tt)
-		    chuck(tt + cs - wb - 1);
+		    chuck(tt + cs - wb);
 		tt0 = tok;
 		/* Store the number of this word. */
 		clwpos = i;
@@ -984,7 +1005,8 @@ get_comp_string(void)
 		rd = linredir;
 		if (inwhat == IN_NOTHING && incond)
 		    inwhat = IN_COND;
-	    }
+	    } else if (linredir)
+		continue;
 	    if (!tokstr)
 		continue;
 	    /* We need to store the token strings of all words (for some of *
@@ -1010,8 +1032,8 @@ get_comp_string(void)
 	    /* If this is the word the cursor is in and we added a `x', *
 	     * remove it.                                               */
 	    if (clwpos == i++ && addedx)
-		chuck(&clwords[i - 1][((cs - wb - 1) >= sl) ?
-				     (sl - 1) : (cs - wb - 1)]);
+		chuck(&clwords[i - 1][((cs - wb) >= sl) ?
+				     (sl - 1) : (cs - wb)]);
 	} while (tok != LEXERR && tok != ENDINPUT &&
 		 (tok != SEPER || (zleparse && !tt0)));
 	/* Calculate the number of words stored in the clwords array. */
@@ -1024,19 +1046,21 @@ get_comp_string(void)
 	strinend();
 	inpop();
 	errflag = zleparse = 0;
-	if (addedx)
-	    wb++;
 	if (parbegin != -1) {
 	    /* We are in command or process substitution */
 	    if (parend >= 0 && !tmp)
 		line = (unsigned char *) dupstring(tmp = (char *)line);
 	    linptr = (char *) line + ll + addedx - parbegin + 1;
+
+	    if ((linptr - (char *) line) < 2 ||
+		linptr[-1] != '(' || linptr[-2] != '$') {
 	    if (parend >= 0) {
 		ll -= parend;
 		line[ll + addedx] = '\0';
 	    }
 	    lexrestore();
 	    goto start;
+	    }
 	}
 
 	if (inwhat == IN_MATH)
@@ -1068,13 +1092,14 @@ get_comp_string(void)
 	    we = ll;
 	tt = (char *)line;
 	if (tmp) {
+	    linptr += tmp - (char *) line;
 	    line = (unsigned char *)tmp;
 	    ll = strlen((char *)line);
+	    addedx = 0;
 	}
 	if (t0 != STRING && inwhat != IN_MATH) {
 	    if (tmp) {
 		tmp = NULL;
-		linptr = (char *)line;
 		lexrestore();
 		goto start;
 	    }
@@ -1234,9 +1259,9 @@ doexpansion(char *s, int lst, int olst, int explincmd)
 void
 gotword(void)
 {
-    we = ll + 1 - inbufct;
+    we = ll + 1 - inbufct + (addedx == 2 ? 1 : 0);
     if (cs <= we) {
-	wb = ll - wordbeg;
+	wb = ll - wordbeg + addedx;
 	zleparse = 0;
     }
 }
@@ -1255,8 +1280,6 @@ inststrlen(char *str, int move, int len)
 	len = strlen(str);
     spaceinline(len);
     strncpy((char *)(line + cs), str, len);
-    if (remove_at >= cs)
-        remove_at += len;
     if (move)
 	cs += len;
 }
@@ -1288,7 +1311,7 @@ quotename(const char *s, char **e, char *te, int *pl)
 			   *u == (char)bangchar) ||
 	     (instring == 2 &&
 	      (*u == '$' || *u == '`' || *u == '\"')) ||
-	     (instring == 1 && *u == '\'')))
+	     (instring == 1 && *u == '\''))) {
 	    if (*u == '\n' || (instring == 1 && *u == '\'')) {
 		if (unset(RCQUOTES)) {
 		    *v++ = '\'';
@@ -1303,6 +1326,7 @@ quotename(const char *s, char **e, char *te, int *pl)
 		continue;
 	    } else
 		*v++ = '\\';
+	}
 	if(*u == Meta)
 	    *v++ = *u++;
 	*v++ = *u;
@@ -1542,6 +1566,7 @@ addmatch(char *s, char *t)
 	    *bp = test;
 	if ((test = sfxlen(*fm, s)) < *ep)
 	    *ep = test;
+	if (*ep + *bp > *sp) *ep = *sp - *bp; /* TJA - add this below #endif? */
 #else
 	if ((test = isset(WINNTIGNORECASE)?pfxilen(*fm,s):pfxlen(*fm, s)) < *bp)
 	    *bp = test;
@@ -1842,7 +1867,7 @@ get_ccompctl(Compctl occ, int *compadd, int incmd)
 			    break;
 			case CCT_CURSUB:
 			case CCT_CURSUBC:
-			    if (clwpos < 0 || clwpos > clwnum)
+			    if (clwpos < 0 || clwpos >= clwnum)
 				t = 0;
 			    else {
 				a = getcpat(clwords[clwpos],
@@ -1880,7 +1905,7 @@ get_ccompctl(Compctl occ, int *compadd, int incmd)
 			case CCT_RANGEPAT:
 			    if (cc->type == CCT_RANGEPAT)
 				tokenize(sc = dupstring(cc->u.l.a[i]));
-			    for (j = clwpos; j; j--) {
+			for (j = clwpos - 1; j > 0; j--) {
 				untokenize(s = ztrdup(clwords[j]));
 				if (cc->type == CCT_RANGESTR)
 				    sc = rembslash(cc->u.l.a[i]);
@@ -1987,14 +2012,14 @@ void
 dumphashtable(HashTable ht, int what)
 {
     HashNode hn;
-    int i;
+    int i, aw = addwhat;
 
     addwhat = what;
 
     for (i = 0; i < ht->hsize; i++)
 	for (hn = ht->nodes[i]; hn; hn = hn->next)
 	    addmatch(hn->nam, (char *) hn);
-
+    addwhat = aw;
 }
 
 /* ScanFunc used by maketildelist() et al. */
@@ -2196,6 +2221,7 @@ docompletion(char *s, int lst, int incmd, int untokenized)
 	if(makecomplist(s, incmd, &delit, &compadd, untokenized)) {
 	    /* Error condition: feeeeeeeeeeeeep(). */
 	    feep();
+	    clearlist = 1;
 	    goto compend;
 	}
 
@@ -2265,7 +2291,7 @@ makecomplist(char *s, int incmd, int *delit, int *compadd, int untokenized)
 {
     Compctl cc = NULL;
     int oloffs = offs, owe = we, owb = wb, ocs = cs, oll = ll, isf = 1;
-    int t, sf1, sf2, ooffs;
+    int t, sf1, sf2, ooffs, um = usemenu;
     char *p, *sd = NULL, *tt, *s1, *s2, *os = NULL;
     unsigned char *ol = NULL;
 
@@ -2285,6 +2311,7 @@ makecomplist(char *s, int incmd, int *delit, int *compadd, int untokenized)
     if (unset(COMPLETEINWORD) && cs != we)
 	cs = we, offs = strlen(s);
 
+    usemenu = um;
     ispattern = haswhat = lastambig = 0;
     patcomp = filecomp = NULL;
     menucur = NULL;
@@ -2436,6 +2463,7 @@ makecomplist(char *s, int incmd, int *delit, int *compadd, int untokenized)
 	*delit = 1;
 	*s = '\0';
 	offs = 0;
+	if (isset(AUTOMENU)) usemenu = 1;
     } else
 	*delit = 0;
 
@@ -2864,7 +2892,8 @@ makecomplist(char *s, int incmd, int *delit, int *compadd, int untokenized)
 	char *j, *jj;
 
 	for (i = 0; i < MAXJOB; i++)
-	    if (jobtab[i].stat & STAT_INUSE) {
+	    if ((jobtab[i].stat & STAT_INUSE) &&
+		jobtab[i].procs && jobtab[i].procs->text) {
 		int stopped = jobtab[i].stat & STAT_STOPPED;
 
 		j = jj = dupstring(jobtab[i].procs->text);
@@ -3205,7 +3234,7 @@ void
 do_ambiguous(void)
 {
     int p = (usemenu || ispattern), atend = (cs == we);
-    int inv = 0;
+    int inv = 0, am = 0;
 
     menucmp = 0;
 
@@ -3247,14 +3276,22 @@ do_ambiguous(void)
 	    inststrlen(firstm + strlen(firstm) - ae, 0, ae);
 	if(ab || (ae && !atend))
 	    inv = 1;
+
+	/* If REC_EXACT and AUTO_MENU are set and what we inserted is an   *
+	 * exact match, we want to start menu completion now. Otherwise    *
+	 * on the next call to completion the inserted string would be     *
+	 * taken as a match and no menu completion would be started.       */
+	if (isset(RECEXACT) && (atend ? ab : ab + ae) == shortl) am = 1;
+
 	/* If the LIST_AMBIGUOUS option (meaning roughly `show a list only *
 	 * if the completion is completely ambiguous') is set, and some    *
 	 * prefix was inserted, return now, bypassing the list-displaying  *
 	 * code.  On the way, invalidate the list and note that we don't   *
 	 * want to enter an AUTO_MENU imediately.                          */
-	if(isset(LISTAMBIGUOUS) && inv) {
+	if(isset(LISTAMBIGUOUS) && inv && !am) {
 	    invalidatelist();
 	    lastambig = 0;
+	    clearlist = 1;
 	    return;
 	}
     }
@@ -3266,6 +3303,7 @@ do_ambiguous(void)
 	showinglist = -2;
     if(inv)
 	invalidatelist();
+    if (am) lastambig = 1;
 }
 
 /* This is a stat that ignores backslashes in the filename.  The `ls' *
@@ -3458,7 +3496,8 @@ do_single(char *str)
 	    menuend = ll;
 	if (menuend && ((((char)line[menuend - 1]) != singlec) ||
 	    (menuend > 1 && singlec == ' ' &&
-	      (line[menuend - 2] == '\\' || line[menuend - 2] == STOUC(Meta)))))
+	     (line[menuend - 2] == '\\' ||
+	      line[menuend - 2] == STOUC(Meta))))) {
 	    if (parampre && singlec == '/' && ((char)line[menuend]) == '/')
 		addedsuffix = 0;
 	    /* Now insert the slash or space if there is none already. */
@@ -3473,6 +3512,7 @@ do_single(char *str)
 		if (!menuwe)
 		    cs = ccs;
 	    }
+    }
     }
     /* Move to the end of the word if requested. */
     if (isset(ALWAYSTOEND) || menuwe)
@@ -3689,21 +3729,11 @@ listmatches(void)
     nboff = ispattern && psuf && *psuf &&
 	!(haswhat & (HAS_MISC | HAS_PATHPAT)) ? niceztrlen(psuf) : 0;
 
-    /* When called from expandorcompleteprefix, we probably have to
-       remove a space now. */
-    if (remove_at >= 0) {
-	int ocs = cs;
-
-	cs = remove_at;
-	deletechar();
-	remove_at = -1;
-	cs = ocs;
-    }
-
     /* Set the cursor below the prompt. */
+    ll = strlen(line);
     trashzle();
     ct = nmatches;
-    showinglist = 0;
+    showinglist = listshown = 0;
 
     clearflag = (isset(USEZLE) && !termflags &&
 		 (isset(ALWAYSLASTPROMPT) && !gotmult)) ||
@@ -3805,7 +3835,6 @@ listmatches(void)
                                 (prpre && *prpre) ? prpre : "./", *ap);
                     } else
 #endif /* WINNT */
-		    {
 			nicezputs(fpre, shout);
 			nicezputs(*ap, shout);
 			nicezputs(fsuf, shout);
@@ -3814,7 +3843,6 @@ listmatches(void)
 				     strlen(fpre) + strlen(*ap) + strlen(fsuf));
 			sprintf(pb, "%s%s%s%s",
 			    (prpre && *prpre) ? prpre : "./", fpre, *ap, fsuf);
-		    }
 		}
 		if (ztat(pb, &buf, 1))
 		    putc(' ', shout);
@@ -3872,14 +3900,16 @@ listmatches(void)
 	if (t1 != colsz - 1 || !clearflag)
 	    putc('\n', shout);
     }
-    if (clearflag)
+    if (clearflag) {
 	/* Move the cursor up to the prompt, if always_last_prompt *
 	 * is set and all that...                                  */
 	if (up < lines) {
 	    tcmultout(TCUP, TCMULTUP, up);
 	    showinglist = -1;
+	    listshown = 1;
 	} else
 	    clearflag = 0, putc('\n', shout);
+    }
 }
 
 /* This is used to print expansions. */
@@ -3893,6 +3923,9 @@ listlist(LinkList l)
     int nm = nmatches, vl = validlist;
     char **am = amatches;
     char *ex = expl;
+
+    if (listshown)
+	showagain = 1;
 
     haswhat = HAS_MISC;
     ispattern = 0;
@@ -4162,26 +4195,7 @@ expandcmdpath(void)
 void
 expandorcompleteprefix(void)
 {
-    /* global c is the current character typed. */
-    int csafe = c;
-
-    /* insert a space and backspace. */
-    c = ' ';
-    selfinsert();		/* insert the extra character */
-    forwardchar();		/* move towards beginning */
-    
-    remove_at = cs;
-
-    /* do the expansion/completion. */
-    c = csafe;
-    zmult = 1;
-    expandorcomplete();		/* complete. */
-    zmult = -1;
-
-    /* remove the inserted space. */
-    if (remove_at >= 0) {
-	backwardchar();		/* move towards ends */
-	deletechar();		/* delete the added space. */
-    }
-    remove_at = -1;
+    comppref = 1;
+    expandorcomplete();
+    comppref = 0;
 }

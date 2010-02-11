@@ -1,6 +1,4 @@
 /*
- * $Id: params.c,v 2.41 1996/10/15 20:16:35 hzoli Exp $
- *
  * params.c - parameters
  *
  * This file is part of zsh, the Z shell.
@@ -73,7 +71,7 @@ createparamtable(void)
 
     argvparam = (Param) paramtab->getnode(paramtab, "*");
 
-    noerrs = 1;
+    noerrs = 2;
 
     HEAPALLOC {
 	int allexp = opts[ALLEXPORT];
@@ -284,15 +282,13 @@ isident(char *s)
     return 1;
 }
 
-char **garr;
-
 /**/
-long
-getarg(char **str, int *inv, Value v, int a2, long *w)
+zlong
+getarg(char **str, int *inv, Value v, int a2, zlong *w)
 {
-    int num = 1, word = 0, rev = 0, ind = 0, down = 0, l, i;
+    int word = 0, rev = 0, ind = 0, down = 0, l, i;
     char *s = *str, *sep = NULL, *t, sav, *d, **ta, **p, *tt;
-    long r = 0;
+    zlong num = 1, r = 0;
     Comp c;
 
     /* first parse any subscription flags */
@@ -406,7 +402,7 @@ getarg(char **str, int *inv, Value v, int a2, long *w)
 		return 0;
 
 	    if (!a2 && *tt != ',')
-		*w = (long)(s - t) - 1;
+		*w = (zlong)(s - t) - 1;
 
 	    return (a2 ? s : d + 1) - t;
 	} else if (!v->isarr && !word) {
@@ -476,7 +472,7 @@ getarg(char **str, int *inv, Value v, int a2, long *w)
 		    r++;
 		for (i = 0; (t = findword(&d, sep)) && *t; i++)
 		    if (!--r) {
-			r = (long)(t - s + (a2 ? -1 : 1));
+			r = (zlong)(t - s + (a2 ? -1 : 1));
 			if (!a2 && *tt != ',')
 			    *w = r + strlen(ta[i]) - 2;
 			return r;
@@ -543,7 +539,7 @@ getindex(char **pptr, Value v)
 	v->b = -1;
 	s += 2;
     } else {
-	long we = 0, dummy;
+	zlong we = 0, dummy;
 
 	a = getarg(&s, &inv, v, 0, &we);
 
@@ -608,17 +604,16 @@ getvalue(char **pptr, int bracks)
     int ppar = 0;
 
     s = t = *pptr;
-    garr = NULL;
 
-    if (idigit(*s))
+    if (idigit(*s)) {
 	if (bracks >= 0)
 	    ppar = zstrtol(s, &s, 10);
 	else
 	    ppar = *s++ - '0';
-    else if (iident(*s))
+    } else if (iident(*s)) {
 	while (iident(*s))
 	    s++;
-    else if (*s == Quest)
+    } else if (*s == Quest)
 	*s++ = '?';
     else if (*s == Pound)
 	*s++ = '#';
@@ -690,7 +685,7 @@ char *
 getstrvalue(Value v)
 {
     char *s, **ss;
-    static char buf[(SIZEOF_LONG * 8) + 4];
+    static char buf[(SIZEOF_ZLONG * 8) + 4];
 
     if (!v)
 	return hcalloc(1);
@@ -724,8 +719,9 @@ getstrvalue(Value v)
 	    break;
 	}
 
-	if (v->a == 0 && v->b == -1)
+	if (v->a == 0 && v->b == -1) {
 	    LASTALLOC_RETURN s;
+	}
 	if (v->a < 0)
 	    v->a += strlen(s);
 	if (v->b < 0)
@@ -776,7 +772,7 @@ getarrvalue(Value v)
 }
 
 /**/
-long
+zlong
 getintvalue(Value v)
 {
     if (!v || v->isarr)
@@ -792,7 +788,7 @@ getintvalue(Value v)
 void
 setstrvalue(Value v, char *val)
 {
-    char buf[(SIZEOF_LONG * 8) + 4];
+    char buf[(SIZEOF_ZLONG * 8) + 4];
 
     if (v->pm->flags & PM_READONLY) {
 	zerr("read-only variable: %s", v->pm->nam, 0);
@@ -870,7 +866,7 @@ setstrvalue(Value v, char *val)
 
 /**/
 void
-setintvalue(Value v, long val)
+setintvalue(Value v, zlong val)
 {
     char buf[DIGBUFSIZE];
 
@@ -881,7 +877,7 @@ setintvalue(Value v, long val)
     switch (PM_TYPE(v->pm->flags)) {
     case PM_SCALAR:
     case PM_ARRAY:
-	sprintf(buf, "%ld", val);
+	convbase(buf, val, 0);
 	setstrvalue(v, ztrdup(buf));
 	break;
     case PM_INTEGER:
@@ -947,7 +943,7 @@ setarrvalue(Value v, char **val)
 /* Retrieve an integer parameter */
 
 /**/
-long
+zlong
 getiparam(char *s)
 {
     Value v;
@@ -1065,7 +1061,7 @@ setaparam(char *s, char **val)
 
 /**/
 Param
-setiparam(char *s, long val)
+setiparam(char *s, zlong val)
 {
     Value v;
     char *t = s;
@@ -1129,10 +1125,11 @@ unsetparam_pm(Param pm, int altflag)
     /* remove it under its alternate name if necessary */
     if (pm->ename && !altflag) {
 	altpm = (Param) paramtab->getnode(paramtab, pm->ename);
+	if (altpm)
 	unsetparam_pm(altpm, 1);
     }
 
-    if ((locallevel && locallevel == pm->level) || spec) {
+    if ((pm->level && locallevel >= pm->level) || spec) {
 	pm->flags |= PM_UNSET;
 	return;
     }
@@ -1152,7 +1149,7 @@ unsetparam_pm(Param pm, int altflag)
 /* Function to get value of an integer parameter */
 
 /**/
-long
+zlong
 intgetfn(Param pm)
 {
     return pm->u.val;
@@ -1162,7 +1159,7 @@ intgetfn(Param pm)
 
 /**/
 void
-intsetfn(Param pm, long x)
+intsetfn(Param pm, zlong x)
 {
     pm->u.val = x;
 }
@@ -1226,10 +1223,10 @@ nullsetfn(Param pm, char *x)
  * containing the integer value.                    */
 
 /**/
-long
+zlong
 intvargetfn(Param pm)
 {
-    return *((long *)pm->data);
+    return *((zlong *)pm->data);
 }
 
 /* Function to set value of generic special integer *
@@ -1238,9 +1235,9 @@ intvargetfn(Param pm)
 
 /**/
 void
-intvarsetfn(Param pm, long x)
+intvarsetfn(Param pm, zlong x)
 {
-    *((long *)pm->data) = x;
+    *((zlong *)pm->data) = x;
 }
 
 /* Function to set value of any ZLE-related integer *
@@ -1249,9 +1246,9 @@ intvarsetfn(Param pm, long x)
 
 /**/
 void
-zlevarsetfn(Param pm, long x)
+zlevarsetfn(Param pm, zlong x)
 {
-    long *p = (long *)pm->data;
+    zlong *p = (zlong *)pm->data;
 
     *p = x;
     if (p == &lines || p == &columns)
@@ -1363,7 +1360,7 @@ uniqarray(char **x)
 /* Function to get value of special parameter `#' and `ARGC' */
 
 /**/
-long
+zlong
 poundgetfn(Param pm)
 {
     return arrlen(pparams);
@@ -1372,7 +1369,7 @@ poundgetfn(Param pm)
 /* Function to get value for special parameter `RANDOM' */
 
 /**/
-long
+zlong
 randomgetfn(Param pm)
 {
     return rand() & 0x7fff;
@@ -1382,7 +1379,7 @@ randomgetfn(Param pm)
 
 /**/
 void
-randomsetfn(Param pm, long v)
+randomsetfn(Param pm, zlong v)
 {
     srand((unsigned int)v);
 }
@@ -1390,7 +1387,7 @@ randomsetfn(Param pm, long v)
 /* Function to get value for special parameter `SECONDS' */
 
 /**/
-long
+zlong
 secondsgetfn(Param pm)
 {
     return time(NULL) - shtimer.tv_sec;
@@ -1400,7 +1397,7 @@ secondsgetfn(Param pm)
 
 /**/
 void
-secondssetfn(Param pm, long x)
+secondssetfn(Param pm, zlong x)
 {
     shtimer.tv_sec = time(NULL) - x;
     shtimer.tv_usec = 0;
@@ -1442,7 +1439,7 @@ usernamesetfn(Param pm, char *x)
 /* Function to get value for special parameter `UID' */
 
 /**/
-long
+zlong
 uidgetfn(Param pm)
 {
     return getuid();
@@ -1462,7 +1459,7 @@ uidsetfn(Param pm, uid_t x)
 /* Function to get value for special parameter `EUID' */
 
 /**/
-long
+zlong
 euidgetfn(Param pm)
 {
     return geteuid();
@@ -1482,7 +1479,7 @@ euidsetfn(Param pm, uid_t x)
 /* Function to get value for special parameter `GID' */
 
 /**/
-long
+zlong
 gidgetfn(Param pm)
 {
     return getgid();
@@ -1502,7 +1499,7 @@ gidsetfn(Param pm, gid_t x)
 /* Function to get value for special parameter `EGID' */
 
 /**/
-long
+zlong
 egidgetfn(Param pm)
 {
     return getegid();
@@ -1520,7 +1517,7 @@ egidsetfn(Param pm, gid_t x)
 }
 
 /**/
-long
+zlong
 ttyidlegetfn(Param pm)
 {
     struct stat ttystat;
@@ -1619,7 +1616,7 @@ lcsetfn(Param pm, char *x)
 /* Function to get value for special parameter `HISTSIZE' */
 
 /**/
-long
+zlong
 histsizegetfn(Param pm)
 {
     return histsiz;
@@ -1629,7 +1626,7 @@ histsizegetfn(Param pm)
 
 /**/
 void
-histsizesetfn(Param pm, long v)
+histsizesetfn(Param pm, zlong v)
 {
     if ((histsiz = v) <= 2)
 	histsiz = 2;
@@ -1639,7 +1636,7 @@ histsizesetfn(Param pm, long v)
 /* Function to get value for special parameter `ERRNO' */
 
 /**/
-long
+zlong
 errnogetfn(Param pm)
 {
     return errno;
@@ -1958,10 +1955,10 @@ delenv(char *x)
 
 /**/
 void
-convbase(char *s, long v, int base)
+convbase(char *s, zlong v, int base)
 {
     int digs = 0;
-    unsigned long x;
+    zulong x;
 
     if (v < 0)
 	*s++ = '-', v = -v;

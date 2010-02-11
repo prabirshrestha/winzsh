@@ -1,6 +1,4 @@
 /*
- * $Id: zle_main.c,v 2.29 1996/10/25 19:27:45 hzoli Exp $
- *
  * zle_main.c - main routines for line editor
  *
  * This file is part of zsh, the Z shell.
@@ -57,6 +55,10 @@ static char *keybuf = NULL;
 static int buflen;
 static long keytimeout;
 
+#ifdef FIONREAD
+static int delayzsetterm;
+#endif
+
 /* set up terminal */
 
 /**/
@@ -66,12 +68,30 @@ setterm(void)
 #ifndef WINNT
     struct ttyinfo ti;
 
-#if defined(CLOBBERS_TYPEAHEAD) && defined(FIONREAD)
+#if defined(FIONREAD)
     int val;
 
     ioctl(SHTTY, FIONREAD, (char *)&val);
-    if (val)
+    if (val) {
+	/*
+	 * Problems can occur on some systems when switching from
+	 * canonical to non-canonical input.  The former is usually
+	 * set while running programmes, but the latter is necessary
+	 * for zle.  If there is input in canonical mode, then we
+	 * need to read it without setting up the terminal.  Furthermore,
+	 * while that input gets processed there may be more input
+	 * being typed (i.e. further typeahead).  This means that
+	 * we can't set up the terminal for zle *at all* until
+	 * we are sure there is no more typeahead to come.  So
+	 * if there is typeahead, we set the flag delayzsetterm.
+	 * Then getkey() performs another FIONREAD call; if that is
+	 * 0, we have finally used up all the typeahead, and it is
+	 * safe to alter the terminal, which we do at that point.
+	 */
+	delayzsetterm = 1;
 	return;
+    } else
+	delayzsetterm = 0;
 #endif
 
 /* sanitize the tty */
@@ -243,8 +263,20 @@ getkey(int keytmout)
     if (kungetct)
 	ret = STOUC(kungetbuf[--kungetct]);
     else {
+#ifdef FIONREAD /* TJA - should this be inside the #ifndef WINNT? */
+	if (delayzsetterm) {
+	    int val;
+	    ioctl(SHTTY, FIONREAD, (char *)&val);
+	    if (!val)
+		setterm();
+	}
+#endif
 #ifndef WINNT
-	if (keytmout) {
+	if (keytmout
+#ifdef FIONREAD
+	    && ! delayzsetterm
+#endif
+	    ) {
 	    if (keytimeout > 500)
 		exp100ths = 500;
 	    else if (keytimeout > 0)
@@ -362,6 +394,8 @@ static FILE *bindout;
 
 /* Read a line.  It is returned metafied. */
 
+static int no_restore_tty;
+
 /**/
 unsigned char *
 zleread(char *lp, char *rp)
@@ -377,7 +411,6 @@ zleread(char *lp, char *rp)
 
     baud = getiparam("BAUD");
     costmult = (baud) ? 3840000L / baud : 0;
-    tv.tv_sec = 0;
 #endif
 
     keytimeout = getiparam("KEYTIMEOUT");
@@ -440,6 +473,13 @@ zleread(char *lp, char *rp)
 	if (tmout)
 	    alarm(tmout);
 	zleactive = 1;
+	/* If the history mechanism is set to restore the tty,
+	 * don't do so here.  Fixes typeahead clobber problem.
+	 * This is handled more cleanly in 3.1.5, but here we
+	 * break abstraction to avoid adding a third parameter
+	 * to every call to zleread().
+	 */
+	no_restore_tty = (histdone & HISTFLAG_SETTY);
 	resetneeded = 1;
 	refresh();
 	errflag = retflag = 0;
@@ -495,6 +535,7 @@ zleread(char *lp, char *rp)
 #ifdef HAVE_SELECT
 	    if (baud && !(lastcmd & ZLE_MENUCMP)) {
 		FD_SET(SHTTY, &foofd);
+		tv.tv_sec = 0;
 		if ((tv.tv_usec = cost * costmult) > 500000)
 		    tv.tv_usec = 500000;
 		if (!kungetct && select(SHTTY+1, (SELECT_ARG_2_T) & foofd,
@@ -508,7 +549,7 @@ zleread(char *lp, char *rp)
 	statusline = NULL;
 	invalidatelist();
 	trashzle();
-	zleactive = 0;
+	zleactive = no_restore_tty = 0;
 	alarm(0);
     } LASTALLOC;
     zsfree(curhistline);
@@ -818,13 +859,14 @@ getkeystring(char *s, int *len, int fromwhere, int *misc)
 		}
 	    default:
 		if ((idigit(*s) && *s < '8') || *s == 'x') {
-		    if (!fromwhere)
+		    if (!fromwhere) {
 			if (*s == '0')
 			    s++;
 			else if (*s != 'x') {
 			    *t++ = '\\', s--;
 			    continue;
 			}
+		    }
 		    if (s[1] && s[2] && s[3]) {
 			svchar = s[3];
 			s[3] = '\0';
@@ -929,12 +971,12 @@ bin_bindkey(char *name, char **argv, char *ops, int junc)
     int i, *tab;
 
     if (ops['v'] && ops['e']) {
-	zerrnam(name, "incompatible options", NULL, 0);
+	zwarnnam(name, "incompatible options", NULL, 0);
 	return 1;
     }
     if (ops['v'] || ops['e'] || ops['d'] || ops['m']) {
 	if (*argv) {
-	    zerrnam(name, "too many arguments", NULL, 0);
+	    zwarnnam(name, "too many arguments", NULL, 0);
 	    return 1;
 	}
 #ifdef WINNT
@@ -1013,7 +1055,7 @@ bin_bindkey(char *name, char **argv, char *ops, int junc)
 		func = (ky = (Key) keybindtab->getnode(keybindtab, s)) ? ky->func
 		    : z_undefinedkey;
 	    if (func == z_undefinedkey) {
-		zerrnam(name, "in-string is not bound", NULL, 0);
+		zwarnnam(name, "in-string is not bound", NULL, 0);
 		zfree(s, len);
 		return 1;
 	    }
@@ -1073,7 +1115,7 @@ bin_bindkey(char *name, char **argv, char *ops, int junc)
 		if (!strcmp(*argv, zlecmds[i].name))
 		    break;
 	    if (i == ZLECMDCOUNT) {
-		zerr("undefined function: %s", *argv, 0);
+		zwarnnam(name, "undefined function: %s", *argv, 0);
 		zfree(s, len);
 		return 1;
 	    }
@@ -1152,6 +1194,7 @@ describekeybriefly(void)
 
     if (statusline)
 	return;
+    clearlist = 1;
     statusline = "Describe key briefly: _";
     statusll = strlen(statusline);
     refresh();
@@ -1189,7 +1232,7 @@ printfuncbind(HashNode hn, int printflags)
     int len = strlen(k->nam);
 
     if (k->func != func || funcfound >= MAXFOUND ||
-	((len <= 1) && mainbindtab[*k->nam] == z_sendstring))
+	((len <= 1) && mainbindtab[*(unsigned char *)k->nam] == z_sendstring))
 	return;
     if (!funcfound++)
 	fprintf(shout, " on");
@@ -1251,12 +1294,13 @@ trashzle(void)
 	moveto(nlnct, 0);
 	if (clearflag && tccan(TCCLEAREOD)) {
 	    tcout(TCCLEAREOD);
-	    clearflag = 0;
+	    clearflag = listshown = 0;
 	}
 	if (postedit)
 	    fprintf(shout, "%s", postedit);
 	fflush(shout);
 	resetneeded = 1;
+	if (!no_restore_tty)
 	settyinfo(&shttyinfo);
     }
     if (errflag)

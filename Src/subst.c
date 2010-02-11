@@ -1,6 +1,4 @@
 /*
- * $Id: subst.c,v 2.52 1996/10/15 20:16:35 hzoli Exp $
- *
  * subst.c - various substitutions
  *
  * This file is part of zsh, the Z shell.
@@ -55,9 +53,9 @@ prefork(LinkList list, int flags)
 
     MUSTUSEHEAP("prefork");
     for (node = firstnode(list); node; incnode(node)) {
-	char *str, *str3;
+	char *str;
 
-	str = str3 = (char *)getdata(node);
+	str = (char *)getdata(node);
 	if ((*str == Inang || *str == Outang || *str == Equals) &&
 	    str[1] == Inpar) {
 	    if (*str == Inang || *str == Outang)
@@ -97,7 +95,7 @@ stringsubst(LinkList list, LinkNode node, int ssub)
     char *str  = str3;
 
     while (!errflag && *str) {
-	if ((qt = *str == Qstring) || *str == String)
+	if ((qt = *str == Qstring) || *str == String) {
 	    if (str[1] == Inpar) {
 		str++;
 		goto comsub;
@@ -120,7 +118,7 @@ stringsubst(LinkList list, LinkNode node, int ssub)
 		str3 = (char *)getdata(node);
 		continue;
 	    }
-	else if ((qt = *str == Qtick) || *str == Tick)
+	} else if ((qt = *str == Qtick) || *str == Tick)
 	  comsub: {
 	    LinkList pl;
 	    char *s, *str2 = str;
@@ -137,7 +135,8 @@ stringsubst(LinkList list, LinkNode node, int ssub)
 		endchar = *str;
 		*str = '\0';
 
-		while (*++str != endchar)
+		while (*++str && *str != endchar)
+		    ;
 		    DPUTS(!*str, "Oops. parse error in command substitution");
 	    }
 	    *str++ = '\0';
@@ -293,7 +292,7 @@ filesub(char **namptr, int assign)
     if (!assign)
 	return;
 
-    if (assign < 3)
+    if (assign < 3) {
 	if ((*namptr)[1] && (sub = strchr(*namptr + 1, Equals))) {
 	    if (assign == 1)
 		for (ptr = *namptr; ptr != sub; ptr++)
@@ -306,6 +305,7 @@ filesub(char **namptr, int assign)
 	    }
 	} else
 	    return;
+    }
 
     ptr = *namptr;
     while ((sub = strchr(ptr, ':'))) {
@@ -662,7 +662,7 @@ get_intarg(char **s)
 {
     char *t = get_strarg(*s + 1);
     char *p, sav;
-    long ret;
+    zlong ret;
 
     if (!*t)
 	return -1;
@@ -694,7 +694,7 @@ LinkNode
 paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 {
     char *aptr = *str;
-    char *s = aptr, *u, *idbeg, *idend, *ostr = (char *) getdata(n);
+    char *s = aptr, *fstr, *idbeg, *idend, *ostr = (char *) getdata(n);
     int colf;			/* != 0 means we found a colon after the name */
     int doub = 0;		/* != 0 means we have %%, not %, or ##, not # */
     int isarr = 0;
@@ -715,7 +715,7 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
     int casmod = 0;
     char *sep = NULL, *spsep = NULL;
     char *premul = NULL, *postmul = NULL, *preone = NULL, *postone = NULL;
-    long prenum = 0, postnum = 0;
+    zlong prenum = 0, postnum = 0;
     int copied = 0;
     int arrasg = 0;
     int eval = 0;
@@ -740,9 +740,10 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 	if (*s == '(' || *s == Inpar) {
 	    char *t, sav;
 	    int tt = 0;
-	    long num;
+	    zlong num;
 	    int escapes = 0;
 	    int klen;
+#define UNTOK(C)  (itok(C) ? ztokens[(C) - Pound] : (C))
 #define UNTOK_AND_ESCAPE(X) {\
 		untokenize(X = dupstring(s + 1));\
 		if (escapes) {\
@@ -856,7 +857,7 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 			prenum = num;
 		    else
 			postnum = num;
-		    if (s[1] != sav)
+		    if (UNTOK(s[1]) != UNTOK(sav))
 			break;
 		    t = get_strarg(++s);
 		    if (!*t)
@@ -870,7 +871,7 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 		    *t = sav;
 		    sav = *s;
 		    s = t + 1;
-		    if (*s != sav) {
+		    if (UNTOK(*s) != UNTOK(sav)) {
 			s--;
 			break;
 		    }
@@ -932,7 +933,7 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 		s++;
 	    } else
 		globsubst = 1;
-	} else if (*s == '+')
+	} else if (*s == '+') {
 	    if (iident(s[1]))
 		chkset = 1, s++;
 	    else if (!inbrace) {
@@ -943,13 +944,16 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 		zerr("bad substitution", NULL, 0);
 		return NULL;
 	    }
+	} else if (inbrace && INULL(*s))
+	    s++;
 	else
 	    break;
     }
     globsubst = globsubst && !qt;
 
     idbeg = s;
-    if (s[-1] && isstring(*s) && (s[1] == Inbrace || s[1] == Inpar)) {
+    if (inbrace && s[-1] && isstring(*s) &&
+	(s[1] == Inbrace || s[1] == Inpar)) {
 	int sav;
 	int quoted = *s == Qstring;
 
@@ -965,6 +969,8 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 	    isarr = -1;
 	copied = 1;
 	*s = sav;
+	while (INULL(*s))
+	    s++;
 	v = (Value) NULL;
     } else if (!(v = getvalue(&s, (unset(KSHARRAYS) || inbrace) ? 1 : -1)))
 	vunset = 1;
@@ -1073,8 +1079,35 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
     }
 
     idend = s;
+    if (inbrace)
+	while (INULL(*s))
+	    s++;
     if ((colf = *s == ':'))
 	s++;
+
+
+    /* fstr is to be the text following the substitution.  If we have *
+     * braces, we look for it here, else we infer it later on.        */
+    fstr = s;
+    if (inbrace) {
+	int bct;
+	for (bct = 1;; fstr++) {
+	    if (!*fstr)
+		break;
+	    else if (*fstr == Inbrace)
+		bct++;
+	    else if (*fstr == Outbrace && !--bct)
+		break;
+	}
+
+	if (bct) {
+	noclosebrace:
+	    zerr("closing brace expected", NULL, 0);
+	    return NULL;
+	}
+	if (*fstr)
+	    *fstr++ = '\0';
+    }
 
     /* Check for ${..?..} or ${..=..} or one of those. *
      * Only works if the name is in braces.            */
@@ -1086,7 +1119,6 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 		    *s == '%' ||
 		    *s == '#' || *s == Pound ||
 		    *s == '?' || *s == Quest)) {
-	int bct;
 
 	if (!flnum)
 	    flnum++;
@@ -1098,28 +1130,16 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 	    s++;
 	    doub = 1;
 	}
-	u = s + 1;
+	s++;
 
 	flags |= (doub << 1) | (substr << 2) | (colf << 8);
 	if (!(flags & 0xf8))
 	    flags |= 16;
 
-	for (bct = 1; bct && *++s;) {
-	    if (*s == Inbrace)
-		bct++;
-	    else if (*s == Outbrace)
-		bct--;
-	}
-
-	if (bct)
-	    goto noclosebrace;
-
-	if (*s)
-	    *s++ = '\0';
 	if (colf && !vunset)
 	    vunset = (isarr) ? !*aval : !*val || (*val == Nularg && !val[1]);
 
-	switch (u[-1]) {
+	switch (s[-1]) {
 	case '+':
 	    if (vunset) {
 		val = dupstring("");
@@ -1131,16 +1151,16 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 	/* Fall Through! */
 	case '-':
 	    if (vunset) {
-		val = dupstring(u);
+		val = dupstring(s);
 		multsub(&val, &aval, &isarr, NULL);
 		copied = 1;
 	    }
 	    break;
 	case ':':
-	    if (*u != '=' && *u != Equals)
+	    if (*s != '=' && *s != Equals)
 		goto noclosebrace;
 	    vunset = 1;
-	    u++;
+	    s++;
 	    /* Fall through */
 	case '=':
 	case Equals:
@@ -1149,7 +1169,7 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 		int l;
 
 		*idend = '\0';
-		val = dupstring(u);
+		val = dupstring(s);
 		isarr = 0;
 		if (spsep || spbreak || !arrasg)
 		    multsub(&val, NULL, NULL, sep);
@@ -1197,7 +1217,7 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 		char *msg;
 
 		*idend = '\0';
-		msg = tricat(idbeg, ": ", *u ? u : "parameter not set");
+		msg = tricat(idbeg, ": ", *s ? s : "parameter not set");
 		zerr("%s", msg, 0);
 		zsfree(msg);
 		if (!interact)
@@ -1209,26 +1229,26 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 	case '#':
 	case Pound:
 	    if (qt)
-		if (parse_subst_string(u)) {
+		if (parse_subst_string(s)) {
 		    zerr("parse error in ${...%c...} substitution",
-			 NULL, u[-1]);
+			 NULL, s[-1]);
 		    return NULL;
 		}
-	    singsub(&u);
+	    singsub(&s);
 
 	    if (!vunset && isarr) {
 		char **ap = aval;
 		char **pp = aval = (char **)ncalloc(sizeof(char *) * (arrlen(aval) + 1));
 
 		while ((*pp = *ap++)) {
-		    if (getmatch(pp, u, flags, flnum))
+		    if (getmatch(pp, s, flags, flnum))
 			pp++;
 		}
 		copied = 1;
 	    } else {
 		if (vunset)
 		    val = dupstring("");
-		getmatch(&val, u, flags, flnum);
+		getmatch(&val, s, flags, flnum);
 		copied = 1;
 	    }
 	    break;
@@ -1266,7 +1286,7 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 		    }
 		    s = ss;
 		}
-		if (inbrace && *s != Outbrace) {
+		if (inbrace && *s) {
 		    if (*s == ':' && !imeta(s[1]))
 			zerr("unrecognized modifier `%c'", NULL, s[1]);
 		    else
@@ -1275,14 +1295,8 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 		}
 	    }
 	}
-	if (inbrace) {
-	    if (*s != Outbrace) {
-	      noclosebrace:
-		zerr("closing brace expected", NULL, 0);
-		return NULL;
-	    }
-	    s++;
-	}
+	if (!inbrace)
+	    fstr = s;
     }
     if (errflag)
 	return NULL;
@@ -1376,12 +1390,12 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 
 	if (!aval[0] && !plan9) {
 	    if (aptr > (char *) getdata(n) &&
-		aptr[-1] == Dnull && *s == Dnull)
-		*--aptr = '\0', s++;
-	    y = (char *)ncalloc((aptr - ostr) + strlen(s) + 1);
+		aptr[-1] == Dnull && *fstr == Dnull)
+		*--aptr = '\0', fstr++;
+	    y = (char *)ncalloc((aptr - ostr) + strlen(fstr) + 1);
 	    strcpy(y, ostr);
 	    *str = y + (aptr - ostr);
-	    strcpy(*str, s);
+	    strcpy(*str, fstr);
 	    setdata(n, y);
 	    return n;
 	}
@@ -1401,8 +1415,8 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 	    LinkList tl = newlinklist();
 	    LinkNode tn;
 
-	    *--s = Marker;
-	    addlinknode(tl, s);
+	    *--fstr = Marker;
+	    addlinknode(tl, fstr);
 	    if (!eval && !stringsubst(tl, firstnode(tl), ssub))
 		return NULL;
 	    *str = aptr;
@@ -1439,7 +1453,7 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 	    }
 	    if (plan9) {
 		uremnode(l, n);
-		return n; /* WINNT change */
+		return n;
 	    }
 	} else {
 	    x = aval[0];
@@ -1480,7 +1494,7 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 	    if (eval && parsestr(x))
 		return NULL;
 	    xlen = strlen(x);
-	    *str = strcatsub(&y, aptr, aptr, x, xlen, s, globsubst);
+	    *str = strcatsub(&y, aptr, aptr, x, xlen, fstr, globsubst);
 	    if (qt && !*y && isarr != 2)
 		y = dupstring(nulstring);
 	    insertlinknode(l, n, (void *) y), incnode(n);
@@ -1499,7 +1513,7 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 	if (eval && parsestr(x))
 	    return NULL;
 	xlen = strlen(x);
-	*str = strcatsub(&y, ostr, aptr, x, xlen, s, globsubst);
+	*str = strcatsub(&y, ostr, aptr, x, xlen, fstr, globsubst);
 	if (qt && !*y && isarr != 2)
 	    y = dupstring(nulstring);
 	setdata(n, (void *) y);
@@ -1524,11 +1538,11 @@ arithsubst(char *a, char **bptr, char *rest)
 {
     char *s = *bptr, *t, buf[DIGBUFSIZE];
     char *b = buf;
-    long v;
+    zlong v;
 
     singsub(&a);
     v = matheval(a);
-    sprintf(buf, "%ld", v);
+    convbase(buf, v, 0);
     t = *bptr = (char *)ncalloc(strlen(*bptr) + strlen(buf) + strlen(rest) + 1);
     t--;
     while ((*++t = *s++));
@@ -1765,6 +1779,8 @@ dstackent(char ch, int val)
     else
 	for (end=NULL, n=firstnode(dirstack); n && val; val--, n=nextnode(n));
     if (n == end) {
+	if (backwards && !val)
+	    return pwd;
 	if (isset(NOMATCH))
 	    zerr("not enough directory stack entries.", NULL, 0);
 	return NULL;

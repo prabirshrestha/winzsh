@@ -1,6 +1,4 @@
 /*
- * $Id: zle_utils.c,v 2.15 1996/10/15 21:07:03 hzoli Exp $
- *
  * zle_utils.c - miscellaneous line editor utilities
  *
  * This file is part of zsh, the Z shell.
@@ -56,7 +54,7 @@ spaceinline(int ct)
     ll += ct;
     line[ll] = '\0';
 
-    if (mark >= cs)
+    if (mark > cs)
 	mark += ct;
 }
 
@@ -187,6 +185,7 @@ setline(char const *s)
     unmetafy((char *) line, &ll);
     if ((cs = ll) && bindtab == altbindtab)
 	cs--;
+    clearlist = 1;
 }
 
 /**/

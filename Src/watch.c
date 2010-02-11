@@ -1,6 +1,4 @@
 /*
- * $Id: watch.c,v 2.3 1996/10/15 20:16:35 hzoli Exp $
- *
  * watch.c - login/logout watching
  *
  * This file is part of zsh, the Z shell.
@@ -134,7 +132,7 @@ watchlog2(int inout, STRUCT_UTMP *u, char *fmt, int prnt, int fini)
 #endif
 
     while (*fmt)
-	if (*fmt == '\\')
+	if (*fmt == '\\') {
 	    if (*++fmt) {
 		if (prnt)
 		    putchar(*fmt);
@@ -143,7 +141,7 @@ watchlog2(int inout, STRUCT_UTMP *u, char *fmt, int prnt, int fini)
 		return fmt;
 	    else
 		break;
-	else if (*fmt == fini)
+	} else if (*fmt == fini)
 	    return ++fmt;
 	else if (*fmt != '%') {
 	    if (prnt)

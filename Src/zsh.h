@@ -604,9 +604,12 @@ struct job {
 #define STAT_INUSE	(1<<6)	/* this job entry is in use             */
 #define STAT_SUPERJOB	(1<<7)	/* job has a subjob                     */
 #define STAT_SUBJOB	(1<<8)	/* job is a subjob                      */
-#define STAT_CURSH	(1<<9)	/* last command is in current shell     */
-#define STAT_NOSTTY	(1<<10)	/* the tty settings are not inherited   */
+#define STAT_WASSUPER   (1<<9)  /* was a super-job, sub-job needs to be */
+				/* deleted */
+#define STAT_CURSH	(1<<10)	/* last command is in current shell     */
+#define STAT_NOSTTY	(1<<11)	/* the tty settings are not inherited   */
 				/* from this job when it exits.         */
+#define STAT_ATTACH	(1<<12)	/* delay reattaching shell to tty       */
 
 #define SP_RUNNING -1		/* fake status for jobs currently running */
 
@@ -933,7 +936,8 @@ struct histent {
     int flags;			/* Misc flags                       */
 };
 
-#define HIST_OLD	0x00000001	/* Command is already written to disk*/
+#define HIST_OLD	0x00000002	/* Command is already written to disk*/
+#define HIST_READ	0x00000004	/* Command was read back from disk*/
 
 /* Parts of the code where history expansion is disabled *
  * should be within a pair of STOPHIST ... ALLOWHIST     */
@@ -944,7 +948,7 @@ struct histent {
 #define HISTFLAG_DONE   1
 #define HISTFLAG_NOEXEC 2
 #define HISTFLAG_RECALL 4
-
+#define HISTFLAG_SETTY  8
 
 /******************************************/
 /* Definitions for programable completion */
@@ -1139,6 +1143,7 @@ enum {
     HISTIGNOREDUPS,
     HISTIGNORESPACE,
     HISTNOSTORE,
+    HISTREDUCEBLANKS,
     HISTVERIFY,
     HUP,
     IGNOREBRACES,
@@ -1291,7 +1296,8 @@ struct ttyinfo {
 #define TCALLATTRSOFF  21
 #define TCSTANDOUTEND  22
 #define TCUNDERLINEEND 23
-#define TC_COUNT       24
+#define TCHORIZPOS     24
+#define TC_COUNT       25
 
 #define tccan(X) (tclen[X])
 
@@ -1379,8 +1385,8 @@ struct ttyinfo {
 		} while(0)
 
 # define LASTALLOC_RETURN \
-			if ((nonlocal_useheap ? global_heapalloc() : \
-			     global_permalloc()), 0) {;} else return
+			for (nonlocal_useheap ? global_heapalloc() : \
+			     global_permalloc(); 1;) return
 #else
 # define HEAPALLOC	do { int nonlocal_useheap = global_heapalloc(); \
 			alloc_stackp++; do
@@ -1394,8 +1400,8 @@ struct ttyinfo {
 		} while(0)
 
 # define LASTALLOC_RETURN \
-			if ((nonlocal_useheap ? global_heapalloc() : \
-			    global_permalloc()),alloc_stackp--,0){;}else return
+			for (nonlocal_useheap ? global_heapalloc() : \
+			     global_permalloc(); alloc_stackp--;) return
 #endif
 
 /****************/

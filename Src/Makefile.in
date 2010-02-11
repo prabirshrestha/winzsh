@@ -1,6 +1,4 @@
 #
-# $Id: Makefile.in,v 2.4 1996/10/15 20:16:35 hzoli Exp $
-#
 # Makefile for Src subdirectory
 #
 # Copyright (c) 1996 Richard Coleman
@@ -110,7 +108,7 @@ $Uzle_vi.o $Uzle_word.o
 
 # auxiliary files
 AUX = Makefile.in .indent.pro signames.awk rlimits.awk makepro.sed \
-      ansi2knr.c TAGS tags
+      ansi2knr.c
 
 # all files in this directory included in the distribution
 DIST = $(DIST_HDRS) $(SRCS) $(AUX)
@@ -135,8 +133,7 @@ prototypes.h: $(PROTO)
 # silent so the warning doesn't appear unless necessary
 rlimits.h: rlimits.awk $(RLIMITS_INC_H)
 	@echo '$(AWK) -f $(srcdir)/rlimits.awk $(RLIMITS_INC_H) > rlimits.h'; \
-	$(AWK) -f $(srcdir)/rlimits.awk $(RLIMITS_INC_H) > rlimits.h || \
-	    echo WARNING: unknown limits:  mail rlimits.h to developers
+	$(AWK) -f $(srcdir)/rlimits.awk $(RLIMITS_INC_H) > rlimits.h
 
 $(OBJS): $(HDRS)
 
@@ -253,13 +250,7 @@ Makefile: Makefile.in ../config.status
 
 # tag file for vi
 tags: TAGS
-	cd $(srcdir) && ctags -w $(SRCS) $(DIST_HDRS) && \
-	if test -d RCS; then \
-	    rm -f RCS/tags,v RCS/TAGS,v && \
-	    ci -t-tags -m'#tags' tags TAGS && \
-	    rcs -U tags TAGS && \
-	    co TAGS tags ; \
-	fi
+	cd $(srcdir) && ctags -w $(SRCS) $(DIST_HDRS)
 
 # tag file for emacs
 TAGS: $(SRCS) $(DIST_HDRS)
@@ -270,13 +261,4 @@ dist: $(DIST)
 	@echo "Copying distribution files in $(subdir)"
 	for file in $(DIST); do    \
 	  cp -p $$file $(distdir); \
-	done
-
-rcsdistdir = ../`cat ../rcsdistname`/$(subdir)
-dist-rcs: $(DIST)
-	@echo "Copying distribution files in $(subdir) (RCS source)"
-	for file in $(DIST); do                 \
-	  ci $$file;                            \
-	  cp -p RCS/$$file,v $(rcsdistdir)/RCS; \
-	  co -l $$file;                         \
 	done

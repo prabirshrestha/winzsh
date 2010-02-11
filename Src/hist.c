@@ -1,6 +1,4 @@
 /*
- * $Id: hist.c,v 2.27 1996/10/18 01:00:43 hzoli Exp $
- *
  * hist.c - history expansion
  *
  * This file is part of zsh, the Z shell.
@@ -32,12 +30,12 @@
 #include "zsh.h"
 
 /*
- * Note on curhist: with history active, this points to the
- * last line actually added to the history list.  With history inactive,
+ * Note on curhist: with history inactive, this points to the
+ * last line actually added to the history list.  With history active,
  * the line does not get added to the list until hend(), if at all.
  * However, curhist is incremented to reflect the current line anyway.
- * Thus if the line is not added to the list, curhist must be
- * decremented in hend().
+ * If the resulting line was not added to the list, a flag is set so
+ * that curhist will be decremented in hbegin().
  */
 
 /* Bits of histactive variable */
@@ -163,6 +161,14 @@ safeinungetc(int c)
 	inungetc(c);
 }
 
+/**/
+void
+herrflush(void)
+{
+    while (!lexstop && inbufct && !strin)
+	hwaddc(ingetc());
+}
+
 /* extract :s/foo/bar/ delimiters and arguments */
 
 /**/
@@ -184,8 +190,8 @@ getsubsargs(char *subline)
     zsfree(hsubr);
     hsubr = ptr2;
     if (hsubl && !strstr(subline, hsubl)) {
+	herrflush();
 	zerr("substitution failed", NULL, 0);
-	inerrflush();
 	return 1;
     }
     return 0;
@@ -270,7 +276,7 @@ histsubchar(int c)
 	    mev = ev = hconsearch(hsubl = ztrdup(buf), &marg);
 	    evset = 0;
 	    if (ev == -1) {
-		inerrflush();
+		herrflush();
 		zerr("no such event: %s", buf, 0);
 		return -1;
 	    }
@@ -296,7 +302,7 @@ histsubchar(int c)
 		c = ingetc();
 	    }
 	    *ptr = 0;
-	    if (!*buf)
+	    if (!*buf) {
 		if (c != '%') {
 		    if (isset(CSHJUNKIEHISTORY))
 			ev = curhist - 1;
@@ -312,6 +318,7 @@ histsubchar(int c)
 		    else
 			ev = defev;
 		    evset = 0;
+		}
 	    } else if ((t0 = atoi(buf))) {
 		ev = (t0 < 0) ? curhist + t0 : t0;
 		evset = 1;
@@ -322,9 +329,8 @@ histsubchar(int c)
 		ev = curhist;
 		evset = 1;
 	    } else if ((ev = hcomsearch(buf)) == -1) {
+		herrflush();
 		zerr("event not found: %s", buf, 0);
-		while (c != '\n' && !lexstop)
-		    c = ingetc();
 		return -1;
 	    } else
 		evset = 1;
@@ -346,9 +352,8 @@ histsubchar(int c)
 		    ehist = gethist(defev = mev);
 		    argc = getargc(ehist);
 		} else {
+		    herrflush();
 		    zerr("Ambiguous history reference", NULL, 0);
-		    while (c != '\n' && !lexstop)
-			c = ingetc();
 		    return -1;
 		}
 
@@ -405,28 +410,28 @@ histsubchar(int c)
 		break;
 	    case 'h':
 		if (!remtpath(&sline)) {
-		    inerrflush();
+		    herrflush();
 		    zerr("modifier failed: h", NULL, 0);
 		    return -1;
 		}
 		break;
 	    case 'e':
 		if (!rembutext(&sline)) {
-		    inerrflush();
+		    herrflush();
 		    zerr("modifier failed: e", NULL, 0);
 		    return -1;
 		}
 		break;
 	    case 'r':
 		if (!remtext(&sline)) {
-		    inerrflush();
+		    herrflush();
 		    zerr("modifier failed: r", NULL, 0);
 		    return -1;
 		}
 		break;
 	    case 't':
 		if (!remlpaths(&sline)) {
-		    inerrflush();
+		    herrflush();
 		    zerr("modifier failed: t", NULL, 0);
 		    return -1;
 		}
@@ -438,7 +443,7 @@ histsubchar(int c)
 		if (hsubl && hsubr)
 		    subst(&sline, hsubl, hsubr, gbal);
 		else {
-		    inerrflush();
+		    herrflush();
 		    zerr("no previous substitution", NULL, 0);
 		    return -1;
 		}
@@ -456,7 +461,7 @@ histsubchar(int c)
 		upcase(&sline);
 		break;
 	    default:
-		inerrflush();
+		herrflush();
 		zerr("illegal modifier: %c", NULL, c);
 		return -1;
 	    }
@@ -564,6 +569,8 @@ hbegin(void)
     chwords = zalloc((chwordlen = 16)*sizeof(short));
     chwordpos = 0;
 
+    if (histactive & HA_JUNKED)
+	curhist--;
     curhistent = gethistent(curhist);
     if (!curhistent->ftim)
 	curhistent->ftim = time(NULL);
@@ -576,6 +583,78 @@ hbegin(void)
 	histactive |= HA_NOINC;
 }
 
+/* compare current line with history entry using only text in words */
+
+/**/
+int
+histcmp(Histent he)
+{
+    int kword, lword;
+    int nwords = chwordpos/2;
+
+    /* If the history entry came from a file, the words were not divided by
+     * the lexer so we have to resort to a whitespace-ignoring compare.
+     */
+    if (he->flags & HIST_READ) {
+	char *str1 = he->text, *str2 = chline;
+
+	while (inblank(*str1)) str1++;
+	while (inblank(*str2)) str2++;
+	while (*str1 && *str2) {
+	    if (inblank(*str1)) {
+		if (!inblank(*str2))
+		    break;
+		do str1++; while (inblank(*str1));
+		do str2++; while (inblank(*str2));
+	    }
+	    else {
+		if (*str1 != *str2)
+		    break;
+		str1++;
+		str2++;
+	    }
+	}
+	return *str1 - *str2;
+    }
+
+    if (nwords != he->nwords)
+	return 1;
+
+    for (kword = 0; kword < 2*nwords; kword += 2)
+	if ((lword = chwords[kword+1]-chwords[kword])
+	    != he->words[kword+1]-he->words[kword] ||
+	    memcmp(he->text+he->words[kword], chline+chwords[kword], lword))
+	    return 1;
+
+    return 0;
+}
+
+/**/
+void
+histreduceblanks(void)
+{
+    int i, len, pos, needblank;
+
+    for (i = 0, len = 0; i < chwordpos; i += 2) {
+	len += chwords[i+1] - chwords[i]
+	     + (i > 0 && chwords[i] > chwords[i-1]);
+    }
+    if (chline[len] == '\0')
+	return;
+
+    for (i = 0, pos = 0; i < chwordpos; i += 2) {
+	len = chwords[i+1] - chwords[i];
+	needblank = (i < chwordpos-2 && chwords[i+2] > chwords[i+1]);
+	if (pos != chwords[i]) {
+	    memcpy(chline + pos, chline + chwords[i], len + needblank);
+	    chwords[i] = pos;
+	    chwords[i+1] = chwords[i] + len;
+	}
+	pos += len + needblank;
+    }
+    chline[pos] = '\0';
+}
+
 /* say we're done using the history mechanism */
 
 /**/
@@ -583,9 +662,10 @@ int
 hend(void)
 {
     int flag, save = 1;
-    Histent he;
 
     DPUTS(!chline, "BUG: chline is NULL in hend()");
+    if (histdone & HISTFLAG_SETTY)
+	settyinfo(&shttyinfo);
     if (histactive & (HA_NOSTORE|HA_NOINC)) {
 	zfree(chline, hlinesz);
 	zfree(chwords, chwordlen*sizeof(short));
@@ -601,14 +681,13 @@ hend(void)
 	save = 0;
     else {
 	*hptr = '\0';
-	if (hptr[-1] == '\n')
+	if (hptr[-1] == '\n') {
 	    if (chline[1]) {
 		*--hptr = '\0';
 	    } else
 		save = 0;
-	he = gethistent(curhist - 1);
+	}
 	if (!*chline || !strcmp(chline, "\n") ||
-	    (isset(HISTIGNOREDUPS) && he->text && !strcmp(he->text, chline)) ||
 	    (isset(HISTIGNORESPACE) && spaceflag))
 	    save = 0;
     }
@@ -617,9 +696,9 @@ hend(void)
 
 	ptr = ztrdup(chline);
 	if ((flag & (HISTFLAG_DONE | HISTFLAG_RECALL)) == HISTFLAG_DONE) {
-	    zputs(ptr, stderr);
-	    fputc('\n', stderr);
-	    fflush(stderr);
+	    zputs(ptr, shout);
+	    fputc('\n', shout);
+	    fflush(shout);
 	}
 	if (flag & HISTFLAG_RECALL) {
 	    PERMALLOC {
@@ -630,30 +709,51 @@ hend(void)
 	    zsfree(ptr);
     }
     if (save) {
-	Histent curhistent = gethistent(curhist);
-	zsfree(curhistent->text);
-	if (curhistent->nwords)
-	    zfree(curhistent->words, curhistent->nwords*2*sizeof(short));
+	Histent he;
 
-	curhistent->text = ztrdup(chline);
-	curhistent->stim = time(NULL);
-	curhistent->ftim = 0L;
-	curhistent->flags = 0;
 #ifdef DEBUG
 	/* debugging only */
 	if (chwordpos%2) {
 	    hwend();
-	    DPUTS(1, "internal:  uncompleted line in history");
+	    DPUTS(1, "BUG: uncompleted line in history");
 	}
 #endif
 	/* get rid of pesky \n which we've already nulled out */
-	if (!chline[chwords[chwordpos-2]])
+	if (chwordpos > 1 && !chline[chwords[chwordpos-2]])
 	    chwordpos -= 2;
-	if ((curhistent->nwords = chwordpos/2)) {
-	    curhistent->words =
-		(short *)zalloc(curhistent->nwords*2*sizeof(short));
-	    memcpy(curhistent->words, chwords,
-		   curhistent->nwords*2*sizeof(short));
+	/* strip superfluous blanks, if desired */
+	if (isset(HISTREDUCEBLANKS))
+	    histreduceblanks();
+	if (isset(HISTIGNOREDUPS) && (he = gethistent(curhist - 1))
+	 && he->text && histcmp(he) == 0) {
+	    /* This history entry compares the same as the previous.
+	     * In case minor changes were made, we overwrite the
+	     * previous one with the current one.  This also gets the
+	     * timestamp right.  Perhaps, preserve the HIST_OLD flag.
+	     */
+	    zsfree(he->text);
+	    he->text = ztrdup(chline);
+	    if (chwordpos)
+		memcpy(he->words, chwords, chwordpos * sizeof(short));
+	    he->stim = time(NULL);	/* set start time */
+	    he->ftim = 0;
+	    curhist--;
+	}
+	else {
+	    Histent curhistent = gethistent(curhist);
+	    zsfree(curhistent->text);
+	    if (curhistent->nwords)
+		zfree(curhistent->words, curhistent->nwords*2*sizeof(short));
+
+	    curhistent->text = ztrdup(chline);
+	    curhistent->stim = time(NULL);
+	    curhistent->ftim = 0L;
+	    curhistent->flags = 0;
+
+	    if ((curhistent->nwords = chwordpos/2)) {
+		curhistent->words = (short *)zalloc(chwordpos * sizeof(short));
+		memcpy(curhistent->words, chwords, chwordpos * sizeof(short));
+	    }
 	}
     } else
 	curhist--;
@@ -677,7 +777,7 @@ remhist(void)
 	    zsfree(he->text);
 	    he->text = NULL;
 	    histactive |= HA_JUNKED;
-	    curhist--;
+	    /* curhist-- is delayed until the next hbegin() */
 	}
     } else
 	histactive |= HA_NOSTORE;
@@ -753,12 +853,12 @@ hwget(char **startptr)
     /* debugging only */
     if (hwgetword == -1 && !chwordpos) {
 	/* no words available */
-	DPUTS(1, "hwget called with no words.");
+	DPUTS(1, "BUG: hwget() called with no words");
 	*startptr = "";
 	return;
     } 
     else if (hwgetword == -1 && chwordpos%2) {
-	DPUTS(1, "hwget called in middle of word.");
+	DPUTS(1, "BUG: hwget() called in middle of word");
 	*startptr = "";
 	return;
     }
@@ -837,12 +937,12 @@ getargspec(int argc, int marg, int evset)
 	ret = argc;
     else if (c == '%') {
 	if (evset) {
-	    inerrflush();
+	    herrflush();
 	    zerr("Ambiguous history reference", NULL, 0);
 	    return -2;
 	}
 	if (marg == -1) {
-	    inerrflush();
+	    herrflush();
 	    zerr("%% with no previous word matched", NULL, 0);
 	    return -2;
 	}
@@ -1075,7 +1175,7 @@ gethist(int ev)
 
     ret = quietgethist(ev);
     if (!ret) {
-	inerrflush();
+	herrflush();
 	zerr("no such event: %d", NULL, ev);
     }
     return ret;
@@ -1090,7 +1190,7 @@ getargs(Histent elist, int arg1, int arg2)
 
     if (arg2 < arg1 || arg1 >= nwords || arg2 >= nwords) {
 	/* remember, argN is indexed from 0, nwords is total no. of words */
-	inerrflush();
+	herrflush();
 	zerr("no such word in event", NULL, 0);
 	return NULL;
     }
@@ -1196,7 +1296,7 @@ quotebreak(char **tr)
 
 /* read an arbitrary amount of data into a buffer until stop is found */
 
-/**/
+#if 0 /**/
 char *
 hdynread(int stop)
 {
@@ -1222,6 +1322,7 @@ hdynread(int stop)
     }
     return buf;
 }
+#endif
 
 /**/
 char *
@@ -1352,26 +1453,29 @@ readhistfile(char *s, int err)
 		ent->ftim = ent->stim = tim;
 	    }
 
+	    if (ent->ftim < ent->stim)	/* 3.1.6 history file compatibility */
+		ent->ftim += ent->stim;
+
 	    zsfree(ent->text);
 	    ent->text = ztrdup(pt);
-	    ent->flags = HIST_OLD;
+	    ent->flags = HIST_OLD|HIST_READ;
 	    if (ent->nwords)
 		zfree(ent->words, ent->nwords*2*sizeof(short));
 
 	    /* Divide up the words.  We don't know how it lexes,
-	       so just look for spaces.
+	       so just look for white-space.
 	       */
 	    nwordpos = 0;
 	    start = pt;
 	    do {
-		while (*pt == ' ')
+		while (inblank(*pt))
 		    pt++;
 		if (*pt) {
 		    if (nwordpos >= nwordlist)
 			wordlist = (short *) realloc(wordlist,
 					(nwordlist += 16)*sizeof(short));
 		    wordlist[nwordpos++] = pt - start;
-		    while (*pt && *pt != ' ')
+		    while (*pt && !inblank(*pt))
 			pt++;
 		    wordlist[nwordpos++] = pt - start;
 		}

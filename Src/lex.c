@@ -1,6 +1,4 @@
 /*
- * $Id: lex.c,v 2.47 1996/10/15 20:16:35 hzoli Exp $
- *
  * lex.c - lexical analysis
  *
  * This file is part of zsh, the Z shell.
@@ -130,7 +128,7 @@ lexrestore(void)
 {
     struct lexstack *ln;
 
-    DPUTS(!lstack, "lexrestore without lexsave");
+    DPUTS(!lstack, "BUG: lexrestore() without lexsave()");
     incmdpos = lstack->incmdpos;
     incond = lstack->incond;
     incasepat = lstack->incasepat;
@@ -344,11 +342,12 @@ add(int c)
 
 #define SETPARBEGIN {if (zleparse && !(inbufflags & INP_ALIAS) && cs >= ll+1-inbufct) parbegin = inbufct;}
 #define SETPAREND {\
-	    if (zleparse && !(inbufflags & INP_ALIAS) && parbegin != -1 && parend == -1)\
+	    if (zleparse && !(inbufflags & INP_ALIAS) && parbegin != -1 && parend == -1) {\
 		if (cs >= ll + 1 - inbufct)\
 		    parbegin = -1;\
 		else\
-		    parend = inbufct;}
+		    parend = inbufct;\
+	    } }
 
 static int
 cmd_or_math(int cs_type)
@@ -644,7 +643,7 @@ gettok(void)
 int
 gettokstr(int c, int sub)
 {
-    int bct = 0, pct = 0, brct = 0;
+    int bct = 0, pct = 0, brct = 0, fdpar = 0;
     int intpos = 1, in_brace_param = 0;
     int peek, inquote;
 #ifdef DEBUG
@@ -659,8 +658,12 @@ gettokstr(int c, int sub)
     for (;;) {
 	int act;
 	int e;
+	int inbl = inblank(c);
 
-	if (inblank(c) && !in_brace_param && !pct)
+	if (fdpar && !inbl && c != ')')
+	    fdpar = 0;
+
+	if (inbl && !in_brace_param && !pct)
 	    act = LX2_BREAK;
 	else {
 	    act = lexact2[STOUC(c)];
@@ -683,22 +686,30 @@ gettokstr(int c, int sub)
 	    add(Meta);
 	    break;
 	case LX2_OUTPAR:
+	    if (fdpar) {
+		/* this is a single word `(   )', treat as INOUTPAR */
+		add(c);
+		*bptr = '\0';
+		return INOUTPAR;
+	    }
 	    if ((sub || in_brace_param) && isset(SHGLOB))
 		break;
-	    if (!in_brace_param && !pct--)
+	    if (!in_brace_param && !pct--) {
 		if (sub) {
 		    pct = 0;
 		    break;
 		} else
 		    goto brk;
+	    }
 	    c = Outpar;
 	    break;
 	case LX2_BAR:
-	    if (!pct && !in_brace_param)
+	    if (!pct && !in_brace_param) {
 		if (sub)
 		    break;
 		else
 		    goto brk;
+	    }
 	    if (unset(SHGLOB) || (!sub && !in_brace_param))
 		c = Bar;
 	    break;
@@ -769,11 +780,40 @@ gettokstr(int c, int sub)
 		    e = hgetc();
 		    hungetc(e);
 		    lexstop = 0;
-		    if (e == ')' ||
-			(incmdpos && !brct && peek != ENVSTRING))
+		    /* For command words, parentheses are only
+		     * special at the start.  But now we're tokenising
+		     * the remaining string.  So I don't see what
+		     * the old incmdpos test here is for.
+		     *   pws 1999/6/8
+		     *
+		     * Oh, no.
+		     *  func1(   )
+		     * is a valid function definition in [k]sh.  The best
+		     * thing we can do, without really nasty lookahead tricks,
+		     * is break if we find a blank after a parenthesis.  At
+		     * least this can't happen inside braces or brackets.  We
+		     * only allow this with SHGLOB (set for both sh and ksh).
+		     *
+		     * Things like `print @( |foo)' should still
+		     * work, because [k]sh don't allow multiple words
+		     * in a function definition, so we only do this
+		     * in command position.
+		     *   pws 1999/6/14
+		     */
+		    if (e == ')' || (isset(SHGLOB) && inblank(e) && !bct &&
+				     !brct && !intpos && incmdpos))
 			goto brk;
 		}
-		pct++;
+		/*
+		 * This also handles the [k]sh `foo( )' function definition.
+		 * Maintain a variable fdpar, set as long as a single set of
+		 * parentheses contains only space.  Then if we get to the
+		 * closing parenthesis and it is still set, we can assume we
+		 * have a function definition.  Only do this at the start of
+		 * the word, since the (...) must be a separate token.
+		 */
+		if (!pct++ && isset(SHGLOB) && intpos && !bct && !brct)
+		    fdpar = 1;
 	    }
 	    c = Inpar;
 	    break;
@@ -786,8 +826,9 @@ gettokstr(int c, int sub)
 		    *bptr = '\0';
 		    return STRING;
 		}
-		if (in_brace_param)
+		if (in_brace_param) {
 		    cmdpush(CS_BRACE);
+		}
 		bct++;
 	    }
 	    break;
@@ -796,8 +837,9 @@ gettokstr(int c, int sub)
 		break;
 	    if (!bct)
 		break;
-	    if (in_brace_param)
+	    if (in_brace_param) {
 		cmdpop();
+	    }
 	    if (bct-- == in_brace_param)
 		in_brace_param = 0;
 	    c = Outbrace;
@@ -807,11 +849,12 @@ gettokstr(int c, int sub)
 		c = Comma;
 	    break;
 	case LX2_OUTANG:
-	    if (!intpos)
+	    if (!intpos) {
 		if (in_brace_param || sub)
 		    break;
 		else
 		    goto brk;
+	    }
 	    e = hgetc();
 	    if (e != '(') {
 		hungetc(e);
@@ -953,7 +996,7 @@ gettokstr(int c, int sub)
 	    cmdpush(CS_BQUOTE);
 	    SETPARBEGIN
 	    inquote = 0;
-	    while ((c = hgetc()) != '`' && !lexstop)
+	    while ((c = hgetc()) != '`' && !lexstop) {
 		if (c == '\\') {
 		    c = hgetc();
 		    if (c != '\n') {
@@ -967,11 +1010,13 @@ gettokstr(int c, int sub)
 			break;
 		    }
 		    add(c);
-		    if (c == '\'')
+		    if (c == '\'') {
 			if ((inquote = !inquote))
 			    STOPHIST
 			else
 			    ALLOWHIST
+		    }
+		}
 		}
 	    if (inquote)
 		ALLOWHIST
@@ -1128,8 +1173,9 @@ dquote_parse(char endchar, int sub)
     }
     if (intick == 2)
 	ALLOWHIST
-    if (intick)
+    if (intick) {
 	cmdpop();
+    }
     while (bct--)
 	cmdpop();
     if (lexstop)

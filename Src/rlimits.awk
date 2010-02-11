@@ -1,5 +1,3 @@
-# 
-# $Id$
 #
 # rlimits.awk: {g,n}awk script to generate rlimits.h
 # rewritten by Peter Stephenson <pws@ifh.de> from Geoff Wing

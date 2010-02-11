@@ -1,6 +1,4 @@
 /*
- * $Id: zle_word.c,v 2.6 1996/10/15 20:16:35 hzoli Exp $
- *
  * zle_word.c - word-related editor functions
  *
  * This file is part of zsh, the Z shell.
@@ -69,7 +67,7 @@ viforwardword(void)
 		cs++;
 	if (wordflag && !zmult)
 	    return;
-	while (cs != ll && iblank(line[cs]))
+	while (cs != ll && (iblank(line[cs]) || line[cs] == '\n'))
 	    cs++;
     }
 }

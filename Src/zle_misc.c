@@ -1,6 +1,4 @@
 /*
- * $Id: zle_misc.c,v 2.30 1996/10/15 20:16:35 hzoli Exp $
- *
  * zle_misc.c - miscellaneous editor routines
  *
  * This file is part of zsh, the Z shell.
@@ -131,6 +129,7 @@ killwholeline(void)
 	for (i = cs; i != ll && line[i] != '\n'; i++);
 	forekill(i - cs + (i != ll), fg);
     }
+    clearlist = 1;
 }
 
 /**/
@@ -139,6 +138,7 @@ killbuffer(void)
 {
     cs = 0;
     forekill(ll, 0);
+    clearlist = 1;
 }
 
 /**/
@@ -160,6 +160,7 @@ backwardkillline(void)
 		cs--, i++;
     }
     forekill(i, 1);
+    clearlist = 1;
 }
 
 /**/
@@ -289,6 +290,7 @@ killline(void)
 		cs++, i++;
     }
     backkill(i, 0);
+    clearlist = 1;
 }
 
 /**/
@@ -552,10 +554,11 @@ makequote(char *str, size_t *len)
 int
 executenamedcommand(char *prmt)
 {
-    int len, cmd, t0, l = strlen(prmt);
+    int len, cmd, t0, l = strlen(prmt), ols = listshown;
     char *ptr, *buf = halloc(l + NAMLEN + 2);
     int *obindtab = bindtab;
 
+    clearlist = 1;
     strcpy(buf, prmt);
     statusline = buf;
     bindtab = mainbindtab;
@@ -568,6 +571,10 @@ executenamedcommand(char *prmt)
 	if ((cmd = getkeycmd()) < 0 || cmd == z_sendbreak) {
 	    statusline = NULL;
 	    bindtab = obindtab;
+	    if ((listshown = ols))
+		showinglist = -2;
+	    else
+		clearlist = 1;
 	    return -1;
 	}
 	switch (cmd) {
@@ -621,6 +628,10 @@ executenamedcommand(char *prmt)
 	    if (t0 != ZLECMDCOUNT) {
 		statusline = NULL;
 		bindtab = obindtab;
+		if ((listshown = ols))
+		    showinglist = -2;
+		else
+		    clearlist = 1;
 		return t0;
 	    }
 	    /* fall through */

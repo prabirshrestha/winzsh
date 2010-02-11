@@ -1,6 +1,4 @@
 /*
- * $Id: zle_move.c,v 2.7 1996/10/15 20:16:35 hzoli Exp $
- *
  * zle_move.c - editor movement
  *
  * This file is part of zsh, the Z shell.

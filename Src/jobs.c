@@ -1,6 +1,4 @@
 /*
- * $Id: jobs.c,v 2.17 1996/10/15 20:16:35 hzoli Exp $
- *
  * jobs.c - job control
  *
  * This file is part of zsh, the Z shell.
@@ -67,8 +65,12 @@ makerunning(Job jn)
 
     jn->stat &= ~STAT_STOPPED;
     for (pn = jn->procs; pn; pn = pn->next)
+#if 0
 	if (WIFSTOPPED(pn->status) && 
 	    (!(jn->stat & STAT_SUPERJOB) || pn->next))
+	    pn->status = SP_RUNNING;
+#endif
+        if (WIFSTOPPED(pn->status))
 	    pn->status = SP_RUNNING;
 
     if (jn->stat & STAT_SUPERJOB)
@@ -93,6 +95,84 @@ findproc(pid_t pid, Job *jptr, Process *pptr)
 		return 1;
 	    }
 
+    return 0;
+}
+
+/* Find the super-job of a sub-job. */
+
+static int
+super_job(int sub)
+{
+    int i;
+
+    for (i = 1; i < MAXJOB; i++)
+	if ((jobtab[i].stat & STAT_SUPERJOB) &&
+	    jobtab[i].other == sub &&
+	    jobtab[i].gleader)
+	    return i;
+    return 0;
+}
+
+static int
+handle_sub(int job, int fg)
+{
+    Job jn = jobtab + job, sj = jobtab + jn->other;
+
+    if ((sj->stat & STAT_DONE) || !sj->procs) {
+	struct process *p;
+		    
+	for (p = sj->procs; p; p = p->next)
+	    if (WIFSIGNALED(p->status)) {
+		if (jn->gleader != mypgrp && jn->procs->next)
+		    killpg(jn->gleader, WTERMSIG(p->status));
+		else
+		    kill(jn->procs->pid, WTERMSIG(p->status));
+		kill(sj->other, SIGCONT);
+		kill(sj->other, WTERMSIG(p->status));
+		break;
+	    }
+	if (!p) {
+	    int cp;
+
+	    jn->stat &= ~STAT_SUPERJOB;
+	    jn->stat |= STAT_WASSUPER;
+
+	    if ((cp = ((WIFEXITED(jn->procs->status) ||
+			WIFSIGNALED(jn->procs->status)) &&
+		       killpg(jn->gleader, 0) == -1))) {
+		Process p;
+		for (p = jn->procs; p->next; p = p->next);
+		jn->gleader = p->pid;
+	    }
+	    /* This deleted the job too early if the parent
+	       shell waited for a command in a list that will
+	       be executed by the sub-shell (e.g.: if we have
+	       `ls|if true;then sleep 20;cat;fi' and ^Z the
+	       sleep, the rest will be executed by a sub-shell,
+	       but the parent shell gets notified for the
+	       sleep.
+	       deletejob(sj); */
+	    /* If this super-job contains only the sub-shell,
+	       we have to attach the tty to its process group
+	       now. */
+	    if ((fg || thisjob == job) &&
+		(!jn->procs->next || cp || jn->procs->pid != jn->gleader))
+		attachtty(jn->gleader);
+	    kill(sj->other, SIGCONT);
+	}
+	curjob = jn - jobtab;
+    } else if (sj->stat & STAT_STOPPED) {
+	struct process *p;
+
+	jn->stat |= STAT_STOPPED;
+	for (p = jn->procs; p; p = p->next)
+	    if (p->status == SP_RUNNING ||
+		(!WIFEXITED(p->status) && !WIFSIGNALED(p->status)))
+		p->status = sj->procs->status;
+	curjob = jn - jobtab;
+	printjob(jn, !!isset(LONGLISTJOBS), 1);
+	return 1;
+    }
     return 0;
 }
 
@@ -126,6 +206,7 @@ update_job(Job jn)
     int job;
     int val = 0, status = 0;
     int somestopped = 0, inforeground = 0;
+    extern int list_pipe;
 
     for (pn = jn->procs; pn; pn = pn->next) {
 	if (pn->status == SP_RUNNING)      /* some processes in this job are running       */
@@ -147,20 +228,34 @@ update_job(Job jn)
 		jn->ty = (struct ttyinfo *) zalloc(sizeof(struct ttyinfo));
 	    gettyinfo(jn->ty);
 	}
-	if (jn->stat & STAT_STOPPED)
+	if (jn->stat & STAT_STOPPED) {
+	    if (jn->stat & STAT_SUBJOB) {
+		/* If we have `cat foo|while read a; grep $a bar;done'
+		 * and have hit ^Z, the sub-job is stopped, but the
+		 * super-job may still be running, waiting to be stopped
+		 * or to exit. So we have to send it a SIGTSTP. */
+		int i;
+
+		if ((i = super_job(job)))
+		    killpg(jobtab[i].gleader, SIGTSTP);
+	    }
 	    return;
+	}
     } else {                   /* job is done, so remember return value */
 	lastval2 = val;
 	/* If last process was run in the current shell, keep old status
-	 * and let it handle its own traps
+	 * and let it handle its own traps, but always allow the test
+	 * for the pgrp.
 	 */
-	if (job == thisjob && !(jn->stat & STAT_CURSH)) {
+	if (jn->stat & STAT_CURSH)
+	    inforeground = 1;
+	else if (job == thisjob) {
 	  lastval = val;
-	  inforeground = 1;
+	    inforeground = 2;
 	}
     }
 
-    if (shout && !ttyfrozen && !jn->stty_in_env &&
+    if (shout && !ttyfrozen && !jn->stty_in_env && !zleactive &&
 	job == thisjob && !somestopped && !(jn->stat & STAT_NOSTTY))
 	gettyinfo(&shttyinfo);
 
@@ -170,15 +265,50 @@ update_job(Job jn)
 	/* is this job in the foreground of an interactive shell? */
 	if (mypgrp != pgrp && inforeground &&
 	    (jn->gleader == pgrp || (pgrp > 1 && kill(-pgrp, 0) == -1))) {
+	    if (list_pipe) {
+		if (pgrp > 1 && kill(-pgrp, 0) == -1) {
 	    attachtty(mypgrp);
-	    adjustwinsize(0);   /* check window size and adjust if necessary */
+		    /* check window size and adjust if necessary */
+		    adjustwinsize(0);
+		} else {
+		    /*
+		     * Oh, dear, we're right in the middle of some confusion
+		     * of shell jobs on the righthand side of a pipeline, so
+		     * it's death to call attachtty() just yet.  Mark the
+		     * fact in the job, so that the attachtty() will be called
+		     * when the job is finally deleted.
+		     */
+		    jn->stat |= STAT_ATTACH;
+		}
+		/* If we have `foo|while true; (( x++ )); done', and hit
+		 * ^C, we have to stop the loop, too. */
+		if ((val & 0200) && inforeground == 1) {
+		    breaks = loops;
+		    errflag = 1;
+		    inerrflush();
+		}
+	    } else {
+		attachtty(mypgrp);
+		/* check window size and adjust if necessary */
+		adjustwinsize(0);
 	}
     }
-
+    } else if (list_pipe && (val & 0200) && inforeground == 1) {
+	breaks = loops;
+	errflag = 1;
+	inerrflush();
+    }
     if (somestopped && jn->stat & STAT_SUPERJOB)
 	return;
     jn->stat |= (somestopped) ? STAT_CHANGED | STAT_STOPPED :
 	STAT_CHANGED | STAT_DONE;
+    if (!inforeground &&
+	(jn->stat & (STAT_SUBJOB | STAT_DONE)) == (STAT_SUBJOB | STAT_DONE)) {
+	int su;
+
+	if ((su = super_job(jn - jobtab)))
+	    handle_sub(su, 0);
+    }
     if ((jn->stat & (STAT_DONE | STAT_STOPPED)) == STAT_STOPPED) {
 	prevjob = curjob;
 	curjob = job;
@@ -195,7 +325,7 @@ update_job(Job jn)
      * process group from the shell, so the shell will not receive     *
      * terminal signals, therefore we we pretend that the shell got    *
      * the signal too.                                                 */
-    if (inforeground && isset(MONITOR) && WIFSIGNALED(status)) {
+    if (inforeground == 2 && isset(MONITOR) && WIFSIGNALED(status)) {
 	int sig = WTERMSIG(status);
 
 	if (sig == SIGINT || sig == SIGQUIT) {
@@ -251,7 +381,7 @@ printjob(Job jn, int lng, int synch)
 	if (jn->stat & STAT_SUPERJOB &&
 	    jn->procs->status == SP_RUNNING && !pn->next)
 	    pn->status = SP_RUNNING;
-	if (pn->status != SP_RUNNING)
+	if (pn->status != SP_RUNNING) {
 	    if (WIFSIGNALED(pn->status)) {
 		sig = WTERMSIG(pn->status);
 		llen = strlen(sigmsg[sig]);
@@ -273,6 +403,7 @@ printjob(Job jn, int lng, int synch)
 		       WEXITSTATUS(pn->status))
 		sflag = 1;
     }
+    }
 
 /* print if necessary */
 
@@ -289,7 +420,7 @@ printjob(Job jn, int lng, int synch)
 	    len2 = ((job == thisjob) ? 5 : 10) + len;	/* 2 spaces */
 	    if (lng)
 		qn = pn->next;
-	    else
+	    else {
 		for (qn = pn->next; qn; qn = qn->next) {
 		    if (qn->status != pn->status)
 			break;
@@ -297,17 +428,19 @@ printjob(Job jn, int lng, int synch)
 			break;
 		    len2 += strlen(qn->text) + 2;
 		}
-	    if (job != thisjob)
-		if (fline)
+	    }
+	    if (job != thisjob) {
+		if (fline) {
 		    fprintf(fout, "[%ld]  %c ",
 			    (long)(jn - jobtab),
 			    (job == curjob) ? '+'
 			    : (job == prevjob) ? '-' : ' ');
+		}
 		else
 		    fprintf(fout, (job > 9) ? "        " : "       ");
-	    else
+	    } else
 		fprintf(fout, "zsh: ");
-	    if (lng)
+	    if (lng) {
 		if (lng == 1)
 		    fprintf(fout, "%ld ", (long) pn->pid);
 		else {
@@ -319,26 +452,27 @@ printjob(Job jn, int lng, int synch)
 		    while ((x /= 10));
 		    skip++;
 		    lng = 0;
+		}
 	    } else
 		fprintf(fout, "%*s", skip, "");
-	    if (pn->status == SP_RUNNING)
+	    if (pn->status == SP_RUNNING) {
 		if (!conted)
 		    fprintf(fout, "running%*s", len - 7 + 2, "");
 		else
 		    fprintf(fout, "continued%*s", len - 9 + 2, "");
-	    else if (WIFEXITED(pn->status))
+	    } else if (WIFEXITED(pn->status)) {
 		if (WEXITSTATUS(pn->status))
 		    fprintf(fout, "exit %-4d%*s", WEXITSTATUS(pn->status),
 			    len - 9 + 2, "");
 		else
 		    fprintf(fout, "done%*s", len - 4 + 2, "");
-	    else if (WIFSTOPPED(pn->status))
+	    } else if (WIFSTOPPED(pn->status))
 		fprintf(fout, "%-*s", len + 2, sigmsg[WSTOPSIG(pn->status)]);
-	    else if (WCOREDUMP(pn->status))
+	    else if (WCOREDUMP(pn->status)) {
 		fprintf(fout, "%s (core dumped)%*s",
 			sigmsg[WTERMSIG(pn->status)],
 			(int)(len - 14 + 2 - strlen(sigmsg[WTERMSIG(pn->status)])), "");
-	    else
+	    } else
 		fprintf(fout, "%-*s", len + 2, sigmsg[WTERMSIG(pn->status)]);
 	    for (; pn != qn; pn = pn->next)
 		fprintf(fout, (pn->next) ? "%s | " : "%s", pn->text);
@@ -395,6 +529,11 @@ deletejob(Job jn)
 {
     struct process *pn, *nx;
 
+    if (jn->stat & STAT_ATTACH) {
+	attachtty(mypgrp);
+	adjustwinsize(0);
+    }
+
     for (pn = jn->procs; pn; pn = nx) {
 	nx = pn->next;
 	zfree(pn, sizeof(struct process));
@@ -406,6 +545,8 @@ deletejob(Job jn)
     if (jn->ty)
 	zfree(jn->ty, sizeof(struct ttyinfo));
 
+    if (jn->stat & STAT_WASSUPER)
+	deletejob(jobtab + jn->other);
     *jn = zero;
 }
 
@@ -419,13 +560,14 @@ setprevjob(void)
 
     for (i = MAXJOB - 1; i; i--)
 	if ((jobtab[i].stat & STAT_INUSE) && (jobtab[i].stat & STAT_STOPPED) &&
-	    i != curjob && i != thisjob) {
+	    !(jobtab[i].stat & STAT_SUBJOB) && i != curjob && i != thisjob) {
 	    prevjob = i;
 	    return;
 	}
 
     for (i = MAXJOB - 1; i; i--)
-	if ((jobtab[i].stat & STAT_INUSE) && i != curjob && i != thisjob) {
+	if ((jobtab[i].stat & STAT_INUSE) && !(jobtab[i].stat & STAT_SUBJOB) &&
+	    i != curjob && i != thisjob) {
 	    prevjob = i;
 	    return;
 	}
@@ -468,6 +610,13 @@ addproc(pid_t pid, char *text)
 	/* first process for this job */
 	jobtab[thisjob].procs = pn;
     }
+    /* If the first process in the job finished before any others were *
+     * added, maybe STAT_DONE got set incorrectly.  This can happen if *
+     * a $(...) was waited for and the last existing job in the        *
+     * pipeline was already finished.  We need to be very careful that *
+     * there was no call to printjob() between then and now, else      *
+     * the job will already have been deleted from the table.          */
+    jobtab[thisjob].stat &= ~STAT_DONE;
 }
 
 /* Check if we have files to delete.  We need to check this to see *
@@ -532,36 +681,13 @@ waitjob(int job, int sig)
 	       what this might be.  --oberon
 
 	    errflag = 0; */
-	    if (jn->stat & STAT_SUPERJOB) {
-		Job sj = jobtab + jn->other;
-		if (sj->stat & STAT_DONE) {
-		    struct process *p;
-		    
-		    for (p = sj->procs; p; p = p->next)
-			if (WIFSIGNALED(p->status)) {
-			    killpg(jn->gleader, WTERMSIG(p->status));
-			    kill(sj->other, SIGCONT);
-			    kill(sj->other, WTERMSIG(p->status));
-			    break;
-			}
-		    if (!p) {
-			jn->stat &= ~STAT_SUPERJOB;
-			kill(sj->other, SIGCONT);
-			deletejob(sj);
-		    }
-		    curjob = jn - jobtab;
-		}
-		else if (sj->stat & STAT_STOPPED) {
-		    struct process *p;
-
-		    jn->stat |= STAT_STOPPED;
-		    for (p = jn->procs; p; p = p->next)
-			p->status = sj->procs->status;
-		    curjob = jn - jobtab;
-		    printjob(jn, !!isset(LONGLISTJOBS), 1);
-		    break;
-		}
+	    if (subsh) {
+		killjb(jn, SIGCONT);
+		jn->stat &= ~STAT_STOPPED;
 	    }
+	    if (jn->stat & STAT_SUPERJOB)
+		if (handle_sub(jn - jobtab, 1))
+			    break;
 	    child_block();
 	}
     } else

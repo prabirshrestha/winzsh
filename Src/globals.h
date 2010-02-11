@@ -1,6 +1,4 @@
 /*
- * $Id: globals.h,v 2.44 1996/10/15 20:16:35 hzoli Exp $
- *
  * globals.h - global variables for zsh
  *
  * This file is part of zsh, the Z shell.
@@ -332,19 +330,19 @@ EXTERN char *cached_username INIT_ZERO;   /* $USERNAME   */
 EXTERN char *zsh_name INIT_ZERO;		/* ZSH_NAME    */
 
 EXTERN char *underscore INIT_ZERO;	/* $_          */
-EXTERN long lastval INIT_ZERO;            /* $?          */
-EXTERN long mypid INIT_ZERO;		/* $$          */
-EXTERN long lastpid INIT_ZERO;		/* $!          */
-EXTERN long ppid INIT_ZERO;		/* $PPID       */
+EXTERN zlong lastval INIT_ZERO;		/* $?          */
+EXTERN zlong mypid INIT_ZERO;		/* $$          */
+EXTERN zlong lastpid INIT_ZERO;		/* $!          */
+EXTERN zlong ppid INIT_ZERO;		/* $PPID       */
 EXTERN char *ifs INIT_ZERO;		/* $IFS        */
 EXTERN char *pwd INIT_ZERO;		/* $PWD        */
 EXTERN char *oldpwd INIT_ZERO;		/* $OLDPWD     */
 
-EXTERN long columns INIT_ZERO;            /* $COLUMNS    */
-EXTERN long lines INIT_ZERO;              /* $LINES      */
+EXTERN zlong columns INIT_ZERO;		/* $COLUMNS    */
+EXTERN zlong lines INIT_ZERO;		/* $LINES      */
 
 EXTERN char *zoptarg INIT_ZERO;		/* $OPTARG     */
-EXTERN long zoptind INIT_ZERO;		/* $OPTIND     */
+EXTERN zlong zoptind INIT_ZERO;		/* $OPTIND     */
 EXTERN char *prompt INIT_ZERO;		/* $PROMPT     */
 EXTERN char *prompt2 INIT_ZERO;		/* etc.        */
 EXTERN char *prompt3 INIT_ZERO;
@@ -367,8 +365,8 @@ EXTERN char *argzero INIT_ZERO;           /* $0 */
 EXTERN char *hackzero INIT_ZERO;
 EXTERN char *scriptname INIT_ZERO;        /* name of script being sourced */
 
-EXTERN long lineno INIT_ZERO;             /* $LINENO       */
-EXTERN long shlvl INIT_ZERO;              /* $SHLVL        */
+EXTERN zlong lineno INIT_ZERO;		/* $LINENO       */
+EXTERN zlong shlvl INIT_ZERO;		/* $SHLVL        */
  
 EXTERN long lastval2 INIT_ZERO;
 
@@ -546,6 +544,14 @@ EXTERN int useheap INIT_ZERO;
 EXTERN int clwsize INIT_ZERO, clwnum INIT_ZERO, clwpos INIT_ZERO;
 EXTERN char **clwords INIT_ZERO;
 
+/* Non-zero if a completion list was displayed. */
+
+EXTERN int listshown INIT_ZERO;
+
+/* Non-zero if refresh() should clear the list below the prompt. */
+
+EXTERN int clearlist INIT_ZERO;
+
 /* pid of process undergoing 'process substitution' */
  
 EXTERN pid_t cmdoutpid INIT_ZERO;
@@ -626,7 +632,7 @@ char *tccapnams[TC_COUNT] =
 {
     "cl", "le", "LE", "nd", "RI", "up", "UP", "do",
     "DO", "dc", "DC", "ic", "IC", "cd", "ce", "al", "dl", "ta",
-    "md", "so", "us", "me", "se", "ue"
+    "md", "so", "us", "me", "se", "ue", "ch"
 };
 #else
 extern char *tccapnams[TC_COUNT];
@@ -649,7 +655,7 @@ char *tokstrings[WHILE + 1] = {
     ")",	/* OUTPAR	     */
     "||",	/* DBAR		     */
     "&&",	/* DAMPER	     */
-    ")",	/* OUTANG	  10 */
+    ">",	/* OUTANG	  10 */
     ">|",	/* OUTANGBANG	     */
     ">>",	/* DOUTANG	     */
     ">>|",	/* DOUTANGBANG	     */
@@ -747,6 +753,7 @@ struct option optns[OPT_SIZE] = {
     {"histignoredups", 		'h',  0,    0},
     {"histignorespace", 	'g',  0,    0},
     {"histnostore", 		0,    0,    0},
+    {"histreduceblanks",	0,    0,    0},
     {"histverify", 		0,    0,    0},
     {"hup", 			0,    0,    OPT_EMULATE|OPT_ZSH},
     {"ignorebraces", 		'I',  0,    OPT_EMULATE|OPT_SH},
@@ -774,9 +781,7 @@ struct option optns[OPT_SIZE] = {
     {"overstrike", 		0,    0,    0},
     {"pathdirs", 		'Q',  0,    0},
     {"posixbuiltins",		0,    0,    OPT_EMULATE|OPT_BOURNE},
-#ifdef WINNT
     {"printeightbit", 		0,  0,    0},
-#endif /* WINNT */
     {"printexitvalue", 		'1',  0,    0},
     {"privileged", 		'p',  'p',  OPT_SPECIAL},
     {"promptcr", 		x'V', 0,    OPT_ALL},
@@ -816,6 +821,7 @@ struct option optns[OPT_SIZE] = {
 #endif
 
 EXTERN short int typtab[256] INIT_ZERO_STRUCT;
+
 #if defined (WINNT)
 #ifndef GLOBALS
 #undef INIT_ZERO

@@ -1,6 +1,4 @@
 /*
- * $Id: ztype.h,v 2.5 1996/10/15 20:16:35 hzoli Exp $
- *
  * ztype.h - character classification macros
  *
  * This file is part of zsh, the Z shell.

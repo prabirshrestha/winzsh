@@ -1,5 +1,3 @@
-# 
-# $Id: signames.awk,v 2.3 1996/06/03 01:23:38 hzoli Exp $
 #
 # {g,n}awk script to generate signals.h
 # provided by Geoff Wing <mason@werple.apana.org.au>

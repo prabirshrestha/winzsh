@@ -1,6 +1,4 @@
 /*
- * $Id: hashtable.c,v 2.11 1996/10/15 20:16:35 hzoli Exp $
- *
  * hashtable.c - hash tables
  *
  * This file is part of zsh, the Z shell.
@@ -44,7 +42,7 @@ hasher(char *str)
     unsigned hashval = 0;
 
     while (*str)
-	hashval += (hashval << 5) + ((unsigned) *str++);
+	hashval += (hashval << 5) + *(unsigned char *)str++;
 
     return hashval;
 }
@@ -65,7 +63,7 @@ newhashtable(int size)
 }
 
 /* Add a node to a hash table.                          *
- * nam is the key to use in hashing.  dat is a pointer  *
+ * nam is the key to use in hashing.  nodeptr points    *
  * to the node to add.  If there is already a node in   *
  * the table with the same key, it is first freed, and  *
  * then the new node is added.  If the number of nodes  *
@@ -224,13 +222,15 @@ enablehashnode(HashNode hn, int flags)
     hn->flags &= ~DISABLED;
 }
 
-/* Compare two hash table entries */
+/* Compare two hash table entries by name */
 
 /**/
 int
-hnamcmp(struct hashnode **a, struct hashnode **b)
+hnamcmp(const void *ap, const void *bp)
 {
-    return ztrcmp((unsigned char *) (*a)->nam, (unsigned char *) (*b)->nam);
+    HashNode a = *(HashNode *)ap;
+    HashNode b = *(HashNode *)bp;
+    return ztrcmp((unsigned char *) a->nam, (unsigned char *) b->nam);
 }
 
 /* Scan the nodes in a hash table and execute scanfunc on nodes based on the flags *
@@ -256,8 +256,7 @@ scanhashtable(HashTable ht, int sorted, int flags1, int flags2, ScanFunc scanfun
 	    for (hn = ht->nodes[i]; hn; hn = hn->next)
 		*htp++ = hn;
 
-	qsort((void *) & hnsorttab[0], ht->ct, sizeof(HashNode),
-	           (int (*) _((const void *, const void *))) hnamcmp);
+	qsort((void *) & hnsorttab[0], ht->ct, sizeof(HashNode), hnamcmp);
 
 	/* Ignore the flags */
 	if (!flags1 && !flags2) {
@@ -1060,6 +1059,9 @@ freeparamnode(HashNode hn)
 void
 printparamnode(HashNode hn, int printflags)
 {
+#ifdef ZSH_64_BIT_TYPE
+    static char llbuf[DIGBUFSIZE];
+#endif
     Param p = (Param) hn;
     char *t, **u;
 
@@ -1109,7 +1111,12 @@ printparamnode(HashNode hn, int printflags)
 	break;
     case PM_INTEGER:
 	/* integer */
+#ifdef ZSH_64_BIT_TYPE
+	convbase(llbuf, p->gets.ifn(p), 0);
+	puts(llbuf);
+#else
 	printf("%ld\n", p->gets.ifn(p));
+#endif
 	break;
     case PM_ARRAY:
 	/* array */

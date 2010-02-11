@@ -1,6 +1,4 @@
 /*
- * $Id: compat.c,v 2.3 1996/10/15 20:16:35 hzoli Exp $
- *
  * compat.c - compatibiltiy routines for the deprived
  *
  * This file is part of zsh, the Z shell.

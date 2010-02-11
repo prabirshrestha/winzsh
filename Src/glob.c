@@ -1,6 +1,4 @@
 /*
- * $Id: glob.c,v 2.35 1996/10/15 20:16:35 hzoli Exp $
- *
  * glob.c - filename generation
  *
  * This file is part of zsh, the Z shell.
@@ -64,6 +62,7 @@ typedef struct stat *Statptr;	 /* This makes the Ultrix compiler happy.  Go figu
 #define TT_MINS 2
 #define TT_WEEKS 3
 #define TT_MONTHS 4
+#define TT_SECONDS 5
 
 #define TT_BYTES 0
 #define TT_POSIX_BLOCKS 1
@@ -72,13 +71,13 @@ typedef struct stat *Statptr;	 /* This makes the Ultrix compiler happy.  Go figu
 
 /* max # of qualifiers */
 
-typedef int (*TestMatchFunc) _((struct stat *, long));
+typedef int (*TestMatchFunc) _((struct stat *, off_t));
 
 struct qual {
     struct qual *next;		/* Next qualifier, must match                */
     struct qual *or;		/* Alternative set of qualifiers to match    */
     TestMatchFunc func;		/* Function to call to test match            */
-    long data;			/* Argument passed to function               */
+    off_t data;			/* Argument passed to function               */
     int sense;			/* Whether asserting or negating             */
     int amc;			/* Flag for which time to test (a, m, c)     */
     int range;			/* Whether to test <, > or = (as per signum) */
@@ -148,6 +147,8 @@ glob(LinkList list, LinkNode np)
     }
     if (*str == ':' && str[-1] == Inpar) {
 	str[-1] = '\0';
+	str[strlen(str)-1] = '\0';
+	untokenize(str);
 	modify((char **) &getdata(np), &str);
 	return;
     }
@@ -167,9 +168,9 @@ glob(LinkList list, LinkNode np)
 	char *s;
 	int sense = 0;			/* bit 0 for match (0)/don't match (1)   */
 					/* bit 1 for follow links (2), don't (0) */
-	long data = 0;			/* Any numerical argument required       */
+	off_t data = 0;			/* Any numerical argument required       */
 
-	int (*func) _((Statptr, long));
+	int (*func) _((Statptr, off_t));
 
 	/* Check these are really qualifiers, not a set of *
 	 * alternatives or exclusions                      */
@@ -179,9 +180,10 @@ glob(LinkList list, LinkNode np)
 		break;
 	if (*s == Inpar) {
 	    /* Real qualifiers found. */
+	    str[sl-1] = '\0';
 	    *s++ = '\0';
-	    while (*s != Outpar && !colonmod) {
-		func = (int (*) _((Statptr, long)))0;
+	    while (*s && !colonmod) {
+		func = (int (*) _((Statptr, off_t)))0;
 		if (idigit(*s)) {
 		    /* Store numeric argument for qualifier */
 		    func = qualflags;
@@ -206,6 +208,7 @@ glob(LinkList list, LinkNode np)
 			/* Remaining arguments are history-type     *
 			 * colon substitutions, handled separately. */
 			colonmod = s - 1;
+			untokenize(colonmod);
 			break;
 		    case Hat:
 		    case '^':
@@ -367,7 +370,7 @@ glob(LinkList list, LinkNode np)
 				    zerr("unknown user", NULL, 0);
 				    data = 0;
 				}
-				if ((*tt = sav) != Outpar)
+				if ((*tt = sav))
 				    s = tt + 1;
 				else
 				    s = tt;
@@ -400,7 +403,7 @@ glob(LinkList list, LinkNode np)
 				    zerr("unknown group", NULL, 0);
 				    data = 0;
 				}
-				if ((*tt = sav) != Outpar)
+				if ((*tt = sav))
 				    s = tt + 1;
 				else
 				    s = tt;
@@ -470,6 +473,8 @@ glob(LinkList list, LinkNode np)
 				units = TT_WEEKS, ++s;
 			    else if (*s == 'M')
 				units = TT_MONTHS, ++s;
+			    else if (*s == 's')
+				units = TT_SECONDS, ++s;
 			}
 			/* See if it's greater than, equal to, or less than */
 			if ((range = *s == '+' ? 1 : *s == '-' ? -1 : 0))
@@ -539,7 +544,7 @@ glob(LinkList list, LinkNode np)
     /* Deal with failures to match depending on options */
     if (matchct)
 	badcshglob |= 2;	/* at least one cmd. line expansion O.K. */
-    else if (!gf_nullglob)
+    else if (!gf_nullglob) {
 	if (isset(CSHNULLGLOB)) {
 	    badcshglob |= 1;	/* at least one cmd. line expansion failed */
 	} else if (isset(NOMATCH)) {
@@ -551,6 +556,7 @@ glob(LinkList list, LinkNode np)
 	    untokenize(*matchptr++ = dupstring(ostr));
 	    matchct = 1;
 	}
+    }
     /* Sort arguments in to lexical (and possibly numeric) order. *
      * This is reversed to facilitate insertion into the list.    */
     qsort((void *) & matchbuf[0], matchct, sizeof(char *),
@@ -565,10 +571,10 @@ glob(LinkList list, LinkNode np)
 /* get number after qualifier */
 
 /**/
-long
+off_t
 qgetnum(char **s)
 {
-    long v = 0;
+    off_t v = 0;
 
     if (!idigit(**s)) {
 	zerr("number expected", NULL, 0);
@@ -582,10 +588,10 @@ qgetnum(char **s)
 /* get octal number after qualifier */
 
 /**/
-long
+off_t
 qgetoctnum(char **s)
 {
-    long v = 0;
+    off_t v = 0;
 
     if (!idigit(**s)) {
 	zerr("octal number expected", NULL, 0);
@@ -655,7 +661,6 @@ insert(char *s)
 #ifndef WINNT
 	    if (gf_follow) {
 		if (!S_ISLNK(mode) || stat(unmeta(s), &buf2))
-/*		if (stat(unmeta(s), &buf2)) /* WINNT change, patch? will comment out for now */
 		    memcpy(&buf2, &buf, sizeof(buf));
 		statted = 2;
 		mode = buf2.st_mode;
@@ -833,17 +838,19 @@ hasbraces(char *str)
 	 * will match and expand to the characters in between. */
 	int bc;
 
-	for (bc = 0; *str; ++str)
+	for (bc = 0; *str; ++str) {
 	    if (*str == Inbrace) {
 		if (!bc && str[1] == Outbrace)
 		    *str++ = '{', *str = '}';
 		else
 		    bc++;
-	    } else if (*str == Outbrace)
+	    } else if (*str == Outbrace) {
 		if (!bc)
 		    *str = '}';
 		else if (!--bc)
 		    return 1;
+	    }
+	}
 	return 0;
     }
     /* Otherwise we need to look for... */
@@ -1020,11 +1027,12 @@ xpandbraces(LinkList list, LinkNode *np)
 	else if (*str2 == Outbrace) {
 	    if (--bc == 0)
 		break;
-	} else if (bc == 1)
+	} else if (bc == 1) {
 	    if (*str2 == Comma)
 		++comma;	/* we have {foo,bar} */
 	    else if (*str2 == '.' && str2[1] == '.')
 		dotdot++;	/* we have {num1..num2} */
+	}
     DPUTS(bc, "BUG: unmatched brace in xpandbraces()");
     if (!comma && dotdot) {
 	/* Expand range like 0..10 numerically: comma or recursive
@@ -1505,7 +1513,7 @@ scanner(Complist q)
 
     /* make sure we haven't just done this one. */
     if (q->closure && old_pos != pathpos &&
-	stat((*pathbuf) ? unmeta(pathbuf) : ".", &st) != -1)
+	stat((*pathbuf) ? unmeta(pathbuf) : ".", &st) != -1) {
 #ifndef WINNT
 	if (st.st_ino == old_ino && st.st_dev == old_dev)
 	    return;
@@ -1514,16 +1522,19 @@ scanner(Complist q)
 	    old_ino = st.st_ino;
 	    old_dev = st.st_dev;
 	}
+    }
 #else
 	{
 	    ;
 	}
+	}
 #endif /* WINNT */
-    if ((closure = q->closure))	/* (foo/)# - match zero or more dirs */
+    if ((closure = q->closure)) { /* (foo/)# - match zero or more dirs */
 	if (q->closure == 2)	/* (foo/)## - match one or more dirs */
 	    q->closure = 1;
 	else
 	    scanner(q->next);
+    }
     if ((c = q->comp)) {
 	/* Now the actual matching for the current path section. */
 	if (!(c->next || c->left) && !haswilds(c->str)) {
@@ -1703,9 +1714,9 @@ doesmatch(Comp c)
 	    savei = first;
 	    /* Loop over alternatives with exclusions: (foo~bar|...). *
 	     * Exclusions apply to the pattern in c->left.            */
-	    if (c->left || c->right)
+	    if (c->left || c->right) {
 		if (!doesmatch(c->left) ||
-		    (c->exclude && excluded(c, saves)))
+		    (c->exclude && excluded(c, saves))) {
 		    if (c->right) {
 			pptr = saves;
 			first = savei;
@@ -1713,6 +1724,8 @@ doesmatch(Comp c)
 			    return 0;
 		    } else
 			return 0;
+		}
+	    }
 	    if (*pptr && CLOSUREP(c)) {
 		/* With a closure (#), need to keep trying */
 		pat = c->str;
@@ -1822,7 +1835,14 @@ doesmatch(Comp c)
 	}
 	if (*pat == Inang) {
 	    /* Numeric globbing. */
+#ifdef ZSH_64_BIT_TYPE
+/* zstrtol returns zlong anyway */
+# define RANGE_CAST()
+	    zlong t1, t2, t3;
+#else
+# define RANGE_CAST() (unsigned long)
 	    unsigned long t1, t2, t3;
+#endif
 	    char *ptr;
 
 	    if (!idigit(*pptr))
@@ -1835,29 +1855,40 @@ doesmatch(Comp c)
 	    } else {
 		/* Flag that there is no upper limit */
 		int not3 = 0;
+		char *opptr = pptr;
 		/*
 		 * Form is <a-b>, where a or b are numbers or blank.
 		 * t1 = number supplied:  must be positive, so use
 		 * unsigned arithmetic.
 		 */
-		t1 = (unsigned long)zstrtol(pptr, &ptr, 10);
+		t1 = RANGE_CAST() zstrtol(pptr, &ptr, 10);
 		pptr = ptr;
 		/* t2 = lower limit */
 		if (idigit(*pat))
-		    t2 = (unsigned long)zstrtol(pat, &ptr, 10);
+		    t2 = RANGE_CAST() zstrtol(pat, &ptr, 10);
 		else
 		    t2 = 0, ptr = pat;
 		if (*ptr != '-' || (not3 = (ptr[1] == Outang)))
 				/* exact match or no upper limit */
 		    t3 = t2, pat = ptr + not3;
 		else		/* t3 = upper limit */
-		    t3 = (unsigned long)zstrtol(ptr + 1, &pat, 10);
+		    t3 = RANGE_CAST() zstrtol(ptr + 1, &pat, 10);
 		DPUTS(*pat != Outang, "BUG: wrong internal range pattern");
 		pat++;
+		/*
+		 * If the number found is too large for the pattern,
+		 * try matching just the first part.  This way
+		 * we always get the longest possible match.
+		 */
+		while (!not3 && t1 > t3 && pptr > opptr+1) {
+		  pptr--;
+		  t1 /= 10;
+		}
 		if (t1 < t2 || (!not3 && t1 > t3))
 		    break;
 	    }
 	    continue;
+#undef RANGE_CAST
 	}
 #ifdef WINNT
 	if (isset(WINNTIGNORECASE)?(tolower(*pptr)==tolower(*pat))
@@ -2219,16 +2250,14 @@ tokenize(char *s)
 	    *t = Inang;
 	    *s = Outang;
 	    break;
-	case '^':
-	case '#':
-	case '~':
-	    if (unset(EXTENDEDGLOB))
-		break;
 	case '(':
 	case '|':
 	case ')':
 	    if (isset(SHGLOB))
 		break;
+	case '^':
+	case '#':
+	case '~':
 	case '*':
 	case '?':
 	    for (t = ztokens; *t; t++)
@@ -2270,7 +2299,7 @@ remnulargs(char *s)
 
 /**/
 int
-qualdev(struct stat *buf, long dv)
+qualdev(struct stat *buf, off_t dv)
 {
     return buf->st_dev == dv;
 }
@@ -2279,7 +2308,7 @@ qualdev(struct stat *buf, long dv)
 
 /**/
 int
-qualnlink(struct stat *buf, long ct)
+qualnlink(struct stat *buf, off_t ct)
 {
     return (range < 0 ? buf->st_nlink < ct :
 	    range > 0 ? buf->st_nlink > ct :
@@ -2290,7 +2319,7 @@ qualnlink(struct stat *buf, long ct)
 
 /**/
 int
-qualuid(struct stat *buf, long uid)
+qualuid(struct stat *buf, off_t uid)
 {
     return buf->st_uid == uid;
 }
@@ -2299,7 +2328,7 @@ qualuid(struct stat *buf, long uid)
 
 /**/
 int
-qualgid(struct stat *buf, long gid)
+qualgid(struct stat *buf, off_t gid)
 {
     return buf->st_gid == gid;
 }
@@ -2308,7 +2337,7 @@ qualgid(struct stat *buf, long gid)
 
 /**/
 int
-qualisdev(struct stat *buf, long junk)
+qualisdev(struct stat *buf, off_t junk)
 {
     junk = buf->st_mode & S_IFMT;
 #ifndef WINNT
@@ -2322,7 +2351,7 @@ qualisdev(struct stat *buf, long junk)
 
 /**/
 int
-qualisblk(struct stat *buf, long junk)
+qualisblk(struct stat *buf, off_t junk)
 {
     junk = buf->st_mode & S_IFMT;
 #ifndef WINNT
@@ -2336,7 +2365,7 @@ qualisblk(struct stat *buf, long junk)
 
 /**/
 int
-qualischar(struct stat *buf, long junk)
+qualischar(struct stat *buf, off_t junk)
 {
     junk = buf->st_mode & S_IFMT;
     return junk == S_IFCHR;
@@ -2346,7 +2375,7 @@ qualischar(struct stat *buf, long junk)
 
 /**/
 int
-qualmode(struct stat *buf, long mod)
+qualmode(struct stat *buf, off_t mod)
 {
     return (buf->st_mode & S_IFMT) == mod;
 }
@@ -2355,7 +2384,7 @@ qualmode(struct stat *buf, long mod)
 
 /**/
 int
-qualflags(struct stat *buf, long mod)
+qualflags(struct stat *buf, off_t mod)
 {
     return buf->st_mode & mod;
 }
@@ -2364,7 +2393,7 @@ qualflags(struct stat *buf, long mod)
 
 /**/
 int
-qualeqflags(struct stat *buf, long mod)
+qualeqflags(struct stat *buf, off_t mod)
 {
     return (buf->st_mode & 07777) == mod;
 }
@@ -2373,7 +2402,7 @@ qualeqflags(struct stat *buf, long mod)
 
 /**/
 int
-qualiscom(struct stat *buf, long mod)
+qualiscom(struct stat *buf, off_t mod)
 {
     return (buf->st_mode & (S_IFMT | S_IEXEC)) == (S_IFREG | S_IEXEC);
 }
@@ -2382,9 +2411,15 @@ qualiscom(struct stat *buf, long mod)
 
 /**/
 int
-qualsize(struct stat *buf, long size)
+qualsize(struct stat *buf, off_t size)
 {
-    unsigned long scaled = buf->st_size;
+#if defined(LONG_IS_64_BIT) || defined(OFF_T_IS_64_BIT)
+# define QS_CAST_SIZE()
+    off_t scaled = buf->st_size;
+#else
+# define QS_CAST_SIZE() (unsigned long)
+    unsigned long scaled = (unsigned long)buf->st_size;
+#endif
 
     switch (units) {
     case TT_POSIX_BLOCKS:
@@ -2401,16 +2436,17 @@ qualsize(struct stat *buf, long size)
 	break;
     }
 
-    return (range < 0 ? scaled < (unsigned long) size :
-	    range > 0 ? scaled > (unsigned long) size :
-	    scaled == (unsigned long) size);
+    return (range < 0 ? scaled < QS_CAST_SIZE() size :
+	    range > 0 ? scaled > QS_CAST_SIZE() size :
+	    scaled == QS_CAST_SIZE() size);
+#undef QS_CAST_SIZE
 }
 
 /* time in required range? */
 
 /**/
 int
-qualtime(struct stat *buf, long days)
+qualtime(struct stat *buf, off_t days)
 {
     time_t now, diff;
 
@@ -2440,4 +2476,3 @@ qualtime(struct stat *buf, long days)
 	    range > 0 ? diff > days :
 	    diff == days);
 }
-
