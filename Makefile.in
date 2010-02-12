@@ -176,7 +176,7 @@ dist: $(DIST) Makefile
 ftp-dist: dist-diff
 	@echo "Begin building zsh distribution"
 	Src/zsh -c '(cd $(distdir)/.. ; \
-	tar cf - zsh-$(VERSION)/**/*(D^@)) | gzip > $(FTP_DIST) && \
+	tar cf - zsh-$(VERSION)) | gzip > $(FTP_DIST) && \
 	ln -sf $${$${:-$(FTP_DIST)}#$(FTPDIR)/} $(FTPDIR)/zsh.tar.gz'
 	@echo "Done building zsh distribution"
 

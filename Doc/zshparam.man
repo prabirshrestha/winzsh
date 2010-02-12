@@ -512,6 +512,9 @@ Unless \fB%C\fP is used, tilde expansion is performed first.
 .B %!
 Current history event number
 .TP
+.B %L
+The current value of $SHLVL.
+.TP
 .B %M
 The full machine hostname.
 .TP

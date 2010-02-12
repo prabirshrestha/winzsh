@@ -1,3 +1,208 @@
+2000-05-29  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/version.h: Version 3.0.8 released.
+
+	* acconfig.h, configure.in, Etc/NEWS: Copy RLIM_T_IS_LONG_LONG
+	configure test from 3.1.7.
+
+	* Src/builtin.c: Fix printf() formatting in one case where
+	RLIM_T_IS_LONG_LONG; Mike Sullivan <Mike.Sullivan@Eng.Sun.COM>
+
+2000-05-27  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/builtin.c: Fix a crash in "read -q" when zsh was not
+	interactive; 11607, plus Sven, 11524.
+
+2000-05-19  Bart Schaefer  <schaefer@zsh.org>
+
+	* Etc/BUGS, Src/builtin.c: Make the "read" builtin interruptible
+	even when it's in a pipeline.  Describe the bug that makes this
+	change necessary.
+
+2000-05-15  Bart Schaefer  <schaefer@zsh.org>
+
+	* Etc/MACHINES: Add note for OpenStep 4.2 from Brian Boonstra.
+
+	* Etc/FAQ: Latest version from PWS.
+
+	* Src/utils.c: Fix for ${(s::)...} when parameter value has
+	meta-characters; Sven, 11368.
+
+2000-05-12  Bart Schaefer  <schaefer@zsh.org>
+
+	* Etc/BUGS: Make note of the numeric range globbing bug reported
+	by Zefram in 10444 (requires too many other changes to fix now).
+
+	* Etc/NEWS: Note change in character ranges in globbing.
+
+2000-05-11  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/builtin.c, Src/params.c: "typeset -U" updates exported
+	colon-arrays; PWS, 11314.
+
+	* Src/jobs.c: In setprevjob(), skip jobs with either the
+	STAT_NOPRINT or STAT_SUBJOB bits set, as suggested in
+	zsh-workers/10005.
+
+2000-04-30  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/glob.c: Disable locale-sensitive character ranges; sorting
+	is still done by locale.  This is the 3.1.7 behavior.
+
+	* Src/builtin.c: Since "read -q" always reads from the tty, always
+	write the prompt to the tty.  Adapted from Sven, 10727.
+
+2000-03-08  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/utils.c, configure, configure.in, config.h.in: Silence linker
+	warnings on FreeBSD by using _mktemp() when available.
+
+2000-02-29  Bart Schaefer  <schaefer@zsh.org>
+
+	* Doc/zsh.texi: Silence a couple of warnings.
+
+2000-02-28  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/init.c, Src/params.c: Silence some harmless compiler
+	warnings; Sven, 9905.
+
+	* Src/exec.c: Fix problem with handling of errflag that caused
+	push-line-or-edit to fail when used within a here-document; Sven;
+	9900 and 9903.
+
+	* Etc/NEWS: Note minor new features and configuration changes.
+
+2000-02-27  Bart Schaefer  <schaefer@zsh.org>
+	
+	* Src/version.h: Version 3.0.8 (pre-release).
+
+	* Src/builtin.c: Fixes to `vared', particularly when run from a
+	subshell; adapted from PWS, 7308, and Sven, 8591.
+
+	* configure.in, configure, acconfig.h, config.h.in,
+	Src/prototypes.h: Add test for mknod() prototype, per bug report
+	from Olivier Delemar.
+
+	* Src/exec.c, Src/globals.h, Src/init.c, Src/builtin.c: Fix
+	improper redirection of xtrace output; unlock terminal device on
+	Solaris as per zsh-workers/5118; misc. insignificant typos.
+
+2000-02-23  Bart Schaefer  <schaefer@zsh.org>
+
+	* config.sub: Handle the latest Alpha hardware type; Sven, 9840.
+
+2000-02-16  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/subst.c: Better quoting behavior for ${(e)...}
+	substitutions; from Sven, 9763.
+
+2000-02-15  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/signames.awk: Missing newline.
+
+	* Src/jobs.c, Src/signames.awk: Wrap signal message array derefs
+	in a macro to avoid segfaults in the event we receive an
+	unrecognized signal.
+
+2000-02-13  Bart Schaefer  <schaefer@zsh.org>
+
+	* configure.in, configure: Import the 3.1.6 signal.h (or
+	equivalent) detection code.
+
+	* Etc/MACHINES: Mention potential resource.h problem on Linux.
+
+2000-02-12  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/init.c: Redo the way we attach to the tty in init_io() to
+	avoid competing with our parent on systems that don't prevent TTY
+	ioctl()s from background jobs.
+
+2000-02-06  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/builtin.c: Clear the PM_UNSET flag from the `pm' structure
+	before setting the parameter; PWS, 9582.
+
+2000-02-03  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/utils.c: Interrupt read1char() when any of the usual shell
+	loop control flags becomes set (e.g. by a trap handler); Sven,
+	9522.
+
+	* Src/exec.c: A different reformulation of 9345; based on Sven,
+	9503 and 9521.
+
+2000-01-29  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/globals.h: Add a missing EXTERN.
+
+	* Src/globals.h, Src/jobs.c, Src/zsh.h, Src/builtin.c, Src/exec.c:
+	Fixes for suspending/restarting subshells; adapted from Sven, 9345.
+
+2000-01-12  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/loop.c: Fix behavior of "select" loops with respect to
+	reading stdin; adapted from PWS, 9295.
+
+2000-01-08  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/loop.c: Using a negative count with the "repeat" construct
+	should not loop.  Adapted from Sven, 9188.
+
+1999-12-12  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/exec.c: Don't try to suspend/resume loops and other shell
+	constructs as separate processes when the parent shell is not
+	doing job control in the first place.
+
+1999-11-25  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/lex.c: Fix off-by-one line number when reporting unmatched
+	cshjunkiequote errors.
+
+1999-11-24  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/signals.c: Just for sanity, be sure not to SIGHUP ourself
+	when already exiting.
+
+1999-10-25  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/system.h, Src/hashtable.h, Src/init.c, Src/params.c,
+	INSTALL, acconfig.h, configure.in, configure, config.h.in:
+	Configure option to disable setlocale() support, and also do a
+	linkage test for it rather than simply test for the LC_ALL
+	constant; adapted from Zefram, 8372, by Tatsuo Furukawa.
+
+1999-10-24  Bart Schaefer  <schaefer@zsh.org>
+
+	* Makefile.in: Don't bother trying to enumerate all the files in
+	the ftp-dist tar, just pack up the whole zsh-$(VERSION) directory.
+	The enumeration caused files in subdirectories to be included
+	twice by tar.
+
+1999-10-23  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/zle_misc.c, Doc/zshparam.man: Add the %L prompt token, for
+	the value of SHLVL, as in 3.1.6; thanks to Phil Pennock
+	<phil@PsiDev.net> for pointing out this inconsistency.
+
+1999-10-22  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/mem.c: Fix a couple of typos in comments.
+
+1999-10-19  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/utils.c: Remove redundant variable decls; noted by Albert
+	Chin in 8327.
+
+	* Src/builtin.c: Tweak whitespace in string constant.
+
+	* Src/builtin.c: Recognize "maxpthreads" limit as noted by Albert
+	Chin in private mail; also arrange to print the "sockbufsize"
+	limit in "ulimit -a".
+
+	* Src/rlimits.awk: Recognize "maxpthreads" limit as noted by
+	Albert Chin in private mail.
+
 1999-10-18  Bart Schaefer  <schaefer@zsh.org>
 
 	* Src/version.h: Version 3.0.7 released.

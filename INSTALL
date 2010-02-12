@@ -244,3 +244,4 @@ Features:
      zprofile=pathname   # the full pathname of the global zprofile script
      zlogout=pathname    # the full pathname of the global zlogout script
      lfs                 # allow configure check for large files
+     locale              # allow use of locale library

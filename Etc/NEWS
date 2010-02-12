@@ -2,6 +2,29 @@
 CHANGES FROM PREVIOUS VERSIONS OF ZSH
 -------------------------------------
 
+New features in zsh version 3.0.8
+---------------------------------
+
+User-visible changes:
+  - the "maxpthreads" limit is now recognized.
+  - the token "%L" is recognized in prompts and expands to the current
+    value of the SHLVL parameter.
+  - parameter expansions using the ${(e)...} flag now obey quoting rules;
+    in previous versions, such expansions always acted as if double-quoted.
+  - ranges (e.g. [A-Z]) in file patterns are no longer locale-specific.
+
+Configuration changes:
+  - test for mknod() prototype.
+  - more comprehensive signal name detection, copied from 3.1.6.
+  - more comprehensive rlim_t type detection, copied from 3.1.7.
+  - support additional hardware platforms in config.sub, from 3.1.6.
+  - better detection of setlocale() support, and a switch to turn it off.
+  - better detection of tgetstr() support, from 3.1.6 (as of 3.0.7).
+  - use newer autoconf test for functions in libnsl (as of 3.0.7).
+
+Otherwise, versions 3.0.7 and 3.0.8 provide bug fixes only.
+
+
 New features in zsh version 3.0.6
 ---------------------------------
 

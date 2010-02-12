@@ -124,6 +124,9 @@
  * hash tables.  This turns on the `hashinfo' builtin.              */
 #undef ZSH_HASH_DEBUG
 
+/* Define if you want locale features.  By default this is defined. */
+#undef CONFIG_LOCALE
+
 /* Define to 1 if your termcap library has the ospeed variable */
 #undef HAVE_OSPEED
 /* Define to 1 if you have ospeed, but it is not defined in termcap.h */
@@ -159,13 +162,19 @@
 /* Define to 1 if there is a prototype defined for ioctl() on your system */
 #undef HAVE_IOCTL_PROTO
 
+/* Define to 1 if there is a prototype defined for mknod() on your system */
+#undef HAVE_MKNOD_PROTO
+
 /* Define to 1 if system has working FIFO's */
 #undef HAVE_FIFOS
 
-/* Define to 1 if struct rlimit use quad_t */
+/* Define to 1 if struct rlimit uses quad_t */
 #undef RLIM_T_IS_QUAD_T
 
-/* Define to 1 if rlimit use unsigned */
+/* Define to 1 if struct rlimit uses long long */
+#undef RLIM_T_IS_LONG_LONG
+
+/* Define to 1 if rlimit uses unsigned */
 #undef RLIM_T_IS_UNSIGNED
 
 /* Define to the type used in struct rlimit */

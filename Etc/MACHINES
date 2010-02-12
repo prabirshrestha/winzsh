@@ -6,7 +6,7 @@ These are the architectures that zsh has been tried on.  If you
 succeed in getting zsh to work on an architecture not listed, let
 us know.
 
-Apple:	Mac with MiNT after redefining the zgetwd() function as getwd()
+Apple:	Mac with MiNT after redefining the zgetwd() function as getwd().
 
 Cray:	C90 and T90 Cray machines with Unicos
 	Should build `out-of-the-box',
@@ -55,6 +55,13 @@ Linux:	If you are using an early minor version of libc 5, then a bug
 	config.h and change HAVE_LSTAT to 1.
 	libc-5.2.18 or later does not have this problem.
 
+	Some versions of glibc2 have a conflict with <asm/resource.h>
+	which causes a redefinition warning on RLIM_INFINITY.  This
+	causes configure to decide that <sys/resource.h> is not present,
+	which can cause compilation errors in zsh's rlimit code.  The
+	best solution is to edit config.h after running configure and
+	#define HAS_SYS_RESOURCE_H.
+
 	If you create a symbolic link from /dev/fd to /proc/self/fd, zsh
 	will use this for process substitution.  This link must exist
 	according to the Linux standards but some distributions come
@@ -66,6 +73,9 @@ NetBSD:	NetBSD 1.x
 Next:	NextStep 3.x
 	Zsh should build easily on NextStep, but the zsh
 	malloc routines are not recommended.
+
+	OpenStep 4.2
+	Builds and runs `out-of-the-box' with gcc 2.8.1 and gawk 2.15.
 
 SCO:
 
