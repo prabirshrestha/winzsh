@@ -1,6 +1,4 @@
 #
-# $Id: Makefile.in,v 2.1 1996/10/15 20:16:35 hzoli Exp $
-#
 # Makefile for Functions subdirectory
 #
 # Copyright (c) 1995 Richard Coleman
@@ -34,8 +32,8 @@ VPATH  = @srcdir@
 .SUFFIXES:
 
 # all files in this directory included in the distribution
-DIST = Makefile.in acx cdmatch cx harden mere multicomp proto \
-randline run-help yp yu zed
+DIST = Makefile.in acx cat cdmatch cdmatch2 checkmail cx harden \
+mere multicomp proto pushd randline run-help yp yu zed
 
 # ========== DEPENDENCIES FOR BUILDING ==========
 
@@ -67,13 +65,4 @@ dist: $(DIST)
 	@echo "Copying distribution files in $(subdir)"
 	for file in $(DIST); do    \
 	  cp -p $$file $(distdir); \
-	done
-
-rcsdistdir = ../`cat ../rcsdistname`/$(subdir)
-dist-rcs: $(DIST)
-	@echo "Copying distribution files in $(subdir) (RCS source)"
-	for file in $(DIST); do                 \
-	  ci $$file;                            \
-	  cp -p RCS/$$file,v $(rcsdistdir)/RCS; \
-	  co -l $$file;                         \
 	done

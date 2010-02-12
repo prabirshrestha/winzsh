@@ -1,6 +1,4 @@
 #
-# $Id: Makefile.in,v 2.14 1996/10/15 20:16:35 hzoli Exp $
-#
 # Makefile for top level of zsh distribution
 #
 # Copyright (c) 1996 Richard Coleman
@@ -116,7 +114,7 @@ mostlyclean-top:
 clean-top: mostlyclean-top
 
 distclean-top: clean-top
-	rm -f Makefile config.h config.status config.log config.cache stamp-h distname rcsdistname
+	rm -f Makefile config.h config.status config.log config.cache stamp-h distname
 
 realclean-top: distclean-top
 
@@ -156,71 +154,52 @@ tags:
 test:
 	@echo zsh test suite not available yet
 
-FTPDIR   = /home/ftp/pub/zsh
+FTPDIR   = @ftpdir@
 FTP_DIST = $(FTPDIR)/zsh-$(VERSION).tar.gz
-FTP_RCS  = $(FTPDIR)/zsh-RCS.tar.gz
-FTP_DIFF = $(FTPDIR)/zsh-$(VERSION).diff.gz
 
 # build zsh distribution
-dist: Src tags
+distdir = @distdir@/zsh-$(VERSION)
+dist: $(DIST) Makefile
+	@echo "Copying distribution files in $(srcdir)" ; \
+	echo "$(distdir)" > distname
+	(test -d $(distdir) || mkdir -p $(distdir)) || exit 1 ; \
+	for file in $(DIST); do    \
+	  cp -p $$file $(distdir); \
+	done; \
+	for subdir in $(SUBDIRS); do \
+	  target=$(distdir)/$$subdir ; \
+	  (test -d $$target || mkdir $$target) || exit 1; \
+	  (cd $$subdir && $(MAKE) $(MAKEDEFS) $@) || exit 1; \
+	done
+
+# build zsh distribution for FTP
+ftp-dist: dist-diff
 	@echo "Begin building zsh distribution"
-	Src/zsh -c 'cd $(srcdir) ; \
-	ln -sf . zsh-$(VERSION) ; \
-	tar cf - zsh-$(VERSION)/**/RCS/*,v(D:s@RCS/@@:s/,v//) | \
-		gzip > $(FTP_DIST) ; \
-	ln -sf $${$${:-$(FTP_DIST)}#$(FTPDIR)/} $(FTPDIR)/zsh.tar.gz ; \
-	rm -f zsh-$(VERSION)'
+	Src/zsh -c '(cd $(distdir)/.. ; \
+	tar cf - zsh-$(VERSION)/**/*(D^@)) | gzip > $(FTP_DIST) && \
+	ln -sf $${$${:-$(FTP_DIST)}#$(FTPDIR)/} $(FTPDIR)/zsh.tar.gz'
 	@echo "Done building zsh distribution"
 
-# build RCS controlled source distribution
-dist-rcs: Src tags
-	@echo "Begin building zsh distribution (RCS source)"
-	Src/zsh -o extendedglob -c 'cd $(srcdir) ; \
-	rcs -q -N$${$${:-$(VERSION)}:fs/./_/}: **/RCS/(^(tags|TAGS)),v(D); \
-	ln -sf . zsh-RCS ; \
-	tar cf - zsh-RCS/**/RCS | gzip > $(FTP_RCS) ; \
-	rm -f zsh-RCS'
-	@echo "Done building zsh distribution (RCS source)"
-
 # make patch against the previous release
-dist-diff: Src
+dist-diff: Src dist
 	@echo "Making patch against the previous release"
-	Src/zsh -o extendedglob -c 'cd $(srcdir) ; \
-	VERSION=$(VERSION) ; \
+	Src/zsh -o extendedglob -c 'VERSION=$(VERSION) ; \
 	pl=$${(M)VERSION%%[0-9]##} ; \
 	: $${prevrel:=$${VERSION%%[0-9]##}$$((pl-1))} ; \
-	(rcsdiff -kk -qc -r$${prevrel#2.6-}(:fs/./_/) -r **/RCS/(^(FAQ|tags|TAGS)),v(D:s@RCS/@@:s/,v//) ; \
-	 rcsdiff -qc -r$${prevrel#2.6-}(:fs/./_/) -r Etc/FAQ) | \
-		gzip > $(FTP_DIFF) ; \
+	(cd $(distdir)/.. && diff -ru zsh-$${prevrel} zsh-$(VERSION)) | \
+	gzip > $(FTPDIR)/zsh-$${prevrel}-$(VERSION).diff.gz && \
 	rm -f $(FTPDIR)/zsh-$${prevrel}.tar.gz'
-
-check-rcs: $(DIST) Src
-	@echo Checking if there are different working files and rcs files
-	Src/zsh -c 'cd $(srcdir) ; \
-	integer diffs=0 ; \
-	for i in **/RCS/*,v(D:s@RCS/@@:s/,v//) ; do \
-	    if [[ ! -f $$i ]] then \
-		co $$i ; \
-	    elif ! rcsdiff -q --brief $$i ; then \
-		let diffs++ ; \
-	    fi ; \
-	done ; \
-	if ((diffs)) then exit diffs ; fi'
 
 md5sum:
 	cd $(FTPDIR) ; md5sum *.gz > MD5SUM
 
 $(FTPDIR)/zsh-doc.tar.gz: $(srcdir)/Doc/zsh.texi
 	if test -d Doc/zsh-doc ; then \
-		cd Doc ; \
+		(cd Doc ; \
 		make everything ; \
-		cp zsh*.html /http/htdocs/zsh-manual ; \
-		mv zsh*.html zsh*.ps zsh.dvi zsh.info* zsh-doc ; \
-		tar cf - zsh-doc | gzip > $@ ; \
+		mv zsh*.html zsh*.ps zsh.dvi zsh.info* zsh-doc) ; \
+		(cd Doc ; tar cf - zsh-doc) | gzip > $@ ; \
 	fi
 
-release: check-rcs dist dist-rcs dist-diff $(FTPDIR)/zsh-doc.tar.gz md5sum
+release: ftp-dist dist-diff $(FTPDIR)/zsh-doc.tar.gz md5sum
 	cd $(srcdir) && cp -p META-FAQ Etc/FAQ $(FTPDIR)
-	cd $(FTPDIR) && \
-	sed 's/zsh-[3-9]\.[0-9]\(\.\|-beta\|-pre\)[0-9]\+/zsh-$(VERSION)/' README > README.new && \
-	mv README.new README

@@ -1,4 +1,66 @@
+-------------------------------------
+CHANGES FROM PREVIOUS VERSIONS OF ZSH
+-------------------------------------
+
+New features in zsh version 3.0.6
+---------------------------------
+
+Most of these changes are designed to improve compatibility with zsh
+version 3.1.6, the latest development release.  However, this release also
+fixes all known Year 2000 (Y2K) bugs in zsh 3.0.
+
+History changes:
+  - whitespace between words is ignored in history searches.
+  - new option HIST_REDUCE_BLANKS removes extra whitespace in the stored
+    history.
+  - support for reading (but not writing) version 3.1.6 history files.
+
+Globbing changes:
+  - the a, c, and m glob qualifiers can now test time in seconds.
+  - globbing of number ranges behaves more like character ranges in that
+    it can match a prefix of a number, e.g. `<1-5>*' matches 1, 2, 3, 4,
+    5, 17, 23skiddoo, 5986, etc., but not 6, 7, 8ball, 911, etc.
+
+Parameter and expansion changes:
+  - expansion of ~ and other globbing flags via ${~param} do not depend
+    upon EXTENDED_GLOB (bug fix).
+  - nested parameter substitutions require braces (this was always the
+    documented behavior, but previous parsers didn't enforce it).
+  - quote only nested expansion, e.g. ${(f)"$(<file)"} reads complete
+    `file', then splits lines into array.
+
+Builtin and function changes:
+  - `typeset -U' works on the colon-array version of linked parameters.
+  - `typeset +f' and `functions +' output the names (only) of functions.
+  - `emulate -L' has the effect of `setopt localoptions'.
+  - in fn1() { local foo; unset foo; foo=bar; }, foo is restored at local
+    level, whereas if the `unset foo' appeared in a nested function it
+    would have been restored at global level, which was presumably wrong.
+  - `foo=bar >&file' is a redirection, not a NULLCMD.
+  - any single complex command, such as `case ... esac', parses as if
+    semicolon-terminated (bug fix).
+  - the shell function `preexec', if defined, is run after parsing each
+    command line but before executing the command.
+
+Other changes:
+  - the option PRINT_EIGHT_BIT causes zsh to emit raw bytes in prompts
+    and completion lists even if the system ctype(3) package says that
+    those bytes are not "printable."
+
+Debugging enhancements:
+  - LINENO is now very much more useful in scripts and functions and is
+    reported correctly in most error messages.
+  - ERREXIT behavior is now consistent with newer Bourne-like shells,
+    e.g. with respect to `if' tests that fail.
+
+Configuration changes:
+  - Large file and 64-bit integers on 32-bit machines supported where
+    provided by OS.
+  - a few more system features, such as getpwnam/getpwuid, are tested for.
+
+
 New features in zsh version 3.0
+-------------------------------
 
 Trailing "/" in a glob pattern now works like in other shell thus it
 can no longer be used as a sorthand for "(/)".
@@ -108,6 +170,7 @@ manual page for more details.
 
 
 New features in zsh version 2.5
+-------------------------------
 
 Greatly expanded completion possibilities.  Programmable completion
 allows detailed control over what arguments of what commands can be

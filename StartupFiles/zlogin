@@ -1,6 +1,4 @@
 #
-# $Id: zlogin,v 2.0 1996/05/02 22:57:04 hzoli Exp $
-#
 # Generic .zlogin file for zsh 2.7
 #
 # .zlogin is sourced in login shells.  It should

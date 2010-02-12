@@ -305,7 +305,7 @@ enable them.
 Output the termcap string corresponding to the capability
 \fIcap\fP, with optional arguments.
 .TP
-\fBemulate\fP [ \-\fBR\fP ] [ \fBzsh\fP | \fBsh\fP | \fBksh\fP | \fBcsh\fP ]
+\fBemulate\fP [ \-\fBLR\fP ] [ \fBzsh\fP | \fBsh\fP | \fBksh\fP | \fBcsh\fP ]
 Set up zsh options to emulate the specified shell as much as possible.
 .B csh
 will never be fully emulated.
@@ -313,7 +313,13 @@ If the argument is not one of the shells listed above,
 .B zsh
 will be used as a default.  If the \-\fBR\fP option is given, all options
 are reset to their default value corresponding to the specified emulation
-mode.
+mode, except for certain options describing the interactive
+environment; otherwise, only those options likely to cause portability
+problems in scripts and functions are altered.  If the \-\fBL\fP option
+is given, the option \fBLOCAL_OPTIONS\fP will be set as well, causing
+the effect of the \fBemulate\fP command to be local to the immediately
+surrounding shell function, if any; normally this is turned off in all
+emulation modes except \fBksh\fP.
 .TP
 \fBenable\fP [ \-\fBafmr\fP ] \fIarg\fP ...
 Enable the hash table element named \fIarg\fP, presumably disabled
@@ -521,7 +527,9 @@ stopped by a signal the name of the signal is printed.
 .TP
 \fBlet\fP \fIarg\fP ...
 Evaluate each \fIarg\fP as an arithmetic expression.
-See \fBARITHMETIC EVALUATION\fP above for a description
+See \fBARITHMETIC EVALUATION\fP in
+.IR zshmisc (1)
+for a description
 of arithmetic expressions.  The exit status is 0 if the
 value of the last expression is nonzero, and 1 otherwise.
 .TP
@@ -912,7 +920,8 @@ Print the accumulated user and system times for the shell
 and for processes run from the shell.
 .TP
 \fBtrap\fP [ \fIarg\fP ] [ \fIsig\fP ] ...
-\fIarg\fP is a command to be read and executed when the shell
+\fIarg\fP is a series of commands (usually quoted to protect it from
+immediate evaluation by the shell) to be read and executed when the shell
 receives \fIsig\fP.  Each \fIsig\fP can be given as a number
 or as the name of a signal.
 If \fIarg\fP is \-, then all traps \fIsig\fP are reset to their
@@ -930,6 +939,10 @@ and the \fBtrap\fP statement is not executed inside the body of a function,
 then the command \fIarg\fP is executed when the shell terminates.
 The \fBtrap\fP command with no arguments prints a list of commands
 associated with each signal.
+Note that traps defined with the \fBtrap\fP builtin are slightly different
+from those defined as `\fBTRAP\fP\fINAL\fP () { ... }', as the latter have
+their own function environment (line numbers, local variables, etc.) while
+the former use the environment of the command in which they were called.
 .TP
 \fBtrue\fP
 Do nothing and return an exit code of 0.

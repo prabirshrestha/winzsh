@@ -1,6 +1,4 @@
 #
-# $Id: Makefile.in,v 2.1 1996/10/15 20:16:35 hzoli Exp $
-#
 # Makefile for StartupFiles subdirectory
 #
 # Copyright (c) 1995 Richard Coleman
@@ -66,13 +64,4 @@ dist: $(DIST)
 	@echo "Copying distribution files in $(subdir)"
 	for file in $(DIST); do    \
 	  cp -p $$file $(distdir); \
-	done
-
-rcsdistdir = ../`cat ../rcsdistname`/$(subdir)
-dist-rcs: $(DIST)
-	@echo "Copying distribution files in $(subdir) (RCS source)"
-	for file in $(DIST); do                 \
-	  ci $$file;                            \
-	  cp -p RCS/$$file,v $(rcsdistdir)/RCS; \
-	  co -l $$file;                         \
 	done

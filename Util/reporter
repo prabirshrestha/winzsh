@@ -1,8 +1,5 @@
 #!/usr/local/bin/zsh
 #
-# $Id: reporter,v 2.0 1996/05/02 22:57:04 hzoli Exp $
-# $Source: /l/src/zsh-RCS/Util/RCS/reporter,v $
-#
 # NAME:
 #	reporter
 #

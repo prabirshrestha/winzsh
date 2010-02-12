@@ -186,8 +186,9 @@ a letter, digit, or underscore that is not to be interpreted
 as part of its name.
 If \fIname\fP is an array parameter, then the values of each
 element of \fIname\fP is substituted, one element per word.
-Otherwise, the expansion results in one word only; no
-word splitting is done on the result.
+Otherwise, the expansion results in one word only; no field
+splitting is done on the result unless the \fBSH_WORD_SPLIT\fR
+option is set.
 .TP
 \fB${+\fIname\fB}\fR
 If \fIname\fP is the name of a set parameter `1' is substituted,
@@ -210,6 +211,7 @@ substituted.
 \fB${\fIname\fB:?\fIword\fB}\fR
 If \fIname\fP is set and is non-null, then substitute
 its value; otherwise, print \fIword\fP and exit from the shell.
+Interactive shells do not exit.
 If \fIword\fP is omitted, then a standard message is printed.
 .TP
 \fB${\fIname\fB:+\fIword\fB}\fR
@@ -356,11 +358,12 @@ Pad the resulting words on the left.  Each word will be truncated if
 required and placed in a field \fIexpr\fP characters wide.  The space
 to the left will be filled with \fIstring1\fP (concatenated as often
 as needed) or spaces if \fIstring1\fP is not given.  If both
-\fIstring1\fP and \fIstring2\fP are given, this string will be placed
-exactly once directly to the left of the resulting word.
+\fIstring1\fP and \fIstring2\fP are given, this string is inserted
+once directly to the left of each word, before padding.
 .TP
 .B r:\fIexpr\fB::\fIstring1\fB::\fIstring2\fB:
-As \fBl...\fP, but pad the words on the right.
+As \fBl...\fP, but pad the words on the right and insert \fIstring2\fB
+on the right.
 .TP
 .B j:\fIstring\fB:
 Join the words of arrays together using \fIstring\fP as a separator.
@@ -374,16 +377,17 @@ This is a shorthand for \fBpj:\\n:\fP.
 .B s:\fIstring\fB:
 Force word splitting (see the option \fBSH_WORD_SPLIT\fP) at the
 separator \fIstring\fP.  Splitting only occurs in places where an
-array value is valid.
+array value is valid, and joining always occurs before splitting.
 .TP
 .B f
 Split the result of the expansion to lines. This is a shorthand
 for \fBps:\\n:\fP.
+.P
+(All remaining flags are useful only with the \fB${...#...}\fP or
+\fB${...%...}\fP forms.)
 .TP
 .B S
-(This and all remaining flags are used with the \fB${...#...}\fP or
-\fB${...%...}\fP forms):
-search substrings as well as beginnings or ends.
+Search substrings as well as beginnings or ends.
 .TP
 .B I:\fIexpr\fB:
 Search the \fIexpr\fP'th match (where \fIexpr\fP evaluates to a number).
@@ -421,7 +425,8 @@ A string of the form \fB$[\fIexp\fB]\fR or \fB$((\fIexp\fB))\fR is substituted
 with the value of the arithmetic expression \fIexp\fP. \fIexp\fP is
 subjected to \fIparameter expansion\fP, \fIcommand substitution\fP
 and \fIarithmetic expansion\fP before it is evaluated.
-See \fBARITHMETIC EVALUATION\fP below.
+See \fBARITHMETIC EVALUATION\fP in
+.IR zshmisc (1).
 .SH BRACE EXPANSION
 A string of the form
 \fIfoo\fB{\fIxx\fB,\fIyy\fB,\fIzz\fB}\fIbar\fR
@@ -544,7 +549,7 @@ ls
 .RE
 .PP
 does a recursive directory search for files named bar, not following
-symbolic links.  For this you can use the form
+symbolic links.  To follow symbolic links, use the form
 .BR ***/ .
 .PP
 If used for filename generation, a pattern may contain an exclusion
@@ -655,21 +660,21 @@ be taken (e.g. \fBu:foo:\fP or \fBu[foo]\fP for user \fBfoo\fP)
 \fBg\fIid\fR
 like \fBu\fIid\fR but with group ids or names
 .TP
-\fBa[Mwhm]\fI[-|+]n\fR
-files accessed exactly \fIn\fP days ago.  Files accessed within the
-last \fIn\fP days are selected using a negative value for \fIn\fP
-(\fI-n\fP).  Files accessed more than \fIn\fP days ago are selected by a
-positive \fIn\fP value (\fI+n\fP).  Optional unit specifiers \fBM\fP,
-\fBw\fP, \fBh\fP, or \fBm\fP (e.g. \fBah5\fP) cause the check to be
-performed with months (of 30 days), weeks, hours, or minutes instead of
-days, respectively.  For instance, \fBecho *(ah-5)\fP would echo files
-accessed within the last five hours.
+\fBa[Mwhms]\fI[-|+]n\fR
+files accessed exactly \fIn\fP days ago.  Files accessed within the last
+\fIn\fP days are selected using a negative value for \fIn\fP (\fI-n\fP).
+Files accessed more than \fIn\fP days ago are selected by a positive
+\fIn\fP value (\fI+n\fP).  Optional unit specifiers \fBM\fP, \fBw\fP,
+\fBh\fP, \fBm\fP, or \fBs\fP (e.g. \fBah5\fP) cause the check to be
+performed with months (of 30 days), weeks, hours, minutes, or seconds
+instead of days, respectively.  For instance, \fBecho *(ah-5)\fP would
+echo files accessed within the last five hours.
 .TP
-\fBm[Mwhm]\fI[-|+]n\fR
+\fBm[Mwhms]\fI[-|+]n\fR
 like the file access qualifier, except that it uses the file modification
 time.
 .TP
-\fBc[Mwhm]\fI[-|+]n\fR
+\fBc[Mwhms]\fI[-|+]n\fR
 like the file access qualifier, except that it uses the file inode change
 time.
 .TP
@@ -1045,4 +1050,5 @@ A less convenient but more comprehensible
 form of command history support
 is provided by the
 .B fc
-builtin (see the entry in the \fBzshbuiltins\fP manual).
+builtin (see the entry in
+.IR zshbuiltins (1)).

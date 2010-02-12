@@ -45,3 +45,7 @@ HP-UX 9.x works.  Get an older working sed, get GNU sed or try to
 get a fixed version from your OS vendor (or write a makepro.sed
 which works on all platforms where the current version works).
 ------------------------------------------------------------------------
+Numeric ranges are still too greedy with using characters; for example,
+<1-1000>33 will not match 633 because the 633 matches the range.  Some
+backtracking will be necessary.
+------------------------------------------------------------------------

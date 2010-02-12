@@ -136,12 +136,18 @@ Execute \fIlist\fP.
 .TP
 \fIword\fP ... \fB(\fP\|\fB)\fP [ \fIterm\fP ] \fIcommand\fP
 .PD
-where \fIterm\fP is one ore more newline or \fB;\fP.
+where \fIterm\fP is one or more newline or \fB;\fP.
 Define a function which is referenced by any one of \fIword\fP.
 Normally, only one \fIword\fP is provided; multiple \fIword\fPs
 are usually only useful for setting traps.
 The body of the function is the \fIlist\fP between
 the \fB{\fP and \fB}\fP. See \fBFUNCTIONS\fP below.
+
+If the option \fBSH_GLOB\fP is set for compatibility with other
+shells, then whitespace may appear between between the left and
+right parentheses when there is a single \fIword\fP; otherwise,
+the parentheses will be treated as forming a globbing pattern
+in that case.
 .TP
 \fBtime\fP [ \fIpipeline\fP ]
 The \fIpipeline\fP is executed, and timing statistics are
@@ -480,7 +486,7 @@ the command \fBcat\fP is assumed.  Thus
 .B < file
 .RE
 .PP
-prints the contents of \fBfile\fP.
+copies the contents of \fBfile\fP to the standard output.
 .PP
 If a command is followed by
 .B &
@@ -512,6 +518,8 @@ execute the specified interpreter on operating systems that do
 not handle this executable format in the kernel.
 .SH FUNCTIONS
 .PP
+Shell functions are defined with the \fBfunction\fP reserved word or the
+special syntax "funcname()".
 The
 .B function
 reserved word is used to define shell functions.
@@ -556,6 +564,11 @@ Executed whenever the current working directory is changed.
 .TP
 \fBprecmd\fP
 Executed before each prompt.
+.TP
+\fBpreexec\fP
+Executed just after a command has been read and is about to be
+executed.  If the history mechanism is active, the string to be
+executed is passed as an argument.
 .TP
 \fBperiodic\fP
 If the parameter

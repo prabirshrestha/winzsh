@@ -1,6 +1,4 @@
 #
-# $Id: zshrc,v 2.0 1996/05/02 22:57:04 hzoli Exp $
-#
 # Generic .zshrc file for zsh 2.7
 #
 # .zshrc is sourced in interactive shells.  It

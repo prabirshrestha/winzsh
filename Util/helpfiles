@@ -13,8 +13,8 @@
 # instead.)
 
 # Takes one filename argument, or stdin: the zsh manual page as a plain
-# ascii file: `man zshbuiltins | colcrt -' (remember the -) should do the
-# trick.
+# ascii file: `man zshbuiltins | colcrt -' (remember the -) should do
+# the trick.
 
 # If you don't have colcrt, try 'col -bx'.  The x is necessary so that
 # spaces don't turn into tabs, which messes up the calculations of
@@ -22,15 +22,17 @@
 # previous line (so you see what we're up against).
 
 # Example usage:
-#    cd ~/zsh-3.0				# or wherever
+#    cd ~/zsh-3.0.0				# or wherever
 #    mkdir Help
 #    cd Help
-#    man zshbuiltins | colcrt - | helpfiles
+#    man zsh | colcrt - | helpfiles
 #    run-help() {
-#      typeset zhelp=~/zsh-3.0/Help		# or wherever
-#      [[ $1 == . ]] && 1=dot
-#      [[ $1 == : ]] && 1=colon
-#      if [[ -f $zhelp/$1 ]]; then
+#      typeset zhelp=~/zsh-3.0.0/Help		# or wherever
+#      [[ $1 = . ]] && 1=dot
+#      [[ $1 = : ]] && 1=colon
+#      if [[ $1 = compctl ]]; then
+#         man zshcompctl
+#      elif [[ -f $zhelp/$1 ]]; then
 #    	  ${=PAGER:-more} $zhelp/$1
 #      else
 #    	  man $1
@@ -39,7 +41,7 @@
 # now <Esc>-h works for shell builtins.
 
 while (<>) {
-    last if /^SHELL BUILTIN COMMANDS/;
+    last if /^\s*SHELL BUILTIN COMMANDS/;
     /zshbuiltins/ && $zb++;
     last if ($zb && /^\s*DESCRIPTIONS/);
 }
@@ -85,9 +87,17 @@ sub newcmd {
     }
 }
 
+sub doprint {
+    local($_) = shift;
+
+    s/^$indentstr//o;		# won't work if too many tabs
+    print;
+}
+
 while (<>) { last unless /^\s*$/; }
 
 /^(\s+)(\S+)/;
+$indentstr = $1;
 $indent = length($1);
 &newcmd($2);
 print if $print;
@@ -97,7 +107,7 @@ BUILTINS: while (<>) {
 
     undef($undented);
     if (/^\s*$/ || ($undented = (/^(\s*)/  && length($1) < $indent))) {
-	$undented && print;
+	$undented && &doprint($_);
 	while (defined($_ = <>) && /(^\w)|(^\s*$)/) { 
 	    last BUILTINS if /^STARTUP\/SHUTDOWN FILES/;
 	}
@@ -111,6 +121,11 @@ BUILTINS: while (<>) {
 		} while (defined($_) && /^\s*$/);
 	    }
 	}
+	# In zshall, the zshcompctl manual page comes after the
+	# builtins.
+	if (/ZSHCOMPCTL\(1\).*ZSHCOMPCTL\(1\)/) {
+	    last BUILTINS;
+	}
 	if (/^(\s*)/ && length($1) < $indent) {
 	    # This may be just a bug on the SGI, or maybe something
 	    # more sinister (don\'t laugh, this is nroff).
@@ -119,23 +134,24 @@ BUILTINS: while (<>) {
 	    do {
 		$_ = <>;
 	    } while (defined($_) && /^\s*$/);
+	    last unless defined($_);
 	}
 	if (/^(\s+)(\S+)/ && length($1) == $indent) {
 	    &newcmd($2);
-	} else {
+	}  else {
 	    print "\n";
 	}
         if ($print) {
 	    if (defined($defer)) {
 		chop;
-		print "$_$defer";
+		&doprint("$_$defer");
 		undef($defer);
 	    } else {
-		print;
+		&doprint($_);
 	    }
 	}
     } else {
-	print if $print;
+	&doprint($_) if $print;
     }
 }
 
@@ -163,3 +179,5 @@ foreach $file (<*>) {
 	symlink ($sameas, $file);
     }
 }
+
+__END__

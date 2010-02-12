@@ -150,9 +150,6 @@
 /* Define to 1 if struct timezone is defined by a system header */
 #undef HAVE_STRUCT_TIMEZONE
 
-/* Define if your system's typeahead disappears from the shell editor. */
-#undef CLOBBERS_TYPEAHEAD
-
 /* Define to 1 if there is a prototype defined for brk() on your system */
 #undef HAVE_BRK_PROTO
 
@@ -176,3 +173,27 @@
 
 /* Define to 1 if /bin/sh does not interpret \ escape sequences */
 #undef SH_USE_BSD_ECHO
+
+/* Define to `unsigned long' if <sys/types.h> doesn't define. */
+#undef ino_t
+
+/*
+ * Definitions used when a long is less than eight byte, to try to
+ * provide some support for eight byte operations.
+ *
+ * Note that ZSH_64_BIT_TYPE, OFF_T_IS_64_BIT, INO_T_IS_64_BIT do *not* get
+ * defined if long is already 64 bits, since in that case no special handling
+ * is required.
+ */
+
+/* Define to a 64 bit integer type if there is one, but long is shorter */
+#undef ZSH_64_BIT_TYPE
+
+/* Define to an unsigned variant of ZSH_64_BIT_TYPE if that is defined */
+#undef ZSH_64_BIT_UTYPE
+
+/* Define to 1 if off_t is 64 bit (for large file support) */
+#undef OFF_T_IS_64_BIT
+
+/* Define to 1 if ino_t is 64 bit (for large file support) */
+#undef INO_T_IS_64_BIT

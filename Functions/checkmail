@@ -22,7 +22,7 @@ do
 		if (($#file)) then
 			checkmail "${^file}\?$message"
 		fi
-	elif test -N "$file"; then  # this also sets $_ to $file
+	elif test -s "$file" -a -N "$file"; then  # this also sets $_ to $file
 		print -r -- "${(e)message:-You have new mail.}"
 	fi
 done

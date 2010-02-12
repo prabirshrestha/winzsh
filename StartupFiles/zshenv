@@ -1,6 +1,4 @@
 #
-# $Id: zshenv,v 2.0 1996/05/02 22:57:04 hzoli Exp $
-#
 # Generic .zshenv file for zsh 2.7
 #
 # .zshenv is sourced on all invocations of the

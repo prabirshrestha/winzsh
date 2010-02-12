@@ -4,22 +4,29 @@
 @settitle    zsh
 @c %**end of header
 
+@ifinfo
+@c Note to RedHat: Do NOT change this to @{@}.  It really should be @'@'.
+@set dsq @'@'
+@end ifinfo
+@iftex
+@c The sequence {} disappears completely in TeX, leaving only the quotes.
+@set dsq '{}'
+@end iftex
+
 @setchapternewpage odd
 @iftex
 @finalout
 @afourpaper
 @end iftex
 
-@set EDITION 2.1.10
-@set VERSION 3.0.1
-@set UPDATED 15 October 1996
+@set EDITION 3.0
+@set VERSION 3.0.6
+@set UPDATED 31 July 1999
 
 @ifinfo
 @noindent
 This is a texinfo version of the man page for the Z Shell, originally by 
-Paul Falstad.  It was converted from the @file{zsh.1} file distributed with
-zsh v2.5.0 by Jonathan Hardwick, @code{jch@@cs.cmu.edu} and updated/modified 
-by Clive Messer, @code{clive@@epos.demon.co.uk} to its present state.
+Paul Falstad.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -46,9 +53,7 @@ Document Edition @value{EDITION}, last updated @value{UPDATED},
 of @cite{The Z Shell Guide}, for zsh, Version @value{VERSION}.
 
 This is a texinfo version of the man page for the Z Shell, originally by 
-Paul Falstad.  It was converted from the @file{zsh.1} file distributed with 
-zsh v2.5.0 by Jonathan Hardwick, @code{jch@@cs.cmu.edu} and updated/modified 
-by Clive Messer, @code{clive@@epos.demon.co.uk} to its present state. 
+Paul Falstad.
 
 Permission is granted to make and distribute verbatim copies of
 this manual provided the copyright notice and this permission notice
@@ -210,11 +215,13 @@ then be processed with @code{dvips} and optionally @code{gs} (Ghostscript) to
 produce a nicely formatted printed guide.
 
 @item The html guide.
-Mark Borges, @code{mdb@@cdc.noaa.gov}, maintains an html version of this
-guide at @code{http://www.mal.com/zsh/Doc/zsh_toc.html}.@*
-(The html version is produced with @code{texi2html}, which may be obtained
-from @code{http://wwwcn.cern.ch/dci/texi2html/}. The command is,
-@code{texi2html -split_chapter -expandinfo zsh.texi})
+An HTML version of this guide is available at the Zsh web site via
+@code{http://sunsite.auc.dk/zsh/Doc/index.html}.  Note that the on-line
+guide may describe a different (usually more recent) version of Zsh.
+(The HTML version is produced with @cite{texi2html}, which may be obtained
+from @code{http://wwwcn.cern.ch/dci/texi2html/}. The command is
+`@code{texi2html -split_chapter -expandinfo zsh.texi}'.)
+
 @end table
 
 @noindent
@@ -222,16 +229,6 @@ For those who do not have the necessary tools to process texinfo,
 precompiled documentation, (PostScript, dvi, info and html formats),
 is available from the zsh archive site or its mirrors in the file, 
 @file{zsh-doc.tar.gz}. (@xref{Availability}, for a list of sites.)
-
-@section Future
-
-@noindent
-This guide is actively maintained by Clive Messer,
-@code{clive@@epos.demon.co.uk}, and Mark Borges, @code{mdb@@cdc.noaa.gov}.
-Patches, comments, criticism, and suggestions should be sent to either of the
-above or alternatively, the @dfn{zsh-workers} mailing list,
-@code{zsh-workers@@math.gatech.edu}.
-
 
 @node Introduction, Invocation, The Z Shell Guide, Top
 @chapter Introduction
@@ -256,64 +253,92 @@ host of other features.
 @node Author, Availability,  , Introduction
 @section Author
 @cindex author
-
 @noindent
-Zsh was originally written by Paul Falstad @code{pjf@@cts.com}.  Zsh is 
-now maintained by the members of the zsh workers mailing list 
-@code{zsh-workers@@math.gatech.edu}.  The development is currently 
-coordinated by 
-@iftex
-Zolt@'an Hidv@'egi,
-@end iftex
-@ifinfo
-Zoltan Hidvegi,
-@end ifinfo
-@code{hzoli@@cs.elte.hu}.
+Zsh was originally written by Paul Falstad @code{<pf@@zsh.org>}.  Zsh is
+now maintained by the members of the zsh-workers mailing list
+@code{<zsh-workers@@sunsite.auc.dk>}.  New development is currently
+coordinated by Peter Stephenson @code{<pws@@zsh.org>}.  The
+coordinator can be contacted at @code{<coordinator@@zsh.org>}, but
+matters relating to the code should generally go to the mailing list.
 
 
 @node Availability, Undocumented Features, Author, Introduction
 @section Availability
 
 @noindent
-Zsh is available from the following anonymous ftp sites.  The first
-is the official archive site.  The rest are mirror sites which are
-kept frequently up to date.  The sites marked with @code{(G)} may 
-mirror @code{ftp.math.gatech.edu} instead of the primary site.
+Zsh is available from the following anonymous FTP sites.  These mirror
+sites are kept frequently up to date.  The sites marked with @emph{(H)} may be
+mirroring @t{ftp.cs.elte.hu} instead of the primary site.
 
+@noindent
+@cindex FTP sites for zsh
+@cindex acquiring zsh by FTP
+@cindex availability of zsh
 @table @asis
-@item Hungary
-@code{ftp://ftp.cs.elte.hu/pub/zsh/}@*
-@code{ftp://ftp.kfki.hu/pub/packages/zsh/}
+@item Primary site
+@t{ftp://ftp.zsh.org/pub/zsh/}@*
+@t{http://www.zsh.org/pub/zsh/}
 
 @item Australia
-@code{ftp://ftp.ips.oz.au/pub/packages/zsh/}  @code{(G)}
+@t{ftp://ftp.zsh.org/pub/zsh/}@*
+@t{http://www.zsh.org/pub/zsh/}@*
+@t{ftp://ftp.ips.gov.au/pub/packages/zsh/}  @emph{(H)}
+
+@item Denmark
+@t{ftp://sunsite.auc.dk/pub/unix/shells/zsh/}
+
+@item Finland
+@t{ftp://ftp.funet.fi/pub/unix/shells/zsh/}
 
 @item France
-@code{ftp://ftp.cenatls.cena.dgac.fr/pub/shells/zsh/}
+@t{ftp://ftp.cenatls.cena.dgac.fr/pub/shells/zsh/}
 
 @item Germany
-@code{ftp://ftp.fu-berlin.de/pub/unix/shells/zsh/}@*
-@code{ftp://ftp.gmd.de/packages/zsh/}@*
-@code{ftp://ftp.uni-trier.de/pub/unix/shell/zsh/}
+@t{ftp://ftp.fu-berlin.de/pub/unix/shells/zsh/}  @emph{(H)}@*
+@t{ftp://ftp.gmd.de/packages/zsh/}@*
+@t{ftp://ftp.uni-trier.de/pub/unix/shell/zsh/}
+
+@item Hungary
+@t{ftp://ftp.cs.elte.hu/pub/zsh/}@*
+@t{http://www.cs.elte.hu/pub/zsh/}@*
+@t{ftp://ftp.kfki.hu/pub/packages/zsh/}
+
+@item Israel
+@t{ftp://ftp.math.technion.ac.il/mirror/ftp.zsh.org/pub/zsh/}@*
+@t{http://www.math.technion.ac.il/mirror/ftp.zsh.org/pub/zsh/}
+
+@item Italy
+@t{ftp://ftp.unina.it/pub/Unix/pkgs/shell/zsh/}
 
 @item Japan
-@code{ftp://ftp.tohoku.ac.jp/mirror/zsh/}@*
-@code{ftp://ftp.iij.ad.jp/pub/misc/zsh/}
+@t{ftp://ftp.nisiq.net/pub/shells/zsh/}  @emph{(H)}@*
+@t{ftp://ftp.win.ne.jp/pub/shell/zsh/}
 
 @item Norway
-@code{ftp://ftp.uit.no/pub/unix/shells/zsh/}
+@t{ftp://ftp.uit.no/pub/unix/shells/zsh/}
+
+@item Poland
+@t{ftp://sunsite.icm.edu.pl/pub/unix/shells/zsh/}
+
+@item Romania
+@t{ftp://ftp.roedu.net/pub/mirrors/ftp.zsh.org/pub/zsh/}
+
+@item Slovenia
+@t{ftp://ftp.siol.net/mirrors/zsh/}
 
 @item Sweden
-@code{ftp://ftp.lysator.liu.se/pub/unix/zsh/}
+@t{ftp://ftp.lysator.liu.se/pub/unix/zsh/}
 
 @item UK
-@code{ftp://ftp.net.lut.ac.uk/zsh/}
+@t{ftp://ftp.net.lut.ac.uk/zsh/}@*
+@t{ftp://sunsite.org.uk/packages/zsh/}
 
 @item USA
-@code{ftp://ftp.math.gatech.edu/pub/zsh/}@*
-@code{ftp://uiarchive.uiuc.edu/pub/packages/shells/zsh/}@*
-@code{ftp://ftp.sterling.com/zsh/}  @code{(G)}@*
-@code{ftp://ftp.rge.com/pub/shells/zsh/}  @code{(G)}
+@t{ftp://uiarchive.uiuc.edu/pub/packages/shells/zsh/}@*
+@t{ftp://ftp.rge.com/pub/shells/zsh/}@*
+@t{ftp://foad.org/pub/zsh/}@*
+@t{http://foad.org/zsh/}
+
 @end table
 
 @node Undocumented Features, Mailing Lists, Availability, Introduction
@@ -332,43 +357,52 @@ To join the mailing lists, see @ref{Mailing Lists}.
 @noindent
 Zsh has 3 mailing lists:
 
-@table @code
-@item zsh-announce@@math.gatech.edu
-Announcements about releases, major changes in the shell and the monthly
-posting of the Zsh FAQ. (moderated)
+@noindent
+@table @asis
+@item @code{<zsh-announce@@sunsite.auc.dk>}
+Announcements about releases, major changes in the shell and the
+monthly posting of the Zsh FAQ.  (moderated)
 
-@item zsh-users@@math.gatech.edu
+@item @code{<zsh-users@@sunsite.auc.dk>}
 User discussions.
 
-@item zsh-workers@@math.gatech.edu
+@item @code{<zsh-workers@@sunsite.auc.dk>}
 Hacking, development, bug reports and patches.
-@end table 
+
+@end table
 
 @noindent
-To subscribe, send mail with the SUBJECT @code{subscribe <e-mail-address>}
+To subscribe or unsubscribe, send mail
 to the associated administrative address for the mailing list.
 
 @noindent
-@code{zsh-announce-request@@math.gatech.edu}@*
-@code{zsh-users-request@@math.gatech.edu}@*
-@code{zsh-workers-request@@math.gatech.edu}
+@table @asis
+@item @code{<zsh-announce-subscribe@@sunsite.auc.dk>}
+@item @code{<zsh-users-subscribe@@sunsite.auc.dk>}
+@item @code{<zsh-workers-subscribe@@sunsite.auc.dk>}
+
+@noindent
+@item @code{<zsh-announce-unsubscribe@@sunsite.auc.dk>}
+@item @code{<zsh-users-unsubscribe@@sunsite.auc.dk>}
+@item @code{<zsh-workers-unsubscribe@@sunsite.auc.dk>}
+@end table
 
 @noindent
 YOU ONLY NEED TO JOIN ONE OF THE MAILING LISTS AS THEY ARE NESTED.
-
-@noindent
-All submissions to @code{zsh-announce} are automatically forwarded to 
-@code{zsh-users}.@*
-All submissions to @code{zsh-users} are automatically forwarded to 
-@code{zsh-workers}.
-
-@noindent
-Un-subscribing is done similarly.
+All submissions to @cite{zsh-announce} are automatically forwarded to
+@cite{zsh-users}.  All submissions to @cite{zsh-users} are automatically
+forwarded to @cite{zsh-workers}.
 
 @noindent
 If you have problems subscribing/unsubscribing to any of the mailing
-lists, send mail to Richard Coleman, @code{coleman@@math.gatech.edu}.
+lists, send mail to @code{<listmaster@@zsh.org>}.  The mailing lists are
+maintained by Karsten Thygesen @code{<karthy@@kom.auc.dk>}.
 
+@noindent
+The mailing lists are archived; the archives can be accessed via the
+administrative addresses listed above.  There is also a hypertext
+archive, maintained by Geoff Wing @code{<gcw@@zsh.org>}, available at
+@code{http://www.zsh.org/mla/}.
 @node Further Information,  , Mailing Lists, Introduction
 @section Further Information
 
@@ -382,19 +416,21 @@ lists, send mail to Richard Coleman, @code{coleman@@math.gatech.edu}.
 @subsection The Zsh FAQ
 
 @noindent
-Zsh has a list of Frequently Asked Questions (FAQ) maintained by
-Peter Stephenson, @code{P.Stephenson@@swansea.ac.uk}.  It is regularly
-posted to the newsgroup @code{comp.unix.shell} and the @code{zsh-announce}
-mailing list.  The latest version can be found at any of the Zsh ftp sites,
-or at: @code{http://www.mal.com/zsh/FAQ/}
+Zsh has a list of Frequently Asked Questions (FAQ), maintained by
+Peter Stephenson @code{<pws@@zsh.org>}.  It is regularly posted to the
+newsgroup @cite{comp.unix.shell} and the @cite{zsh-announce} mailing list.
+The latest version can be found at any of the Zsh FTP sites, or at
+@code{http://www.zsh.org/FAQ/}.  The contact address for FAQ-related matters
+is @code{<faqmaster@@zsh.org>}.
 
 
 @node The Zsh Web Page, See Also, The Zsh FAQ, Further Information
 @subsection The Zsh Web Page
 
 @noindent
-Zsh has a web page maintained by Mark Borges, @code{mdb@@cdc.noaa.gov}
-which is located at: @code{http://www.mal.com/zsh/}.
+Zsh has a web page which is located at @code{http://www.zsh.org/}.  This is
+maintained by Karsten Thygesen @code{<karthy@@zsh.org>}, of SunSITE Denmark.
+The contact address for web-related matters is @code{<webmaster@@zsh.org>}.
 
 
 @node See Also,  , The Zsh Web Page, Further Information
@@ -406,9 +442,10 @@ zshcompctl(1), zshexpn(1), zshparam(1), zshzle(1), zshoptions(1),
 zshmisc(1)
 
 @noindent
-IEEE Standard for information Technology -- Portable Operating System
-Interface (POSIX) -- Part 2: Shell and Utilities, IEEE Inc, 1993, ISBN
-1-55937-255-9.
+@cite{IEEE Standard for information Technology -
+Portable Operating System Interface (POSIX) -
+Part 2: Shell and Utilities},
+IEEE Inc, 1993, ISBN 1-55937-255-9.
 
 
 @node Invocation, Startup/Shutdown Files, Introduction, Top
@@ -659,11 +696,16 @@ Execute @var{list}.
 @item function @var{word} @dots{} [ () ] [ @var{term} ] @{ @var{list} @}
 @itemx @var{word} @dots{} () [ @var{term} ] @{ @var{list} @}
 @itemx @var{word} @dots{} () [ @var{term} ] @var{command}
-Where @var{term} is one ore more newline or @code{;}.
+Where @var{term} is one or more newline or @code{;}.
 Define a function which is referenced by any one of @var{word}.
 Normally, only one @var{word} is provided; multiple @var{word}s are
 usually only useful for setting traps.  The body of the function is the
 @var{list} between the @code{@{} and @code{@}}.
+
+If the option @code{SH_GLOB} is set for compatibility with other shells, then
+whitespace may appear between between the left and right parentheses when
+there is a single @var{word}; otherwise, the parentheses will be treated as
+forming a globbing pattern in that case.
 @xref{Functions}.
 
 @item time [ @var{pipeline} ]
@@ -792,12 +834,7 @@ to prevent an alias being defined for @samp{\foo} as well.
 A character may be @dfn{quoted} (that is, made to stand for itself) by
 preceding it with a @code{\}.  @code{\} followed by a newline is
 ignored.  All characters enclosed between a pair of single quotes
-@ifinfo
-(@code{@'@'}) are quoted, except the first character of @code{histchars}
-@end ifinfo
-@iftex
-(@code{''}) are quoted, except the first character of @code{histchars}
-@end iftex
+(@t{@value{dsq}}) are quoted, except the first character of @code{histchars}
 (@code{!} by default).  A single quote cannot appear within single
 quotes.  Inside double quotes (@code{""}), parameter and command
 substitution occurs, and @code{\} quotes the characters @code{\},
@@ -973,11 +1010,12 @@ as that used for filename generation; @xref{Filename Generation}.
 @item $@{@var{name}@}
 The value, if any, of the parameter @var{name} is substituted.  The
 braces are required if @var{name} is followed by a letter, digit, or
-underscore that is not to be interpreted as part of its name.  If
-@var{name} is an array parameter, then the values of each element of
-@var{name} is substituted, one element per word.  Otherwise, the
-expansion results in one word only; no word splitting is done on the
-result.
+underscore that is not to be interpreted as part of its name.
+If @var{name} is an array parameter, then the value of each
+element of @var{name} is substituted, one element per word.
+Otherwise, the expansion results in one word only; no field
+splitting is done on the result unless the @code{SH_WORD_SPLIT}
+option is set.
 
 @item $@{+@var{name}@}
 If @var{name} is the name of a set parameter, @code{1} is substituted,
@@ -997,8 +1035,9 @@ Set @var{name} to @var{word}; the value of the parameter is then substituted.
 
 @item $@{@var{name}:?@var{word}@}
 If @var{name} is set and is non-null, then substitute its value;
-otherwise, print @var{word} and exit from the shell.  If @var{word} is
-omitted, then a standard message is printed.
+otherwise, print @var{word} and exit from the shell.  Interactive shells
+do not exit.  If @var{word} is omitted, then a standard message is
+printed.
 
 @item $@{@var{name}:+@var{word}@}
 If @var{name} is set and is non-null then substitute @var{word};
@@ -1083,6 +1122,16 @@ type command substitution is used in place of @var{name} above, it is
 substituted first and the result is used as it were the value of @var{name}.
 
 @noindent
+Note that double quotes may appear around nested expansions, in which
+case only the part inside is treated as quoted; for example,
+@code{$@{(f)"$(foo)"@}} quotes the result of @code{$(foo)}, but the flag
+`@code{(f)}' (see below) is applied using the rules for unquoted
+substitutions.  Note further that quotes are themselves nested in this
+context; for example, in @code{"$@{(f)"$(foo)"@}"}, there are two sets
+of quotes, one surrounding the whole expression, the other (redundant)
+surrounding the @code{$(foo)} as before.
+
+@noindent
 If the opening brace is directly followed by an opening parenthesis
 the string up to the matching closing parenthesis will be taken as a
 list of flags.  Where arguments are valid, any character, or the
@@ -1147,11 +1196,12 @@ Pad the resulting words on the left.  Each word will be truncated if
 required and placed in a field @var{expr} characters wide.  The space to
 the left will be filled with @var{string1} (concatenated as often as
 needed), or spaces if @var{string1} is not given.  If both @var{string1}
-and @var{string2} are given, this string will be placed exactly once
-directly to the left of the resulting word.
+and @var{string2} are given, this string is inserted once directly to
+the left of each word, before padding.
 
 @item r:@var{expr}::@var{string1}::@var{string2}:
-As @code{l}, but pad the words on the right.
+As @code{l}, but pad the words on the right and insert @var{string2} on
+the right.
 
 @item j:@var{string}:
 @pindex SH_WORD_SPLIT, use of
@@ -1166,15 +1216,17 @@ shorthand for @code{pj:\n:}.
 @item s:@var{string}:
 Force word splitting (see the option @code{SH_WORD_SPLIT}) at the
 separator @var{string}.  Splitting only occurs in places where an array
-value is valid.
+value is valid, and joining always occurs before splitting.
 
 @item f
 Split the result of the expansion to lines.  This is a shorthand for 
 @code{ps:\n:}.
 
+@noindent
+(All remaining flags are useful only with the
+@code{$@{@dots{}#@dots{}@}} and @code{$@{@dots{}%@dots{}@}} forms.)
+
 @item S
-(This and all remaining flags are used with the
-@code{$@{@dots{}#@dots{}@}} and @code{$@{@dots{}%@dots{}@}} forms).
 Search substrings as well as beginnings or ends.
 
 @item I:@var{expr}:
@@ -1262,9 +1314,9 @@ pattern for filename generation, unless the @code{GLOB} option is
 @pindex GLOB, use of
 unset.  If the @code{EXTENDED_GLOB} option is set, the @code{^}, @code{~}, and
 @pindex EXTENDED_GLOB, use of
-@code{#} characters also denote a pattern; otherwise (except for an
-initial @code{~}, @xref{Filename Expansion}) they are not
-treated specially by the shell.  The word is replaced with a list of
+@code{#} characters also denote a pattern; they are not otherwise
+treated specially by the shell, except for an initial @code{~}
+(@pxref{Filename Expansion}).  The word is replaced with a list of
 sorted filenames that match the pattern.  If no matching pattern is
 found, the shell gives an error message, unless the @code{NULL_GLOB}
 @pindex NULL_GLOB, use of
@@ -1341,7 +1393,7 @@ or
 
 @noindent
 does a recursive directory search for files named @var{bar}, not following 
-symbolic links.  For this you can use the form @code{***/}.
+symbolic links.  To follow symbolic links, use the form @code{***/}.
 
 @noindent
 If used for filename generation, a pattern may contain an exclusion
@@ -1456,21 +1508,22 @@ as a user name and translated into the corresponding user id (e.g.@:
 @item g@var{id}
 Like @code{u@var{id}} but with group ids or names.
 
-@item a[Mwhm][-|+]@var{n}
-Files accessed exactly @var{n} days ago.  Files accessed within the last 
-@var{n} days are selected using a negative value for @var{n} 
-(@samp{-n}).  Files accessed more than @var{n} days ago are selected by a 
-positive @var{n} value (@code{+n}).  Optional unit specifiers @code{M}, 
-@code{w}, @code{h}, or @code{m} (e.g. @code{ah5}) cause the check to be 
-performed with months (of 30 days), weeks, hours, or minutes instead of
-days, respectively.  For instance, @code{echo *(ah-5)} would echo files 
-accessed within the last five hours.
+@item a[Mwhms][-|+]@var{n}
+Files accessed exactly @var{n} days ago.  Files accessed within the last
+@var{n} days are selected using a negative value for @var{n}
+(@samp{-n}).  Files accessed more than @var{n} days ago are selected by
+a positive @var{n} value (@code{+n}).  Optional unit specifiers
+@code{M}, @code{w}, @code{h}, @code{m}, or @code{s} (e.g. @code{ah5})
+cause the check to be performed with months (of 30 days), weeks, hours,
+minutes, or seconds instead of days, respectively.  For instance,
+@code{echo *(ah-5)} would echo files accessed within the last five
+hours.
 
-@item m[Mwhm][-|+]@var{n}
+@item m[Mwhms][-|+]@var{n}
 Like the file access qualifier, except that it uses the file modification 
 time.
 
-@item c[Mwhm][-|+]@var{n}
+@item c[Mwhms][-|+]@var{n}
 Like the file access qualifier, except that it uses the file inode change 
 time.
 
@@ -1569,13 +1622,7 @@ case.  A history substitution begins with the first character of the
 @code{histchars} parameter which is @code{!} by default and may occur 
 anywhere on the command line; history substitutions do not nest.  The 
 @code{!} can be escaped with @code{\} or can be enclosed between a pair of 
-single quotes 
-@ifinfo
-(@code{@'@'}) 
-@end ifinfo
-@iftex
-(@code{''})
-@end iftex
+single quotes (@t{@value{dsq}}) 
 to suppress its special meaning. Double quotes will not work for this.
 
 @noindent
@@ -1969,7 +2016,7 @@ zero or more parameter assignments, but no command name, the command
 @code{< file}
 
 @noindent
-prints the contents of @code{file}.
+copies the contents of @code{file} to the standard output.
 
 @noindent
 If a command is followed by @code{&} and job control is not active, then
@@ -2010,8 +2057,9 @@ format in the kernel.
 @cindex functions
 
 @noindent
-The @code{function} reserved word is used to define shell functions.
 @findex function
+Shell functions are defined with the @code{function} reserved word or the
+special syntax `@var{funcname} @code{()}'.
 Shell functions are read in and stored internally.  Alias names are
 resolved when the function is read.  Functions are executed like
 commands with the arguments passed as positional parameters.
@@ -2043,6 +2091,12 @@ Executed whenever the current working directory is changed.
 @item precmd
 Executed before each prompt.
 @findex precmd
+
+@item preexec
+Executed just after a command has been read and is about to be
+executed.  If the history mechanism is active, the string to be
+executed is passed as an argument.
+@findex preexec
 
 @item periodic
 If the parameter @code{PERIOD} is set, this function is executed every
@@ -3587,6 +3641,7 @@ subscript of the form @code{[@var{exp}]} selects the single element
 to arithmetic expansion as if it were surrounded by @code{$((@dots{}))}.  The 
 elements are numbered beginning with 1 unless the @code{KSH_ARRAYS} option
 is set when they are numbered from zero.
+@cindex subscripts
 @pindex KSH_ARRAYS, use of
 
 @noindent
@@ -4855,6 +4910,11 @@ blank.
 Remove the @code{history} (@code{fc -l}) command from the history
 when invoked.
 
+@item HIST_REDUCE_BLANKS
+@pindex HIST_REDUCE_BLANKS
+Remove superfluous whitespace from each command line
+being added to the history list.
+
 @item HIST_VERIFY
 @cindex history, verifying substitution
 @pindex HIST_VERIFY
@@ -5053,6 +5113,13 @@ builtins are @code{.}, @code{:}, @code{break}, @code{continue},
 @code{local}, @code{readonly}, @code{return}, @code{set}, @code{shift},
 @code{source}, @code{times}, @code{trap} and @code{unset}.
 
+@item PRINT_EIGHT_BIT
+@cindex eight bit characters, printing
+@pindex PRINT_EIGHT_BIT
+Print eight bit characters literally in completion lists, etc.
+This option is not necessary if your system correctly returns the
+printability of eight bit characters (see @code{ctype(3)}).
+
 @item PRINT_EXIT_VALUE (-1)
 @cindex exit status, printing
 @pindex PRINT_EXIT_VALUE
@@ -5116,12 +5183,7 @@ Array expansions of the form @code{foo$@{xx@}bar}, where the parameter
 @cindex rc, quoting style
 @cindex quoting style, rc
 @pindex RC_QUOTES
-@ifinfo
-Allow the character sequence @code{@'@'} to signify a single quote within
-@end ifinfo
-@iftex
-Allow the character sequence @code{''} to signify a single quote within
-@end iftex
+Allow the character sequence @t{@value{dsq}} to signify a single quote within
 singly quoted strings.
 
 @item RCS (+f)
@@ -5784,7 +5846,7 @@ used to enable them.
 Output the termcap string corresponding to the capability @var{cap},
 with optional arguments.
 
-@item emulate [ -R ] [ zsh | sh | ksh | csh ]
+@item emulate [ -LR ] [ zsh | sh | ksh | csh ]
 @findex emulate
 @cindex compatibility, sh
 @cindex compatibility, ksh
@@ -5796,7 +5858,14 @@ Set up zsh options to emulate the specified shell as much as possible.
 @code{csh} will never be fully emulated.  If the argument is not one of the 
 shells listed above, @code{zsh} will be used as a default.  If the @samp{-R}
 option is given, all options are reset to their default value corresponding 
-to the specified emulation mode.
+to the specified emulation
+mode, except for certain options describing the interactive
+environment; otherwise, only those options likely to cause portability
+problems in scripts and functions are altered.  If the @samp{-L} option
+is given, the option @code{LOCAL_OPTIONS} will be set as well, causing
+the effect of the @code{emulate} command to be local to the immediately
+surrounding shell function, if any; normally this is turned off in all
+emulation modes except @code{ksh}.
 
 @item enable [ -afmr ] @var{arg} @dots{}
 @findex enable
@@ -6192,7 +6261,7 @@ change to this new directory.
 The third form of @code{pushd} changes directory by rotating the directory 
 list.  An argument of the form @code{+n} identifies a stack entry by counting
 from the left of the list shown by the @code{dirs} command, starting with 
-zero.  An argument of the form @samp{-n} counts from the right.  If the 
+zero.  An argument of the form @code{-n} counts from the right.  If the 
 @code{PUSHD_MINUS} option is set, the meanings of @code{+} and @code{-} in 
 this context are swapped.
 
@@ -6331,7 +6400,7 @@ parameters (or to the array @var{name} if @samp{-A} is used).  With
 meaning of the other flags.  Flags may be specified by name using the
 @samp{-o} option.  If the @samp{-A} flag is specified, @var{name} is set
 to an array containing the given @var{arg}s; if @samp{+A} is used and
-@var{name} is an array, the gien arguments will replace the initial
+@var{name} is an array, the given arguments will replace the initial
 elements of that array; if no @var{name} is specified, all arrays are
 printed.  Otherwise the positional parameters are set.  If no arguments
 are given, then the names and values of all parameters are printed on
@@ -6400,6 +6469,20 @@ then the command @var{arg} is executed after the function completes.  If
 not executed inside the body of a function, then the command @var{arg}
 is executed when the shell terminates.  The @code{trap} command with no
 arguments prints a list of commands associated with each signal.
+
+Note that traps defined with the @code{trap} builtin are slightly
+different from those defined as `@code{TRAP}@var{NAL} () @{ @dots{} @}',
+as the latter have their own function environment (line numbers, local
+variables, etc.) while the former use the environment of the command in
+which they were called.  For example,
+
+@code{trap 'print $LINENO' DEBUG}
+
+will print the line number of command executed after it has run, while
+
+@code{TRAPDEBUG() @{ print $LINENO; @}}
+
+will always print the number zero.
 
 @item true
 @findex true
@@ -6717,9 +6800,9 @@ as aliases or functions) are completed.
 @item  -T
 supplies completion flags to be used  before any other processing is done,
 even those given to specific commands with other @code{compctl} 
-definitions.  This is only useful when combined with extended completion 
-(the @samp{-x} flag. @xref{Extended Completion}).
-Using this flag you can define default behaviour which will apply 
+definitions.  This works only when combined with the @samp{-x} flag
+(@pxref{Extended Completion}).
+Using the @samp{-T} flag you can define default behaviour which will apply 
 to all commands without exception, or you can alter the standard behaviour 
 for all commands.  For example, if your access to the user database is too
 slow  and/or it contains too many users (so that completion after @code{~}
@@ -6893,6 +6976,13 @@ the resulting files.  More than one pattern may be given separated by
 blanks. (Note that brace expansion is not part of globbing.  Use the syntax
 (@code{either|or}) to match alternatives.)
 
+@item -s @var{subststring}
+The @var{subststring} is split into words and these words are than
+expanded using all shell expansion mechanisms (see the @code{zshexpn}
+manual page). The resulting words are taken as possible
+completions. The @code{fignore} special parameter is not applied to the
+resulting files.  Note that @samp{-g} is faster for filenames.
+
 @item -K @var{function}
 Call the given function to get the completions.  The function is passed
 two arguments: the prefix and the suffix of the word on which completion is
@@ -6916,14 +7006,10 @@ lines.  Only words matching @var{pattern} are taken.  If @var{num} is
 zero or negative the whole history is searched and if @var{pattern} is
 the empty string all words are taken (as with @code{*}).  A typical
 use is
-@ifinfo
 
-@code{compctl -D -f + -H 0 @'@' -X '(No file found; using history)'} 
-@end ifinfo
-@iftex
-
-@code{compctl -D -f + -H 0 '' -X '(No file found; using history)'}
-@end iftex
+@example
+compctl -D -f + -H 0 @value{dsq} -X '(No file found; using history)'
+@end example
 
 which forces completion to look back in the history list for a word if no
 filename matches.  The explanation string is useful as it tells the user
@@ -6983,14 +7069,10 @@ Completion is then performed as if these had been given as arguments to the
 @var{cmd} supplied with the option.  If the @var{cmd} string is empty the
 first word in the range is instead taken as the command name, and command
 name completion performed on the first word in the range.  For example,
-@ifinfo                         
 
-@code{compctl -x 'r[-exec,;]' -l @'@' -- find}
-@end ifinfo
-@iftex
-
-@code{compctl -x 'r[-exec,;]' -l '' -- find}
-@end iftex
+@example
+compctl -x 'r[-exec,;]' -l @value{dsq} -- find
+@end example
 
 completes arguments between @code{-exec} and the following @code{;} (or the
 end of the command line if there is no such string) as if they were a separate

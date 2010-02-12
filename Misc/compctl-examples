@@ -1,4 +1,4 @@
-# $Id: compctl-examples,v 2.12 1996/08/14 17:01:36 hzoli Exp $
+# compctl-examples
 #
 # This file gives examples of possible programmable completions (compctl).
 # You can either put the compctl commands in your .zshrc file, or put them
