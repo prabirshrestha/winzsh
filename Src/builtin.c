@@ -636,8 +636,7 @@ bin_fg(char *name, char **argv, char *ops, int func)
 		    thisjob = job;
 		    if ((jobtab[job].stat & STAT_SUPERJOB) &&
 			((!jobtab[job].procs->next ||
-			  WIFEXITED(jobtab[job].procs->status) ||
-			  WIFSIGNALED(jobtab[job].procs->status))) &&
+			  killpg(jobtab[job].gleader, 0) == -1)) &&
 			jobtab[jobtab[job].other].gleader)
 			attachtty(jobtab[jobtab[job].other].gleader);
 		    else
@@ -2912,7 +2911,7 @@ typeset_single(char *cname, char *pname, Param pm, int func, int on, int off, in
 	    pm->ct = auxlen;
 	if (PM_TYPE(pm->flags) != PM_ARRAY) {
 	    if (pm->flags & PM_EXPORTED) {
-		if (!pm->env)
+		if (!(pm->flags & PM_UNSET) && !pm->env)
 		    pm->env = addenv(pname, value ? value : getsparam(pname));
 	    } else if (pm->env) {
 		delenv(pm->env);
@@ -3810,6 +3809,12 @@ bin_limit(char *nam, char **argv, char *ops, int func)
 	    permitted. */
 	    val = ZSTRTORLIMT(s, &s, 10);
 # endif /* RLIMIT_NOFILE */
+# ifdef RLIMIT_AIO_OPS
+	else if (lim == RLIMIT_AIO_OPS)
+	    /* pure numeric resource -- only a straight decimal number is
+	    permitted. */
+	    val = ZSTRTORLIMT(s, &s, 10);
+# endif /* RLIMIT_AIO_OPS */
 	else {
 	    /* memory-type resource -- `k' and `M' modifiers are permitted,
 	    meaning (respectively) 2^10 and 2^20. */
@@ -4047,6 +4052,9 @@ bin_ulimit(char *name, char **argv, char *ops, int func)
 # ifdef RLIMIT_VMEM
 	    case RLIMIT_VMEM:
 # endif /* RLIMIT_VMEM */
+# ifdef RLIMIT_AIO_MEM
+	    case RLIMIT_AIO_MEM:
+# endif /* RLIMIT_AIO_MEM */
 		limit *= 1024;
 		break;
 	    }
@@ -4132,6 +4140,11 @@ showlimits(int hard, int lim)
 		/* pure numeric resource */
 		printf("%d\n", (int)val);
 # endif /* RLIMIT_NOFILE */
+# ifdef RLIMIT_AIO_OPS
+	    else if (rt == RLIMIT_AIO_OPS)
+		/* pure numeric resource */
+		printf("%d\n", (int)val);
+# endif /* RLIMIT_AIO_OPS */
 	    else if (val >= 1024L * 1024L)
 		/* memory resource -- display with `K' or `M' modifier */
 # ifdef RLIM_T_IS_QUAD_T
@@ -4246,6 +4259,20 @@ printulimit(int lim, int hard, int head)
 	    printf("cached threads             ");
 	break;
 # endif /* RLIMIT_TCACHE */
+# ifdef RLIMIT_AIO_OPS
+    case RLIMIT_AIO_OPS:
+	if (head)
+	    printf("AIO operations             ");
+	break;
+# endif /* RLIMIT_AIO_OPS */
+# ifdef RLIMIT_AIO_MEM
+    case RLIMIT_AIO_MEM:
+	if (head)
+	    printf("AIO locked-in-memory (kb)  ");
+	if (limit != RLIM_INFINITY)
+	    limit /= 1024;
+	break;
+# endif /* RLIMIT_AIO_MEM */
     }
     /* display the limit */
     if (limit == RLIM_INFINITY)
@@ -4589,7 +4616,7 @@ bin_shift(char *name, char **argv, char *ops, int func)
 int
 bin_getopts(char *name, char **argv, char *ops, int func)
 {
-    int lenstr, lenoptstr, i;
+    int lenstr, lenoptstr, i, plus;
     char *optstr = unmetafy(*argv++, &lenoptstr), *var = *argv++;
     char **args = (*argv) ? argv : pparams;
     static int optcind = 1, quiet;
@@ -4627,6 +4654,7 @@ bin_getopts(char *name, char **argv, char *ops, int func)
     if (!optcind)
 	optcind = 1;
     *opch = str[optcind++];
+    plus = (*str == '+');
     if (optcind == lenstr) {
 	if(args[zoptind++])
 	    str = unmetafy(args[zoptind - 1], &lenstr);
@@ -4649,7 +4677,7 @@ bin_getopts(char *name, char **argv, char *ops, int func)
 	return 0;
     }
     /* copy option into specified parameter, with + if required */
-    setsparam(var, metafy(opch - (*str == '+'), 1 + (*str == '+'), META_DUP));
+    setsparam(var, metafy(opch - plus, 1 + plus, META_DUP));
     /* handle case of an expected extra argument */
     if (optstr[i + 1] == ':') {
 	if (!args[zoptind - 1]) {

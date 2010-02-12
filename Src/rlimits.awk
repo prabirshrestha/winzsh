@@ -7,7 +7,7 @@
 #
 BEGIN {limidx = 0}
 
-/^[\t ]*(#[\t ]*define[\t _]*RLIMIT_[A-Z]*[\t ]*[0-9][0-9]*|RLIMIT_[A-Z]*,[\t ]*)/ {
+/^[\t ]*(#[\t ]*define[\t _]*RLIMIT_[A-Z_]*[\t ]*[0-9][0-9]*|RLIMIT_[A-Z]*,[\t ]*)/ {
     limindex = index($0, "RLIMIT_")
     limtail = substr($0, limindex, 80)
     split(limtail, tmp)
@@ -36,6 +36,9 @@ BEGIN {limidx = 0}
 	    if (limnam == "NPROC")   { msg[limnum] = "maxproc" }
 	    if (limnam == "AS")      { msg[limnum] = "addressspace" }
 	    if (limnam == "TCACHE")  { msg[limnum] = "cachedthreads" }
+	    if (limnam == "AIO_OPS") { msg[limnum] = "aiooperations" }
+	    if (limnam == "AIO_MEM") { msg[limnum] = "aiomemorylocked" }
+	    if (limnam == "SBSIZE")  { msg[limnum] = "sockbufsize" }
         }
     }
 }
@@ -63,9 +66,9 @@ END {
     for (i = 0; i < 0 + nlimits; i++)
 	if (msg[i] == "") {
             badlimit++
-            printf("\t%c%s%c,\n", 034, lim[i], 034)
+            printf("\t%c%s%c,\n", 34, lim[i], 34)
 	} else
-	    printf("\t%c%s%c,\n", 034, msg[i], 034)
+	    printf("\t%c%s%c,\n", 34, msg[i], 34)
     print "\tNULL"
     print "};"
     print ""

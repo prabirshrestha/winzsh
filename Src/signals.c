@@ -561,22 +561,30 @@ killjb(Job jn, int sig)
         if (jn->stat & STAT_SUPERJOB) {
             if (sig == SIGCONT) {
                 for (pn = jobtab[jn->other].procs; pn; pn = pn->next)
-                    kill(pn->pid, sig);
+                    if (killpg(pn->pid, sig) == -1)
+			if (kill(pn->pid, sig) == -1 && errno != ESRCH)
+			    err = -1;
  
                 for (pn = jn->procs; pn->next; pn = pn->next)
-                    err = kill(pn->pid, sig);
+                    if (kill(pn->pid, sig) == -1 && errno != ESRCH)
+			err = -1;
 
 		if (!jobtab[jn->other].procs && pn)
-		    err = kill(pn->pid, sig);
+		    if (kill(pn->pid, sig) == -1 && errno != ESRCH)
+			err = -1;
 
                 return err;
             }
- 
-            killpg(jobtab[jn->other].gleader, sig);
-            return killpg(jn->gleader, sig);
+            if (killpg(jobtab[jn->other].gleader, sig) == -1 && errno != ESRCH)
+		err = -1;
+		
+	    if (killpg(jn->gleader, sig) == -1 && errno != ESRCH)
+		err = -1;
+
+	    return err;
         }
         else
-            return (killpg(jn->gleader, sig));
+	    return killpg(jn->gleader, sig);
     }
     for (pn = jn->procs; pn; pn = pn->next)
         if ((err = kill(pn->pid, sig)) == -1 && errno != ESRCH)

@@ -1034,9 +1034,18 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 		case PM_RIGHT_B:
 		case PM_RIGHT_Z:
 		case PM_RIGHT_Z | PM_RIGHT_B:
+		    {
+			int zero = 1;
+
 		    if (strlen(val) < fwidth) {
+			    if (v->pm->flags & PM_RIGHT_Z) {
+				for (t = val; iblank(*t); t++);
+				if (!*t || !idigit(*t))
+				    zero = 0;
+			    }
 			t = (char *)ncalloc(fwidth + 1);
-			memset(t, (v->pm->flags & PM_RIGHT_B) ? ' ' : '0', fwidth);
+			    memset(t, (((v->pm->flags & PM_RIGHT_B) || !zero) ?
+				       ' ' : '0'), fwidth);
 			if ((t0 = strlen(val)) > fwidth)
 			    t0 = fwidth;
 			strcpy(t + (fwidth - t0), val);
@@ -1046,6 +1055,7 @@ paramsubst(LinkList l, LinkNode n, char **str, int qt, int ssub)
 			t[fwidth] = '\0';
 			strncpy(t, val + strlen(val) - fwidth, fwidth);
 			val = t;
+			}
 		    }
 		    break;
 		}

@@ -1,5 +1,5 @@
 #ifdef WINNT
-#define ZSH_VERSION "3.0.6_NT_0.78.1"
+#define ZSH_VERSION "3.0.7_NT_0.78.1"
 #else
-#define ZSH_VERSION "3.0.6"
+#define ZSH_VERSION "3.0.7"
 #endif /* WINNT */

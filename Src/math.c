@@ -347,7 +347,7 @@ zzlex(void)
 	    if (*ptr == '#') {
 		if (*++ptr == '\\') {
 		    ptr++;
-		    yyval = *ptr == Meta ? *++ptr ^ 32 : *ptr;
+		    yyval = STOUC(*ptr == Meta ? *++ptr ^ 32 : *ptr);
 		    ptr++;
 		    unary = 0;
 		    return NUM;

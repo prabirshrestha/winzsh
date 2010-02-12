@@ -1288,7 +1288,7 @@ inststrlen(char *str, int move, int len)
  * pointer it points to may point to aposition in s and in e the position *
  * of the corresponding character in the quoted string is returned.  Like *
  * e, te may point to a position in the string and pl is used to return   *
- * the position of the character pointed to by te in the quoted string.   *
+ * the offset of the character pointed to by te in the quoted string.     *
  * The string is metafied and may contain tokens.                         */
 
 /**/
@@ -1296,16 +1296,15 @@ char *
 quotename(const char *s, char **e, char *te, int *pl)
 {
     const char *u, *tt;
-    char *v, buf[PATH_MAX * 2];
-    int sf = 0;
+    char *v, *buf = ncalloc(2 * strlen(s) + 1);
 
     tt = v = buf;
     u = s;
     for (; *u; u++) {
 	if (e && *e == u)
-	    *e = v, sf |= 1;
+	    *e = v;
 	if (te == u)
-	    *pl = v - tt, sf |= 2;
+	    *pl = v - tt;
 	if (ispecial(*u) &&
 	    (!instring || (isset(BANGHIST) &&
 			   *u == (char)bangchar) ||
@@ -1332,20 +1331,13 @@ quotename(const char *s, char **e, char *te, int *pl)
 	*v++ = *u;
     }
     *v = '\0';
-    if (strcmp(buf, s))
-	tt = dupstring(buf);
-    else
-	tt = s;
-    v += tt - buf;
-    if (e && (sf & 1))
-	*e += tt - buf;
 
     if (e && *e == u)
 	*e = v;
     if (te == u)
-	*pl = v - tt;
+	*pl = v - buf;
 
-    return (char *) tt;
+    return buf;
 }
 
 /* This adds a match to the list of matches.  The string to add is given   *

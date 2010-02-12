@@ -254,14 +254,9 @@ parseargs(char **argv)
 	    }
 
 	    if (**argv == 'c') {         /* -c command */
-		if (!*++argv) {
-		    zerr("string expected after -c", NULL, 0);
-		    exit(1);
-		}
-		cmd = *argv++;
+		cmd = *argv;
 		opts[INTERACTIVE] &= 1;
 		opts[SHINSTDIN] = 0;
-		goto doneoptions;
 	    } else if (**argv == 'o') {
 		if (!*++*argv)
 		    argv++;
@@ -294,6 +289,13 @@ parseargs(char **argv)
     }
     doneoptions:
     paramlist = newlinklist();
+    if (cmd) {
+	if (!*argv) {
+	    zerr("string expected after -%s", cmd, 0);
+	    exit(1);
+	}
+	cmd = *argv++;
+    }
     if (*argv) {
 	if (unset(SHINSTDIN)) {
 	    argzero = *argv;
@@ -383,7 +385,7 @@ init_io(void)
 	 * Try both stdin and stdout before trying /dev/tty. -- Bart
 	 */
 #if defined(HAVE_FCNTL_H) && defined(F_GETFL)
-#define rdwrtty(fd)	((fcntl(fd, F_GETFL) & O_RDWR) == O_RDWR)
+#define rdwrtty(fd)	((fcntl(fd, F_GETFL, 0) & O_RDWR) == O_RDWR)
 #else
 #define rdwrtty(fd)	1
 #endif

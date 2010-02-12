@@ -751,8 +751,10 @@ execpline(Sublist l, int how, int last1)
     if (how & Z_ASYNC) {
 	lastwj = newjob;
 	jobtab[thisjob].stat |= STAT_NOSTTY;
-	if (l->flags & PFLAG_COPROC)
+	if (l->flags & PFLAG_COPROC) {
 	    zclose(ipipe[1]);
+	    zclose(opipe[0]);
+	}
 	if (how & Z_DISOWN) {
 	    deletejob(jobtab + thisjob);
 	    thisjob = -1;
@@ -1691,14 +1693,26 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
 	    case MERGEOUT:
 		if(fn->fd2 < 10)
 		    closemn(mfds, fn->fd2);
-		fil = dup(fn->fd2);
+		if (fn->fd2 > 9 &&
+		    (fdtable[fn->fd2] ||
+		     fn->fd2 == coprocin ||
+		     fn->fd2 == coprocout)) {
+		    fil = -1;
+		    errno = EBADF;
+		} else {
+		    int fd = fn->fd2;
+		    if (fd == -2)
+			fd = (fn->type == MERGEOUT) ? coprocout : coprocin;
+		    fil = dup(fd);
+		}
 		if (fil == -1) {
 		    char fdstr[4];
 
 		    closemnodes(mfds);
 		    fixfds(save);
+		    if (fn->fd2 != -2)
 		    sprintf(fdstr, "%d", fn->fd2);
-		    zerr("%s: %e", fdstr, errno);
+		    zerr("%s: %e", fn->fd2 == -2 ? "coprocess" : fdstr, errno);
 		    execerr();
 		}
 		addfd(forked, save, mfds, fn->fd1, fil, fn->type == MERGEOUT);
@@ -2036,7 +2050,7 @@ entersubsh(int how, int cl, int fake)
 	}
     } else if (thisjob != -1 && cl) {
 	if (jobtab[list_pipe_job].gleader && (list_pipe || list_pipe_child)) {
-	    if (kill(jobtab[list_pipe_job].gleader, 0) == -1 ||
+	    if (killpg(jobtab[list_pipe_job].gleader, 0) == -1 ||
 		setpgrp(0L, jobtab[list_pipe_job].gleader) == -1) {
 		jobtab[list_pipe_job].gleader =
 		    jobtab[thisjob].gleader = (list_pipe_child ? mypgrp : getpid());

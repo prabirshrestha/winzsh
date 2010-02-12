@@ -489,6 +489,7 @@ gettok(void)
 	    }
 	    hungetc(d);
 	    lexstop = 0;
+	    tokfd = -1;
 	    return AMPOUTANG;
 	}
 	hungetc(d);

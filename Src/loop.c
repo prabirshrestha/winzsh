@@ -102,9 +102,15 @@ execselect(Cmd cmd)
 	do {
 	    selectlist(args);
 	    if (empty(bufstack)) {
-	    	if (interact && SHTTY != -1 && isset(USEZLE))
+	    	if (interact && SHTTY != -1 && isset(USEZLE)) {
+		    int oef = errflag;
+
+		    isfirstln = 1;
 		    str = (char *)zleread(prompt3, NULL);
-	    	else {
+		    if (errflag)
+			str = NULL;
+		    errflag = oef;
+	    	} else {
 		    int pptlen;
 		    str = putprompt(prompt3, &pptlen, NULL, 1);
 		    fwrite(str, pptlen, 1, stderr);

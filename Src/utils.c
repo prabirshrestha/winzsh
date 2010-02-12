@@ -984,8 +984,8 @@ adjustwinsize(int from)
 
     if (getwinsz || from == 1) {
 #ifdef TIOCGWINSZ
-    int ttyrows = shttyinfo.winsize.ws_row;
-    int ttycols = shttyinfo.winsize.ws_col;
+    int ttyrows = shttyinfo.winsize.ws_row; /* WINNT patch */
+    int ttycols = shttyinfo.winsize.ws_col; /* WINNT patch */
 
     if (SHTTY == -1)
 	return;
@@ -1331,18 +1331,34 @@ checkrmall(char *s)
 int
 setblock_stdin(void)
 {
+#ifdef O_NDELAY
 #ifdef O_NONBLOCK
+#  define NONBLOCK (O_NDELAY|O_NONBLOCK)
+# else /* !O_NONBLOCK */
+#  define NONBLOCK O_NDELAY
+# endif /* !O_NONBLOCK */
+#else /* !O_NDELAY */
+# ifdef O_NONBLOCK
+#  define NONBLOCK O_NONBLOCK
+# else /* !O_NONBLOCK */
+#  define NONBLOCK 0
+# endif /* !O_NONBLOCK */
+#endif /* !O_NDELAY */
+
+#if NONBLOCK
     struct stat st;
     long mode;
 
     if (!fstat(0, &st) && !S_ISREG(st.st_mode)) {
-	mode = fcntl(0, F_GETFL);
-	if (mode != -1 && (mode & O_NONBLOCK) &&
-	    !fcntl(0, F_SETFL, mode & ~O_NONBLOCK))
+	mode = fcntl(0, F_GETFL, 0);
+	if (mode != -1 && (mode & NONBLOCK) &&
+	    !fcntl(0, F_SETFL, mode & ~NONBLOCK))
 	    return 1;
     }
-#endif
+#endif /* NONBLOCK */
     return 0;
+
+#undef NONBLOCK
 }
 
 /**/
@@ -2997,7 +3013,7 @@ attachtty(pid_t pgrp)
 # endif
 #endif
 	{
-	    if (pgrp != mypgrp && kill(pgrp, 0) == -1)
+	    if (pgrp != mypgrp && kill(-pgrp, 0) == -1)
 		attachtty(mypgrp);
 	    else {
 		if (errno != ENOTTY)

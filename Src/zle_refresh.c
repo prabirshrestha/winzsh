@@ -893,7 +893,7 @@ tc_rightcurs(int ct)
 /* otherwise _carefully_ write the contents of the video buffer.
    if we're anywhere in the prompt, goto the left column and write the whole
    prompt out unless lpptlen == pptw : we can cheat then */
-    if (vln == 0 && i < pptw) {
+    if (vln == 0 && i < pptw && !(termflags & TERM_SHORT)) {
 	if (lpptlen == pptw)
 	    zwrite(lpptbuf + i, lpptlen - i, 1, shout);
 	else if (tccan(TCRIGHT) && (tclen[TCRIGHT] * ct <= lpptlen))
@@ -915,7 +915,7 @@ tc_rightcurs(int ct)
 	    for ( ; *t && ct; ct--, t++)
 		zputc(*t, shout);
     }
-    while (ct--)
+    while (ct-- > 0)
 	zputc(' ', shout);	/* not my fault your terminal can't go right */
 }
 
