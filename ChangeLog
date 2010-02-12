@@ -1,4 +1,135 @@
-1999-08-01  Bart Schaefer  <schaefer@brasslantern.com>
+1999-10-18  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/version.h: Version 3.0.7 released.
+
+	* Src/builtin.c, Src/rlimits.awk: Fix handling of AIO_OPS as a
+	purely numeric resource, and rename "sbsize" to "sockbufsize" for
+	clarity; both pointed out by Zefram in 8320.
+
+1999-10-17  Bart Schaefer  <schaefer@zsh.org>
+
+	* META-FAQ: Update FTP site list to match the latest FAQ.
+
+	* Etc/FAQ: Latest FAQ from 3.1.6; "production version" is 3.0.7.
+
+	* Src/rlimits.awk: Pick up the FreeBSD SBSIZE limit; Jos Backus, 8309.
+
+1999-10-14  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/rlimits.awk, Src/builtin.c: Handle AIO_MEM and AIO_OPS
+	limits; adapted from Zefram, 8229.
+
+1999-10-12  Bart Schaefer  <schaefer@zsh.org>
+
+	* config.sub: Import config.sub from 3.1.6.
+
+1999-10-10  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/globals.h: More complete option resetting by `emulate', plus
+	adjust emulations in which some options are (un)set; adapted from
+	Zefram, 8152, 8154.
+
+	* Src/exec.c, Src/glob.c: Return "bad file descriptor" if a
+	redirection attempts to grab one of zsh's internal descriptors;
+	adapted from Zefram, 8187.
+
+	* Src/exec.c: Plug coproc input file descriptor leak.
+
+	* Src/lex.c: Fix lexing of "&>" redirections.
+
+1999-10-06  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/jobs.c: Reattach the tty and resize the terminal after a
+	foreground job is stopped.
+
+1999-10-04  Bart Schaefer  <schaefer@zsh.org>
+
+	* builtin.c: Fix core dump when exporting an unset special parameter.
+
+	* zle_refresh.c: Don't go into an infinite loop trying to refresh
+	the full ZLE prompt in a single-line-zle environment; adapted from
+	Geoff, 8126.
+
+1999-09-26  Bart Schaefer  <schaefer@zsh.org>
+
+	* math.c: Math lexing of #\x character values should use STOUC()
+	on 'x'.
+
+1999-09-12  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/zle_tricky.c: Clean up quotename() a litte; adapted from 7784.
+
+1999-09-10  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/zle_tricky.c: Fix potential buffer overflow in quotename();
+	adapted from Sven, 7713.
+
+	* Src/subst.c: Zero-filling with "typezet -Z" now matches the
+	documentation; Sven, zsh-users/2576,2578.
+
+1999-09-03  Bart Schaefer  <schaefer@zsh.org>
+
+	* Doc/zsh.texi, Doc/zshoptions.man: Correct the documentation for
+	GLOB_COMPLETE.
+
+1999-09-01  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/builtin.c, Src/exec.c: Final (?) tweak for process group
+	management; Sven, 7605.
+
+1999-08-31  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/signals.c: Remove 3.1.6 #ifdefs not supported by the 3.0
+	configure, and return -1 from killjb() when any kill fails, not
+	just when the last one does.
+
+	* Src/exec.c, Src/signals.c, Src/utils.c: Yet another tweak to
+	process group handling; Sven, 7573.
+
+	* config.h.in, configure, configure.in: Use a newer configure test
+	to search for functions in libnsl.
+
+1999-08-30  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/signals.c: Attempt kill() if killpg() fails, just in case;
+	Sven, 7530.
+
+1999-08-29  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/signals.c: Patch for problem resuming process groups after
+	suspend; 7529.
+
+1999-08-28  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/init.c: Fix parsing of "zsh -c ..." to be more like other
+	shells; 7510.
+
+1999-08-09  Bart Schaefer  <schaefer@zsh.org>
+
+	* configure.in: Import tgetstr-checking code from 3.1.6, as
+	suggested by Jos Backus, 7408.
+
+1999-08-07  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/rlimits.awk, Src/signames.awk: Replace 034 with 34, as per
+	Ed Osinski (7392) and Geoff (7393).
+
+1999-08-02  Bart Schaefer  <schaefer@zsh.org>
+
+	* Src/loop.c: Handle send-break (^G) at the "select" prompt
+	properly; Sven, 7349, plus another old bugfix nabbed from 3.1.6.
+
+	* Src/utils.c: Pick up improved blocking stdin behavior from
+	3.1.6, including Irving Wolfe's patch for fcntl() arguments in
+	7336.
+
+	* Src/builtin.c: Fix bug in "getopts" when using options prefixed
+	by "+"; PWS, 3590 (ancient).
+
+	* Src/init.c: Pass the right number of (unused) arguments to
+	fcntl(); Geoff Wing, 7335.
+
+1999-08-01  Bart Schaefer  <schaefer@zsh.org>
 
 	* Src/version.h: Version 3.0.6 released.
 

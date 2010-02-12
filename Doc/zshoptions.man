@@ -215,11 +215,12 @@ an array or a scalar.
 .TP
 \fBGLOB_COMPLETE\fP
 When the current word has a glob pattern, do not insert all the words
-resulting from the expansion but cycle through them like
-\fBMENU_COMPLETE\fP. If no matches are found, a `*' is added to the end of the
-word or inserted at the cursor if \fBCOMPLETE_IN_WORD\fP is set, and expansion
-is attempted again. Using patterns works not only for files but for all
-completions, such as options, user names, etc.
+resulting from the expansion but generate matches as for completion and
+cycle through them like \fBMENU_COMPLETE\fP. The matches are generated
+as if a `*' was added to the end of the word, or inserted at the
+cursor when \fBCOMPLETE_IN_WORD\fP is set.  This actually uses pattern
+matching, not globbing, so it works not only for files but for any
+completion, such as options, user names, etc.
 .TP
 \fBGLOB_DOTS\fP (\-\fB4\fP)
 Do not require a leading . in a filename to be matched explicitly.

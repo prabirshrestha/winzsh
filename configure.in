@@ -372,11 +372,9 @@ for lib in $termcap_curses_order; do
 done
 
 dnl Some systems (Solaris 2.x) require libnsl (Network Services Library)
-dnl to find getdomainname and yp_all
-AC_CHECK_FUNCS(getdomainname)
-if test $ac_cv_func_getdomainname = no; then
-  AC_CHECK_LIB(nsl, getdomainname)
-fi
+dnl to find getdomainname and yp_all; Linux requires it for yp_all only.
+AC_SEARCH_LIBS(getdomainname, nsl)
+AC_SEARCH_LIBS(yp_all, nsl)
 
 dnl I am told that told that unicos reqire these for nis_list
 if test `echo $host_os | sed 's/^\(unicos\).*/\1/'` = unicos; then
@@ -416,9 +414,22 @@ elif test $zsh_cv_decl_ospeed_must_define = yes; then
 fi
 
 dnl  Check if tgetent accepts NULL (and will allocate its own termcap buffer)
+dnl  Some termcaps reportedly accept a zero buffer, but then dump core
+dnl  in tgetstr().
 AC_CACHE_CHECK(if tgetent accepts NULL,
 zsh_cv_func_tgetent_accepts_null,
-[AC_TRY_RUN([main(){int i = tgetent((char*)0,"vt100");exit(!i || i == -1);}],
+[AC_TRY_RUN([
+main()
+{
+    int i = tgetent((char*)0,"vt100");
+    if (i > 0) {
+	char tbuf[1024], *u;
+    	u = tbuf;
+    	tgetstr("cl", &u);
+    }
+    exit(!i || i == -1);
+}
+],
   zsh_cv_func_tgetent_accepts_null=yes,
   zsh_cv_func_tgetent_accepts_null=no,
   zsh_cv_func_tgetent_accepts_null=no)])

@@ -246,9 +246,6 @@
 /* Define if you have the difftime function.  */
 #undef HAVE_DIFFTIME
 
-/* Define if you have the getdomainname function.  */
-#undef HAVE_GETDOMAINNAME
-
 /* Define if you have the gethostname function.  */
 #undef HAVE_GETHOSTNAME
 
@@ -407,6 +404,3 @@
 
 /* Define if you have the <unistd.h> header file.  */
 #undef HAVE_UNISTD_H
-
-/* Define if you have the nsl library (-lnsl).  */
-#undef HAVE_LIBNSL

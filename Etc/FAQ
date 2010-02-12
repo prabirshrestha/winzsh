@@ -2,7 +2,7 @@
 Archive-Name: unix-faq/shell/zsh
 Last-Modified: 1999/07/30
 Submitted-By: pws@ibmth.df.unipi.it (Peter Stephenson)
-Version: $Id: FAQ,v 1.1.1.5.2.2 1999/07/31 04:50:37 schaefer Exp $
+Version: $Id: FAQ,v 1.1.1.6.2.2 1999/10/17 22:57:48 schaefer Exp $
 Posting-Frequency: Monthly
 Copyright: (C) P.W. Stephenson, 1995--1999 (see end of document)
 
@@ -208,8 +208,7 @@ Chapter 1: Introducing zsh and how to install it
   appreciated if you could add any necessary preprocessor code and
   alter configure.in and acconfig.h to configure zsh automatically,
   then send the required context diffs to the list (see question
-  5.2).  Changes based on version 2.5 are very unlikely to
-  be useful.
+  5.2).  Please make sure you have the latest version first.
 
   To get it to work, retrieve the source distribution (see question
   1.6), un-gzip it, un-tar it and read the INSTALL file in the top
@@ -223,7 +222,7 @@ Chapter 1: Introducing zsh and how to install it
 
 1.5: What's the latest version?
 
-  Zsh 3.0.6 is the latest production version. The new major number 3.0
+  Zsh 3.0.7 is the latest production version. The new major number 3.0
   largely reflects the considerable internal changes in zsh to make it more
   reliable, consistent and (where possible) compatible.  Those planning on
   upgrading their zsh installation should take a look at the list of
@@ -258,7 +257,7 @@ Chapter 1: Introducing zsh and how to install it
     Home site ftp://ftp.zsh.org
               http://www.zsh.org/pub/zsh/
     Australia ftp://ftp.ips.gov.au/mirror/zsh/
-    Denmark   ftp://sunsite.auc.dk/pub/unix/shells/zsh
+    Denmark   ftp://sunsite.auc.dk/pub/unix/shells/zsh/
     Finland   ftp://ftp.funet.fi/pub/unix/shells/zsh/
     France    ftp://ftp.cenatls.cena.dgac.fr/pub/shells/zsh/
     Germany   ftp://ftp.fu-berlin.de/pub/unix/shells/zsh/
@@ -275,6 +274,7 @@ Chapter 1: Introducing zsh and how to install it
     Norway    ftp://ftp.uit.no/pub/unix/shells/zsh/
     Poland    ftp://sunsite.icm.edu.pl/pub/unix/shells/zsh/
     Romania   ftp://ftp.roedu.net/pub/mirrors/ftp.zsh.org/pub/zsh/
+              ftp://ftp.kappa.ro/pub/mirrors/ftp.zsh.org/pub/zsh/
     Slovenia  ftp://ftp.siol.net/mirrors/zsh/
     Sweden    ftp://ftp.lysator.liu.se/pub/unix/zsh/
     UK        ftp://ftp.net.lut.ac.uk/zsh/
@@ -515,7 +515,7 @@ your shell' posted frequently to the USENET group comp.unix.shell.
     o  Traps and signals:
 
     o * Traps are not local to functions.  The option LOCAL_TRAPS is
-          be available from 3.1.6.
+          available from 3.1.6.
     o   TRAPERR has become TRAPZERR (this was forced by UNICOS which
         has SIGERR).
 
@@ -655,7 +655,7 @@ your shell' posted frequently to the USENET group comp.unix.shell.
      \!:1-4        $*[1,4]
      \!:1-         $*[1,$#-1]      (or $*[1,-2])
      \!^-          $*[1,$#-1]
-     \!*:q         "$@"            ($*:q doesn't work (yet))
+     \!*:q         "$@"
      \!*:x         $=*             ($*:x doesn't work (yet))
 
   6) Remember that it is NOT a syntax error in a zsh function to
@@ -1155,9 +1155,9 @@ Chapter 3: How to get various things to work
 
   or even
 
-    foo=$[16#ff]
+    foo=$((16#ff))
 
-  (note that `foo=$((16#ff))' is now supported).  The original syntax was
+  The original syntax was
 
     (( foo = [16]ff ))
 
@@ -1424,6 +1424,16 @@ powerful, and also potentially confusing, features of zsh; here I give
 a short introduction.  There is a set of example completions supplied
 with the source in Misc/compctl-examples; completion definitions for
 many of the most obvious commands can be found there.
+
+If this confuses you, you may like to know that there is a new, more
+elegant completion system which appeared in version 3.1.6.  This is based
+on functions called automatically for completion in particular contexts
+(for example, there is a function called _cd to handle completion for
+the cd command) and is installed automatically with the shell, so all
+you need to do, in principal, is to arrange for this to be loaded.  Putting
+`autoload -U compinit; compinit' in your .zshrc should be enough if
+the system is installed properly.  The rest of this section talks about the
+old completion system.
 
 4.1: What is completion?
 
@@ -1766,7 +1776,8 @@ Chapter 5: The future of zsh
      `\M-p' use history-beginning-search-{forward,backward} which
      search for a line with the same prefix up to the cursor position.
      From 3.1.6, there is a different implementation which makes this
-     closer (though not identical) to the old behaviour. The story for the
+     closer (though not identical) to the old behaviour, and the
+     traditional bindings have been restored.. The story for the 
      {up,down}-line-or-search commands is similar.
   o  In vi insert mode, the cursor keys no longer work.  The following
      will bind them:

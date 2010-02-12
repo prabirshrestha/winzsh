@@ -20,17 +20,16 @@ Availability
 ------------
 
 Zsh is available from the following anonymous FTP sites.  These mirror
-sites are kept frequently up to date.  The sites marked with (H) may be
-mirroring ftp.cs.elte.hu instead of the primary site.
+sites are kept frequently up to date.
 
       Primary site
-            ftp://ftp.zsh.org/pub/zsh/
-            http://www.zsh.org/pub/zsh/
+            ftp://ftp.zsh.org/pub/
+            http://www.zsh.org/pub/
 
       Australia
-            ftp://ftp.zsh.org/pub/zsh/
-            http://www.zsh.org/pub/zsh/
-            ftp://ftp.ips.gov.au/pub/packages/zsh/  (H)
+            ftp://ftp.zsh.org/pub/
+            http://www.zsh.org/pub/
+            ftp://ftp.ips.gov.au/mirror/zsh/
 
       Denmark
             ftp://sunsite.auc.dk/pub/unix/shells/zsh/
@@ -42,7 +41,7 @@ mirroring ftp.cs.elte.hu instead of the primary site.
             ftp://ftp.cenatls.cena.dgac.fr/pub/shells/zsh/
 
       Germany
-            ftp://ftp.fu-berlin.de/pub/unix/shells/zsh/  (H)
+            ftp://ftp.fu-berlin.de/pub/unix/shells/zsh/
             ftp://ftp.gmd.de/packages/zsh/
             ftp://ftp.uni-trier.de/pub/unix/shell/zsh/
 
@@ -59,7 +58,7 @@ mirroring ftp.cs.elte.hu instead of the primary site.
             ftp://ftp.unina.it/pub/Unix/pkgs/shell/zsh/
 
       Japan
-            ftp://ftp.nisiq.net/pub/shells/zsh/  (H)
+            ftp://ftp.nisiq.net/pub/shells/zsh/
             ftp://ftp.win.ne.jp/pub/shell/zsh/
 
       Norway
