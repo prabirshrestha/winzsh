@@ -330,8 +330,14 @@ execute(Cmdnam not_used_yet, int dash)
     /* If the parameter STTY is set in the command's environment, *
      * we first run the stty command with the value of this       *
      * parameter as it arguments.                                 */
+#ifndef WINNT
+	/* the GETPGRP argument was added in 3.0.8, it throws a warning
+	 * in MSVC6 */
     if (!exargs && (s = zgetenv("STTY")) && isatty(0) &&
 	(GETPGRP() == getpid())) {
+#else
+    if (!exargs && (s = zgetenv("STTY")) && isatty(0)) {
+#endif /* WINNT */
 	char *t;
 
 	exargs = args;	/* this prevents infinite recursion */
