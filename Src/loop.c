@@ -80,7 +80,7 @@ execselect(Cmd cmd)
     char *str, *s;
     LinkList args;
     LinkNode n;
-    int i;
+    int i, usezle;
     FILE *inp;
 
     node = cmd->u.forcmd;
@@ -97,12 +97,13 @@ execselect(Cmd cmd)
     loops++;
     lastval = 0;
     pushheap();
-    inp = fdopen(dup((SHTTY == -1) ? 0 : SHTTY), "r");
+    usezle = interact && SHTTY != -1 && isset(USEZLE);
+    inp = fdopen(dup(usezle ? SHTTY : 0), "r");
     for (;;) {
 	do {
 	    selectlist(args);
 	    if (empty(bufstack)) {
-	    	if (interact && SHTTY != -1 && isset(USEZLE)) {
+	    	if (usezle) {
 		    int oef = errflag;
 
 		    isfirstln = 1;
@@ -221,7 +222,7 @@ execrepeat(Cmd cmd)
     count = atoi(peekfirst(cmd->args));
     pushheap();
     loops++;
-    while (count--) {
+    while (count-- > 0) {
 	list = (List) dupstruct(cmd->u.list);
 	execlist(list, 1, 0);
 	freeheap();

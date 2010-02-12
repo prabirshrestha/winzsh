@@ -1,4 +1,4 @@
-#
+# 
 # {g,n}awk script to generate signals.h
 # provided by Geoff Wing <mason@werple.apana.org.au>
 # NB: On SunOS 4.1.3 - user-functions don't work properly, also \" problems
@@ -53,7 +53,7 @@ END {
     ps = "%s"
     ifdstr = sprintf("#ifdef USE_SUSPENDED\n\t%csuspended%s%c,\n%selse\n\t%cstopped%s%c,\n#endif\n", 34, ps, 34, "#", 34, ps, 34)
 
-    printf("%s\n%s\n\n%s\t%d\n\n%s\n\n%s\n\t%c%s%c,\n", "/** signals.h                                 **/", "/** architecture-customized signals.h for zsh **/", "#define SIGCOUNT", max, "#ifdef GLOBALS", "char *sigmsg[SIGCOUNT+2] = {", 34, "done", 34)
+    printf("%s\n%s\n\n%s\t%d\n\n%s\n\n%s\n\t%c%s%c,\n", "/** signals.h                                 **/", "/** architecture-customized signals.h for zsh **/", "#define SIGCOUNT", max, "#ifdef GLOBALS", "char *sig_msg[SIGCOUNT+2] = {", 34, "done", 34)
 
     for (i = 1; i <= 0 + max; i++)
 	if (msg[i] == "") {
@@ -87,6 +87,7 @@ END {
     print "};"
     print ""
     printf("%selse\n", "#")
-    print "extern char *sigs[SIGCOUNT+4],*sigmsg[SIGCOUNT+2];"
+    print "extern char *sigs[SIGCOUNT+4],*sig_msg[SIGCOUNT+2];"
     print "#endif"
+    printf("#define sigmsg(sig) ((sig) <= SIGCOUNT ? sig_msg[sig] : %c%s%c)\n", 34, "unknown signal", 34)
 }

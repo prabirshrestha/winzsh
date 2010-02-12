@@ -1338,23 +1338,20 @@ colonarrsetfn(Param pm, char *x)
 }
 
 /**/
-int
+void
 uniqarray(char **x)
 {
-    int changes = 0;
     char **t, **p = x;
 
     if (!x || !*x)
-	return 0;
+	return;
     while (*++p)
 	for (t = x; t < p; t++)
 	    if (!strcmp(*p, *t)) {
 		zsfree(*p);
 		for (t = p--; (*t = t[1]) != NULL; t++);
-		changes++;
 		break;
 	    }
-    return changes;
 }
 
 /* Function to get value of special parameter `#' and `ARGC' */
@@ -1549,7 +1546,7 @@ ifssetfn(Param pm, char *x)
 
 /* Functions to set value of special parameters `LANG' and `LC_*' */
 
-#ifdef LC_ALL
+#ifdef USE_LOCALE
 static struct localename {
     char *name;
     int category;
@@ -1609,9 +1606,9 @@ lcsetfn(Param pm, char *x)
 	return;
     if (!x)
 	x = getsparam("LANG");
-    setlocale((int) pm->data, x ? x : "");
+    setlocale((long) pm->data, x ? x : "");
 }
-#endif
+#endif /* USE_LOCALE */
 
 /* Function to get value for special parameter `HISTSIZE' */
 

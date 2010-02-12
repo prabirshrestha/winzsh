@@ -39,6 +39,7 @@ BEGIN {limidx = 0}
 	    if (limnam == "AIO_OPS") { msg[limnum] = "aiooperations" }
 	    if (limnam == "AIO_MEM") { msg[limnum] = "aiomemorylocked" }
 	    if (limnam == "SBSIZE")  { msg[limnum] = "sockbufsize" }
+	    if (limnam == "PTHREAD") { msg[limnum] = "maxpthreads" }
         }
     }
 }

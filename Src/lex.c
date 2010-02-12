@@ -646,7 +646,7 @@ gettokstr(int c, int sub)
 {
     int bct = 0, pct = 0, brct = 0, fdpar = 0;
     int intpos = 1, in_brace_param = 0;
-    int peek, inquote;
+    int peek, inquote, unmatched = 0;
 #ifdef DEBUG
     int ocmdsp = cmdsp;
 #endif
@@ -965,7 +965,7 @@ gettokstr(int c, int sub)
 		}
 		ALLOWHIST
 		if (c != '\'') {
-		    zerr("unmatched \'", NULL, 0);
+		    unmatched = '\'';
 		    peek = LEXERR;
 		    cmdpop();
 		    goto brk;
@@ -986,7 +986,7 @@ gettokstr(int c, int sub)
 	    c = dquote_parse('"', sub);
 	    cmdpop();
 	    if (c) {
-		zerr("unmatched \"", NULL, 0);
+		unmatched = '"';
 		peek = LEXERR;
 		goto brk;
 	    }
@@ -1023,7 +1023,7 @@ gettokstr(int c, int sub)
 		ALLOWHIST
 	    cmdpop();
 	    if (c != '`') {
-		zerr("unmatched `", NULL, 0);
+		unmatched = '`';
 		peek = LEXERR;
 		goto brk;
 	    }
@@ -1040,6 +1040,8 @@ gettokstr(int c, int sub)
     }
   brk:
     hungetc(c);
+    if (unmatched)
+	zerr("unmatched %c", NULL, unmatched);
     if (in_brace_param) {
 	while(bct-- >= in_brace_param)
 	    cmdpop();

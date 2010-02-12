@@ -497,3 +497,9 @@ extern short ospeed;
 #ifndef O_NOCTTY
 # define O_NOCTTY 0
 #endif
+
+/* Can we do locale stuff? */
+#undef USE_LOCALE
+#if defined(CONFIG_LOCALE) && defined(HAVE_SETLOCALE) && defined(LC_ALL)
+# define USE_LOCALE 1
+#endif /* CONFIG_LOCALE && HAVE_SETLOCALE && LC_ALL */

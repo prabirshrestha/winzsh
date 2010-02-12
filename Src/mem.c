@@ -592,9 +592,9 @@ malloc(MALLOC_ARG_T size)
 	    m->used++;
 
 	    /* if all small blocks in this block are allocated, the block is 
-	       put at the end of the list blocks wth small blocks of this
+	       put at the end of the list blocks with small blocks of this
 	       size (i.e., we try to keep blocks with free blocks at the
-	       beginning of the list, to make the search faster */
+	       beginning of the list, to make the search faster) */
 
 	    if (m->used == M_SNUM && m->next) {
 		for (mt = m; mt->next; mt = mt->next);

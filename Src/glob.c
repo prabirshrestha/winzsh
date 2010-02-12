@@ -1762,7 +1762,7 @@ doesmatch(Comp c)
 #define PAT(X) (pat[X] == Meta ? pat[(X)+1] ^ 32 : untok(pat[X]))
 #define PPAT(X) (pat[(X)-1] == Meta ? pat[X] ^ 32 : untok(pat[X]))
 	    char ch;
-#ifdef HAVE_STRCOLL
+#if defined(HAVE_STRCOLL) && defined(ZSH_STRICT_POSIX)
 	    char l_buf[2], r_buf[2], ch_buf[2];
 
 	    l_buf[1] = r_buf[1] = ch_buf[1] = '\0';
@@ -1771,7 +1771,7 @@ doesmatch(Comp c)
 	    if (!*pptr)
 		break;
 	    ch = *pptr == Meta ? pptr[1] ^ 32 : *pptr;
-#ifdef HAVE_STRCOLL
+#if defined(HAVE_STRCOLL) && defined(ZSH_STRICT_POSIX)
 	    ch_buf[0] = ch;
 #endif
 	    if (pat[1] == Hat || pat[1] == '^' || pat[1] == '!') {
@@ -1780,7 +1780,7 @@ doesmatch(Comp c)
 		for (pat += 2; *pat != Outbrack && *pat;
 		     *pat == Meta ? pat += 2 : pat++)
 		    if (*pat == '-' && pat[-1] != Hat && pat[1] != Outbrack) {
-#ifdef HAVE_STRCOLL
+#if defined(HAVE_STRCOLL) && defined(ZSH_STRICT_POSIX)
 			l_buf[0] = PPAT(-1);
 			r_buf[0] = PAT(1);
 			if (strcoll(l_buf, ch_buf) <= 0 &&
@@ -1808,7 +1808,7 @@ doesmatch(Comp c)
 		     *pat == Meta ? pat += 2 : pat++)
 		    if (*pat == '-' && pat[-1] != Inbrack &&
 			       pat[1] != Outbrack) {
-#ifdef HAVE_STRCOLL
+#if defined(HAVE_STRCOLL) && defined(ZSH_STRICT_POSIX)
 			l_buf[0] = PPAT(-1);
 			r_buf[0] = PAT(1);
 			if (strcoll(l_buf, ch_buf) <= 0 &&

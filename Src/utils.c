@@ -411,11 +411,6 @@ fprintdir(char *s, FILE *f)
  * or NIS/NIS+ database.                                 */
 
 /**/
-uid_t cached_uid;
-/**/
-char *cached_username;
-
-/**/
 char *
 get_username(void)
 {
@@ -1129,7 +1124,12 @@ gettempname(void)
     if (!(s = getsparam("TMPPREFIX")))
 	s = DEFAULT_TMPPREFIX;
  
+#ifdef HAVE__MKTEMP
+    /* Zsh uses mktemp() safely, so silence the warnings */
+    return ((char *) _mktemp(dyncat(unmeta(s), "XXXXXX")));
+#else
     return ((char *) mktemp(dyncat(unmeta(s), "XXXXXX")));
+#endif
 }
 
 /* Check if a string contains a token */
@@ -1368,7 +1368,7 @@ read1char(void)
     char c;
 
     while (read(SHTTY, &c, 1) != 1) {
-	if (errno != EINTR || errflag)
+	if (errno != EINTR || errflag || retflag || breaks || contflag)
 	    return -1;
     }
     return STOUC(c);
@@ -1803,7 +1803,14 @@ findsep(char **s, char *sep)
 	return i;
     }
     if (!sep[0]) {
-	return **s ? ++*s, 1 : -1;
+	if (**s) {
+	    if (**s == Meta)
+		*s += 2;
+	    else
+		++*s;
+	    return 1;
+	}
+	return -1;
     }
     for (i = 0; **s; i++) {
 	for (t = sep, tt = *s; *t && *tt && *t == *tt; t++, tt++);

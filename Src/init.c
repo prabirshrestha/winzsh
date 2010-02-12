@@ -37,7 +37,7 @@ int
 main(int argc, char **argv)
 {
     char **t;
-#ifdef LC_ALL
+#ifdef USE_LOCALE
     setlocale(LC_ALL, "");
 #endif
 #ifdef WINNT
@@ -269,10 +269,10 @@ parseargs(char **argv)
 		else
 		    dosetopt(optno, action, 1);
 		break;
-	    } else if (isspace(**argv)) {
+	    } else if (isspace(STOUC(**argv))) {
 		/* zsh's typtab not yet set, have to use ctype */
 		while (*++*argv)
-		    if (!isspace(**argv)) {
+		    if (!isspace(STOUC(**argv))) {
 			zerr("bad option string: `%s'", args, 0);
 			exit(1);
 		    }
@@ -363,12 +363,25 @@ init_io(void)
 	SHTTY = -1;
     }
 
+    /* Send xtrace output to stderr -- see execcmd() */
+    xtrerr = stderr;
+
 #ifndef WINNT
     /* Make sure the tty is opened read/write. */
     if (isatty(0)) {
 	zsfree(ttystrname);
-	if ((ttystrname = ztrdup(ttyname(0))))
+	if ((ttystrname = ztrdup(ttyname(0)))) {
 	    SHTTY = movefd(open(ttystrname, O_RDWR | O_NOCTTY));
+#ifdef TIOCNXCL
+	    /*
+	     * See if the terminal claims to be busy.  If so, and fd 0
+	     * is a terminal, try and set non-exclusive use for that.
+	     * This is something to do with Solaris over-cleverness.
+	     */
+	    if (SHTTY == -1 && errno == EBUSY)
+		ioctl(0, TIOCNXCL, 0);
+#endif
+	}
 	/*
 	 * xterm, rxvt and probably all terminal emulators except
 	 * dtterm on Solaris 2.6 & 7 have a bug. Applications are
@@ -435,11 +448,12 @@ init_io(void)
 #ifdef JOB_CONTROL
     /* If interactive, make the shell the foreground process */
     if (opts[MONITOR] && interact && (SHTTY != -1)) {
-	attachtty(GETPGRP());
 	if ((mypgrp = GETPGRP()) > 0) {
 	    while ((ttpgrp = gettygrp()) != -1 && ttpgrp != mypgrp) {
-		sleep(1);
+		sleep(1);	/* give parent time to change pgrp */
 		mypgrp = GETPGRP();
+		if (mypgrp == mypid)
+		    attachtty(mypgrp);
 		if (mypgrp == gettygrp())
 		    break;
 		killpg(mypgrp, SIGTTIN);

@@ -173,13 +173,13 @@ execbuiltin(LinkList args, Builtin bn)
 
     /* display execution trace information, if required */
     if (isset(XTRACE)) {
-	fprintf(stderr, "%s%s", (prompt4) ? prompt4 : "", name);
+	fprintf(xtrerr, "%s%s", (prompt4) ? prompt4 : "", name);
 	if (xarg)
-	    fprintf(stderr, " %s", xarg);
+	    fprintf(xtrerr, " %s", xarg);
 	while (*oargv)
-	    fprintf(stderr, " %s", *oargv++);
-	fputc('\n', stderr);
-	fflush(stderr);
+	    fprintf(xtrerr, " %s", *oargv++);
+	fputc('\n', xtrerr);
+	fflush(xtrerr);
     }
     zsfree(xarg);
     /* call the handler function, and return its return value */
@@ -636,6 +636,7 @@ bin_fg(char *name, char **argv, char *ops, int func)
 		    thisjob = job;
 		    if ((jobtab[job].stat & STAT_SUPERJOB) &&
 			((!jobtab[job].procs->next ||
+			  (jobtab[job].stat & STAT_SUBLEADER) ||
 			  killpg(jobtab[job].gleader, 0) == -1)) &&
 			jobtab[jobtab[job].other].gleader)
 			attachtty(jobtab[jobtab[job].other].gleader);
@@ -2898,13 +2899,22 @@ typeset_single(char *cname, char *pname, Param pm, int func, int on, int off, in
 	}
 	if ((on & PM_UNIQUE) && !(pm->flags & PM_READONLY & ~off)) {
 	    Param apm;
-	    if (PM_TYPE(pm->flags) == PM_ARRAY)
-		uniqarray((*pm->gets.afn) (pm));
-	    else if (PM_TYPE(pm->flags) == PM_SCALAR && pm->ename &&
-		     (apm = (Param) paramtab->getnode(paramtab, pm->ename)))
-		uniqarray((*apm->gets.afn) (apm));
+	    char **x;
+	    if (PM_TYPE(pm->flags) == PM_ARRAY) {
+		x = (*pm->gets.afn)(pm);
+		uniqarray(x);
+		if (pm->ename && x)
+		    arrfixenv(pm->ename, x);
+	    } else if (PM_TYPE(pm->flags) == PM_SCALAR && pm->ename &&
+		       (apm =
+			(Param) paramtab->getnode(paramtab, pm->ename))) {
+		x = (*apm->gets.afn)(apm);
+		uniqarray(x);
+		if (x)
+		    arrfixenv(pm->nam, x);
+	    }
 	}
-	pm->flags = (pm->flags | on) & ~off;
+	pm->flags = (pm->flags | on) & ~(off | PM_UNSET);
 	/* This auxlen/pm->ct stuff is a nasty hack. */
 	if ((on & (PM_LEFT | PM_RIGHT_B | PM_RIGHT_Z | PM_INTEGER)) &&
 	    auxlen)
@@ -3231,8 +3241,9 @@ bin_vared(char *name, char **args, char *ops, int func)
     char *s;
     char *t;
     Param pm;
-    int create = 0;
+    int create = 0, obreaks = breaks, haso = 0;
     char *p1 = NULL, *p2 = NULL;
+    FILE *oshout = shout;
 
     /* all options are handled as arguments */
     while (*args && **args == '-') {
@@ -3293,6 +3304,18 @@ bin_vared(char *name, char **args, char *ops, int func)
 	    return 1;
 	}
     }
+
+    if (SHTTY == -1) {
+	/* need to open /dev/tty specially */
+	if ((SHTTY = open("/dev/tty", O_RDWR|O_NOCTTY)) == -1) {
+	    zerrnam(name, "can't access terminal", NULL, 0);
+	    return 1;
+	}
+	init_shout();
+
+	haso = 1;
+    }
+
     /* edit the parameter value */
     PERMALLOC {
 	pushnode(bufstack, ztrdup(s));
@@ -3300,9 +3323,16 @@ bin_vared(char *name, char **args, char *ops, int func)
     in_vared = !ops['h'];
     t = (char *) zleread(p1, p2);
     in_vared = 0;
+    if (haso) {
+	close(SHTTY);
+	fclose(shout);
+	shout = oshout;
+	SHTTY = -1;
+    }
     if (!t || errflag) {
 	/* error in editing */
 	errflag = 0;
+	breaks = obreaks;
 	return 1;
     }
     /* strip off trailing newline, if any */
@@ -3815,6 +3845,12 @@ bin_limit(char *nam, char **argv, char *ops, int func)
 	    permitted. */
 	    val = ZSTRTORLIMT(s, &s, 10);
 # endif /* RLIMIT_AIO_OPS */
+# ifdef RLIMIT_PTHREAD
+	else if (lim == RLIMIT_PTHREAD)
+	    /* pure numeric resource -- only a straight decimal number is
+	    permitted. */
+	    val = ZSTRTORLIMT(s, &s, 10);
+# endif /* RLIMIT_PTHREAD */
 	else {
 	    /* memory-type resource -- `k' and `M' modifiers are permitted,
 	    meaning (respectively) 2^10 and 2^20. */
@@ -4145,8 +4181,24 @@ showlimits(int hard, int lim)
 		/* pure numeric resource */
 		printf("%d\n", (int)val);
 # endif /* RLIMIT_AIO_OPS */
+# ifdef RLIMIT_PTHREAD
+	    else if (rt == RLIMIT_PTHREAD)
+		/* pure numeric resource */
+		printf("%d\n", (int)val);
+# endif /* RLIMIT_PTHREAD */
 	    else if (val >= 1024L * 1024L)
 		/* memory resource -- display with `K' or `M' modifier */
+# ifdef RLIM_T_IS_LONG_LONG
+#  ifdef RLIM_T_IS_UNSIGNED
+		printf("%lluMB\n", val / (1024L * 1024L));
+	    else
+		printf("%llukB\n", val / 1024L);
+#  else
+		printf("%lldMB\n", val / (1024L * 1024L));
+	    else
+		printf("%lldkB\n", val / 1024L);
+#  endif /* RLIM_T_IS_UNSIGNED */
+# else
 # ifdef RLIM_T_IS_QUAD_T
 		printf("%qdMB\n", val / (1024L * 1024L));
 	    else
@@ -4162,6 +4214,7 @@ showlimits(int hard, int lim)
 		printf("%ldkB\n", val / 1024L);
 #  endif /* RLIM_T_IS_UNSIGNED */
 # endif /* RLIM_T_IS_QUAD_T */
+# endif /* RLIM_T_IS_LONG_LONG */
 	}
 }
 #endif  /* HAVE_GETRLIMIT */
@@ -4273,6 +4326,20 @@ printulimit(int lim, int hard, int head)
 	    limit /= 1024;
 	break;
 # endif /* RLIMIT_AIO_MEM */
+# ifdef RLIMIT_SBSIZE
+    case RLIMIT_SBSIZE:
+	if (head)
+	    printf("socket buffer size (kb)    ");
+	if (limit != RLIM_INFINITY)
+	    limit /= 1024;
+	break;
+# endif /* RLIMIT_SBSIZE */
+# ifdef RLIMIT_PTHREAD
+    case RLIMIT_PTHREAD:
+	if (head)
+	    printf("threads per process        ");
+	break;
+# endif /* RLIMIT_PTHREAD */
     }
     /* display the limit */
     if (limit == RLIM_INFINITY)
@@ -4282,7 +4349,11 @@ printulimit(int lim, int hard, int head)
 	printf("%qd\n", limit);
 # else
 #  ifdef RLIM_T_IS_LONG_LONG
+#    ifdef RLIM_T_IS_UNSIGNED
+	printf("%llu\n", limit);
+#    else
 	printf("%lld\n", limit);
+#    endif /* RLIM_T_IS_UNSIGNED */
 #  else
 #   ifdef RLIM_T_IS_UNSIGNED
 	printf("%lu\n", limit);
@@ -4933,11 +5004,12 @@ int
 bin_read(char *name, char **args, char *ops, int func)
 {
     char *reply, *readpmpt;
-    int bsiz, c = 0, gotnl = 0, al = 0, first, nchars = 1, bslash;
+    int bsiz, c = 0, gotnl = 0, al = 0, first, nchars = 1, bslash, keys = 0;
     int haso = 0;	/* true if /dev/tty has been opened specially */
     int isem = !strcmp(term, "emacs");
     char *buf, *bptr, *firstarg, *zbuforig;
     LinkList readll = newlinklist();
+    FILE *oshout = NULL;
 
     if ((ops['k'] || ops['b']) && *args && idigit(**args)) {
 	if (!(nchars = atoi(*args)))
@@ -4956,10 +5028,17 @@ bin_read(char *name, char **args, char *ops, int func)
     }
 
     if ((ops['k'] && !ops['u'] && !ops['p']) || ops['q']) {
+	if (!zleactive) {
 	if (SHTTY == -1) {
 	    /* need to open /dev/tty specially */
-	    SHTTY = open("/dev/tty", O_RDWR);
+		if ((SHTTY = open("/dev/tty", O_RDWR|O_NOCTTY)) != -1) {
 	    haso = 1;
+		    oshout = shout;
+		    init_shout();
+		}
+	    } else if (!shout) {
+		/* We need an output FILE* on the tty */
+		init_shout();
 	}
 	/* We should have a SHTTY opened by now. */
 	if (SHTTY == -1) {
@@ -4975,6 +5054,8 @@ bin_read(char *name, char **args, char *ops, int func)
 	if (!isem && ops['k'])
 	    setcbreak();
 	readfd = SHTTY;
+	}
+	keys = 1;
     } else if (ops['u'] && !ops['p']) {
 	/* -u means take input from the specified file descriptor. *
 	 * -up means take input from the coprocess.                */
@@ -4989,9 +5070,9 @@ bin_read(char *name, char **args, char *ops, int func)
 	for (readpmpt = firstarg;
 	     *readpmpt && *readpmpt != '?'; readpmpt++);
 	if (*readpmpt++) {
-	    if (isatty(0)) {
-		zputs(readpmpt, stderr);
-		fflush(stderr);
+	    if (keys || isatty(0)) {
+		zputs(readpmpt, (shout ? shout : stderr));
+		fflush(shout ? shout : stderr);
 	    }
 	    readpmpt[-1] = '\0';
 	}
@@ -5030,7 +5111,8 @@ bin_read(char *name, char **args, char *ops, int func)
 	    else
 		settyinfo(&shttyinfo);
 	    if (haso) {
-		close(SHTTY);
+		fclose(shout);	/* close(SHTTY) */
+		shout = oshout;
 		SHTTY = -1;
 	    }
 	}
@@ -5155,7 +5237,8 @@ bin_read(char *name, char **args, char *ops, int func)
 
 	/* dispose of result appropriately, etc. */
 	if (haso) {
-	    close(SHTTY);
+	    fclose(shout);	/* close(SHTTY) */
+	    shout = oshout;
 	    SHTTY = -1;
 	}
 
@@ -5177,6 +5260,7 @@ bin_read(char *name, char **args, char *ops, int func)
     first = 1;
     bslash = 0;
     while (*args || (ops['A'] && !gotnl)) {
+	sigset_t s = child_unblock();
 	buf = bptr = (char *)zalloc(bsiz = 64);
 	/* get input, a character at a time */
 	while (!gotnl) {
@@ -5214,6 +5298,7 @@ bin_read(char *name, char **args, char *ops, int func)
 		bptr = buf + blen;
 	    }
 	}
+	signal_setmask(s);
 	if (c == '\n' || c == EOF)
 	    gotnl = 1;
 	*bptr = '\0';
@@ -5268,7 +5353,8 @@ bin_read(char *name, char **args, char *ops, int func)
     buf = bptr = (char *)zalloc(bsiz = 64);
     /* any remaining part of the line goes into one parameter */
     bslash = 0;
-    if (!gotnl)
+    if (!gotnl) {
+	sigset_t s = child_unblock();
 	for (;;) {
 	    c = zread();
 	    /* \ at the end of a line introduces a continuation line, except in
@@ -5303,6 +5389,8 @@ bin_read(char *name, char **args, char *ops, int func)
 		bptr = buf + blen;
 	    }
 	}
+	signal_setmask(s);
+    }
     while (bptr > buf && iwsep(bptr[-1]))
 	bptr--;
     *bptr = '\0';
@@ -5360,11 +5448,24 @@ zread(void)
 	    return STOUC(cc);
 	case -1:
 #ifndef WINNT
-	    if (!retry && errno == EWOULDBLOCK &&
-		readfd == 0 && setblock_stdin()) {
+#if defined(EAGAIN) || defined(EWOULDBLOCK)
+	    if (!retry && readfd == 0 && (
+# ifdef EAGAIN
+		    errno == EAGAIN
+#  ifdef EWOULDBLOCK
+		    ||
+#  endif /* EWOULDBLOCK */
+# endif /* EAGAIN */
+# ifdef EWOULDBLOCK
+		    errno == EWOULDBLOCK
+# endif /* EWOULDBLOCK */
+		) && setblock_stdin()) {
 		retry = 1;
 		continue;
-	    }
+	    } else
+#endif /* EAGAIN || EWOULDBLOCK */
+	    if (errno == EINTR && !(errflag || retflag || breaks || contflag))
+		continue;
 #endif /* WINNT */
 	    break;
 	}

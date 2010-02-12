@@ -284,6 +284,11 @@ update_job(Job jn)
 		/* If we have `foo|while true; (( x++ )); done', and hit
 		 * ^C, we have to stop the loop, too. */
 		if ((val & 0200) && inforeground == 1) {
+		    if (!errbrk_saved) {
+			errbrk_saved = 1;
+			prev_breaks = breaks;
+			prev_errflag = errflag;
+		    }
 		    breaks = loops;
 		    errflag = 1;
 		    inerrflush();
@@ -295,6 +300,11 @@ update_job(Job jn)
 	}
     }
     } else if (list_pipe && (val & 0200) && inforeground == 1) {
+	if (!errbrk_saved) {
+	    errbrk_saved = 1;
+	    prev_breaks = breaks;
+	    prev_errflag = errflag;
+	}
 	breaks = loops;
 	errflag = 1;
 	inerrflush();
@@ -385,7 +395,7 @@ printjob(Job jn, int lng, int synch)
 	if (pn->status != SP_RUNNING) {
 	    if (WIFSIGNALED(pn->status)) {
 		sig = WTERMSIG(pn->status);
-		llen = strlen(sigmsg[sig]);
+		llen = strlen(sigmsg(sig));
 		if (WCOREDUMP(pn->status))
 		    llen += 14;
 		if (llen > len)
@@ -396,8 +406,8 @@ printjob(Job jn, int lng, int synch)
 		    doputnl = 1;
 	    } else if (WIFSTOPPED(pn->status)) {
 		sig = WSTOPSIG(pn->status);
-		if ((int)strlen(sigmsg[sig]) > len)
-		    len = strlen(sigmsg[sig]);
+		if ((int)strlen(sigmsg(sig)) > len)
+		    len = strlen(sigmsg(sig));
 		if (job == thisjob && sig == SIGTSTP)
 		    doputnl = 1;
 	    } else if (isset(PRINTEXITVALUE) && isset(SHINSTDIN) &&
@@ -468,13 +478,13 @@ printjob(Job jn, int lng, int synch)
 		else
 		    fprintf(fout, "done%*s", len - 4 + 2, "");
 	    } else if (WIFSTOPPED(pn->status))
-		fprintf(fout, "%-*s", len + 2, sigmsg[WSTOPSIG(pn->status)]);
+		fprintf(fout, "%-*s", len + 2, sigmsg(WSTOPSIG(pn->status)));
 	    else if (WCOREDUMP(pn->status)) {
 		fprintf(fout, "%s (core dumped)%*s",
-			sigmsg[WTERMSIG(pn->status)],
-			(int)(len - 14 + 2 - strlen(sigmsg[WTERMSIG(pn->status)])), "");
+			sigmsg(WTERMSIG(pn->status)),
+			(int)(len - 14 + 2 - strlen(sigmsg(WTERMSIG(pn->status)))), "");
 	    } else
-		fprintf(fout, "%-*s", len + 2, sigmsg[WTERMSIG(pn->status)]);
+		fprintf(fout, "%-*s", len + 2, sigmsg(WTERMSIG(pn->status)));
 	    for (; pn != qn; pn = pn->next)
 		fprintf(fout, (pn->next) ? "%s | " : "%s", pn->text);
 	    putc('\n', fout);
@@ -559,21 +569,31 @@ setprevjob(void)
 {
     int i;
 
+    /* #define for easier edit if bits change, especially STAT_is_SUBJOB */
+#define STAT_is_INUSE (jobtab[i].stat & STAT_INUSE)
+#define STAT_is_SUBJOB (jobtab[i].stat & (STAT_SUBJOB|STAT_NOPRINT))
+#define STAT_is_STOPPED \
+    ((jobtab[i].stat & (STAT_INUSE|STAT_STOPPED)) == (STAT_INUSE|STAT_STOPPED))
+
     for (i = MAXJOB - 1; i; i--)
-	if ((jobtab[i].stat & STAT_INUSE) && (jobtab[i].stat & STAT_STOPPED) &&
-	    !(jobtab[i].stat & STAT_SUBJOB) && i != curjob && i != thisjob) {
+	if (STAT_is_STOPPED && !STAT_is_SUBJOB &&
+	    i != curjob && i != thisjob) {
 	    prevjob = i;
 	    return;
 	}
 
     for (i = MAXJOB - 1; i; i--)
-	if ((jobtab[i].stat & STAT_INUSE) && !(jobtab[i].stat & STAT_SUBJOB) &&
+	if (STAT_is_INUSE && !STAT_is_SUBJOB &&
 	    i != curjob && i != thisjob) {
 	    prevjob = i;
 	    return;
 	}
 
     prevjob = -1;
+
+#undef STAT_is_INUSE
+#undef STAT_is_SUBJOB
+#undef STAT_is_STOPPED
 }
 
 /* add a process to the current job */

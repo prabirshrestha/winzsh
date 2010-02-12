@@ -445,6 +445,10 @@ EXTERN FILE *shout INIT_ZERO;
 
 EXTERN FILE *bshin INIT_ZERO;
 
+/* the FILE for xtrace output */
+
+EXTERN FILE *xtrerr INIT_ZERO;
+
 /* != 0 means we are reading input from a string */
  
 EXTERN int strin INIT_ZERO;
@@ -585,6 +589,10 @@ EXTERN int signal_queue[MAX_QUEUE_SIZE] INIT_ZERO_STRUCT;
 EXTERN int queue_front INIT_ZERO;
 EXTERN int queue_rear INIT_ZERO;
 
+/* Previous values of errflag and breaks if the signal handler had to
+ * change them. And a flag saying if it did that. */
+
+EXTERN int prev_errflag INIT_ZERO, prev_breaks INIT_ZERO, errbrk_saved INIT_ZERO;
 /* 1 if aliases should not be expanded */
  
 EXTERN int noaliases INIT_ZERO;

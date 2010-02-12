@@ -3,7 +3,7 @@
  *
  * This file is part of zsh, the Z shell.
  *
- * Copyright (c) 1992-1996 Paul Falstad
+ * Copyright (c) 1992-1997 Paul Falstad
  * All rights reserved.
  *
  * Permission is hereby granted, without written agreement and without
@@ -29,7 +29,7 @@
 
 #include "zsh.h"
 
-#define execerr() if (!forked) { lastval = 1; return; } else _exit(1)
+#define execerr() if (!forked) { lastval = 1; goto done; } else _exit(1)
 	
 
 static LinkList args INIT_ZERO;
@@ -330,7 +330,8 @@ execute(Cmdnam not_used_yet, int dash)
     /* If the parameter STTY is set in the command's environment, *
      * we first run the stty command with the value of this       *
      * parameter as it arguments.                                 */
-    if (!exargs && (s = zgetenv("STTY")) && isatty(0)) {
+    if (!exargs && (s = zgetenv("STTY")) && isatty(0) &&
+	(GETPGRP() == getpid())) {
 	char *t;
 
 	exargs = args;	/* this prevents infinite recursion */
@@ -358,6 +359,7 @@ execute(Cmdnam not_used_yet, int dash)
     }
 
     argv = makecline(args);
+    closem(3);
     child_unblock();
     if ((int) strlen(arg0) >= PATH_MAX) {
 	zerr("command too long: %s", arg0, 0);
@@ -766,6 +768,7 @@ execpline(Sublist l, int how, int last1)
     } else {
 	if (newjob != lastwj) {
 	    Job jn = jobtab + newjob;
+	    int updated;
 
 	    if (newjob == list_pipe_job && list_pipe_child)
 		_exit(0);
@@ -785,9 +788,10 @@ execpline(Sublist l, int how, int last1)
 
 		    /* If the super-job contains only the sub-shell, the
 		       sub-shell is the group leader. */
-		    if (!jn->procs->next || lpforked == 2)
+		    if (!jn->procs->next || lpforked == 2) {
 			jn->gleader = list_pipe_pid;
-
+			jn->stat |= STAT_SUBLEADER;
+		    }
 		    for (pn = jobtab[jn->other].procs; pn; pn = pn->next)
 			if (WIFSTOPPED(pn->status))
 			    break;
@@ -807,19 +811,29 @@ execpline(Sublist l, int how, int last1)
 		    lastwj = -1;
 	    }
 
+	    errbrk_saved = 0;
 	    for (; !nowait;) {
 		if (list_pipe_child) {
 		    jn->stat |= STAT_NOPRINT;
 		    makerunning(jn);
 		}
-		if (!(jn->stat & STAT_LOCKED))
+		if (!(jn->stat & STAT_LOCKED)) {
+		    updated = !!jobtab[thisjob].procs;
 		    waitjobs();
-
+		    child_block();
+		} else
+		    updated = 0;
+		if (!updated &&
+		    list_pipe_job && jobtab[list_pipe_job].procs &&
+		    !(jobtab[list_pipe_job].stat & STAT_STOPPED)) {
+		    child_unblock();
+		    child_block();
+		}
 		if (list_pipe_child &&
 		    jn->stat & STAT_DONE &&
 		    lastval2 & 0200)
 		    killpg(mypgrp, lastval2 & ~0200);
-		if (!list_pipe_child && !lpforked && !subsh &&
+		if (!list_pipe_child && !lpforked && !subsh && jobbing &&
 		    (list_pipe || last1 || pline_level) &&
 		    ((jn->stat & STAT_STOPPED) ||
   		     (list_pipe_job && pline_level &&
@@ -878,6 +892,10 @@ execpline(Sublist l, int how, int last1)
 			list_pipe = 0;
 			list_pipe_child = 1;
 			opts[INTERACTIVE] = 0;
+			if (errbrk_saved) {
+			    errflag = prev_errflag;
+			    breaks = prev_breaks;
+			}
 			break;
 		    }
 		}
@@ -996,16 +1014,16 @@ makecline(LinkList list)
     argv = 2 + (char **) ncalloc((countlinknodes(list) + 4) * sizeof(char *));
     if (isset(XTRACE)) {
 	if (!doneps4)
-	    fprintf(stderr, "%s", (prompt4) ? prompt4 : "");
+	    fprintf(xtrerr, "%s", (prompt4) ? prompt4 : "");
 
 	for (node = firstnode(list); node; incnode(node)) {
 	    *ptr++ = (char *)getdata(node);
-	    zputs(getdata(node), stderr);
+	    zputs(getdata(node), xtrerr);
 	    if (nextnode(node))
-		fputc(' ', stderr);
+		fputc(' ', xtrerr);
 	}
-	fputc('\n', stderr);
-	fflush(stderr);
+	fputc('\n', xtrerr);
+	fflush(xtrerr);
     } else {
 	for (node = firstnode(list); node; incnode(node))
 	    *ptr++ = (char *)getdata(node);
@@ -1028,7 +1046,7 @@ untokenize(char *s)
     }
 }
 
-/* Open a file for writing redicection */
+/* Open a file for writing redirection */
 
 /**/
 int
@@ -1197,7 +1215,7 @@ addvars(LinkList l, int export)
 
     xtr = isset(XTRACE);
     if (xtr && nonempty(l)) {
-	fprintf(stderr, "%s", prompt4 ? prompt4 : "");
+	fprintf(xtrerr, "%s", prompt4 ? prompt4 : "");
 	doneps4 = 1;
     }
 
@@ -1208,7 +1226,7 @@ addvars(LinkList l, int export)
 	    return;
 	untokenize(v->name);
 	if (xtr)
-	    fprintf(stderr, "%s=", v->name);
+	    fprintf(xtrerr, "%s=", v->name);
 	if (v->type == PM_SCALAR) {
 	    vl = newlinklist();
 	    addlinknode(vl, v->str);
@@ -1233,7 +1251,7 @@ addvars(LinkList l, int export)
 		val = ztrdup(ugetnode(vl));
 	    }
 	    if (xtr)
-		fprintf(stderr, "%s ", val);
+		fprintf(xtrerr, "%s ", val);
 	    if (export) {
 		if (export < 0)
 		    /* We are going to fork so do not bother freeing this */
@@ -1256,10 +1274,10 @@ addvars(LinkList l, int export)
 
 	*ptr = NULL;
 	if (xtr) {
-	    fprintf(stderr, "( ");
+	    fprintf(xtrerr, "( ");
 	    for (ptr = arr; *ptr; ptr++)
-		fprintf(stderr, "%s ", *ptr);
-	    fprintf(stderr, ") ");
+		fprintf(xtrerr, "%s ", *ptr);
+	    fprintf(xtrerr, ") ");
 	}
 	setaparam(v->name, arr);
 	if (errflag)
@@ -1285,6 +1303,7 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
     int is_shfunc = 0, is_builtin = 0, is_exec = 0;
     /* Various flags to the command. */
     int cflags = 0, checked = 0;
+    FILE *oxtrerr = xtrerr;
 
     doneps4 = 0;
     args = cmd->args;
@@ -1408,8 +1427,8 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
 		    else
 			lastval = cmdoutval;
 		    if (isset(XTRACE)) {
-			fputc('\n', stderr);
-			fflush(stderr);
+			fputc('\n', xtrerr);
+			fflush(xtrerr);
 		    }
 		    return;
 		}
@@ -1613,6 +1632,16 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
 	goto err;
     }
 
+    /* Make a copy of stderr for xtrace output before redirecting */
+    fflush(xtrerr);
+    if (isset (XTRACE) && xtrerr == stderr &&
+	(type == SIMPLE || type == ZCTIME)) {
+	if (!(xtrerr = fdopen(movefd(dup(fileno(stderr))), "w")))
+	    xtrerr = stderr;
+	else
+	    fdtable[fileno(xtrerr)] = 3;
+    }
+
     /* Add pipeline input/output to mnodes */
     if (input)
 	addfd(forked, save, mfds, 0, input, 0);
@@ -1626,7 +1655,7 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
     while (nonempty(cmd->redir)) {
 	fn = (Redir) ugetnode(cmd->redir);
 	DPUTS(fn->type == HEREDOC || fn->type == HEREDOCDASH,
-	      "BUG: unexpanded here document\n");
+	      "BUG: unexpanded here document");
 	if (fn->type == INPIPE) {
 	    if (fn->fd2 == -1) {
 		closemnodes(mfds);
@@ -1759,7 +1788,7 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
 	for (i = 0; i < 10; i++)
 	    if (save[i] != -2)
 		zclose(save[i]);
-	    return;
+	    goto done;
 	}
 	/*
 	 * If nullexec is 2, we have variables to add with the redirections
@@ -1769,8 +1798,8 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
 	    addvars(cmd->vars, 0);
 	lastval = errflag ? errflag : cmdoutval;
 	if (isset(XTRACE)) {
-	    fputc('\n', stderr);
-	    fflush(stderr);
+	    fputc('\n', xtrerr);
+	    fflush(xtrerr);
     }
     } else if (isset(EXECOPT) && !errflag) {
 	/*
@@ -1809,7 +1838,7 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
 		    restore_params(restorelist, removelist);
 		    lastval = 1;
 		    fixfds(save);
-		    return;
+		    goto done;
 		}
 	    }
 
@@ -1909,6 +1938,14 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
     if (forked)
 	_exit(lastval);
     fixfds(save);
+
+ done:
+    if (xtrerr != oxtrerr) {
+	fil = fileno(xtrerr);
+	fclose(xtrerr);
+	xtrerr = oxtrerr;
+	zclose(fil);
+    }
 }
 #ifdef WINNT
 #pragma optimize("",on)
@@ -2050,8 +2087,8 @@ entersubsh(int how, int cl, int fake)
 	}
     } else if (thisjob != -1 && cl) {
 	if (jobtab[list_pipe_job].gleader && (list_pipe || list_pipe_child)) {
-	    if (killpg(jobtab[list_pipe_job].gleader, 0) == -1 ||
-		setpgrp(0L, jobtab[list_pipe_job].gleader) == -1) {
+	    if (setpgrp(0L, jobtab[list_pipe_job].gleader) == -1 ||
+		killpg(jobtab[list_pipe_job].gleader, 0) == -1) {
 		jobtab[list_pipe_job].gleader =
 		    jobtab[thisjob].gleader = (list_pipe_child ? mypgrp : getpid());
 		setpgrp(0L, jobtab[list_pipe_job].gleader);
@@ -2161,8 +2198,14 @@ gethere(char *str, int typ)
     if (t > buf && t[-1] == '\n')
 	t--;
     *t = '\0';
-    if (!qt)
+    if (!qt) {
+	int ef = errflag;
+
 	parsestr(buf);
+
+	if (!errflag)
+	    errflag = ef;
+    }
     s = dupstring(buf);
     zfree(buf, bsiz);
     return s;

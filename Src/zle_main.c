@@ -886,7 +886,7 @@ getkeystring(char *s, int *len, int fromwhere, int *misc)
 		}
 		break;
 	    }
-	} else if (*s == '^' && fromwhere == 2) {
+	} else if (*s == '^' && !control && fromwhere == 2) {
 	    control = 1;
 	    continue;
 	} else if (*s == Meta)

@@ -830,10 +830,10 @@ mathparse(int pc)
 	    push(yyval, -1);
 	    break;
 	case ID:
-	    push(getiparam(lvals[yylval]), yylval);
+	    push((noeval ? (zlong)0 : getiparam(lvals[yylval])), yylval);
 	    break;
 	case CID:
-	    push(getcvar(yylval), yylval);
+	    push((noeval ? (zlong)0 : getcvar(yylval)), yylval);
 	    break;
 	case M_INPAR:
 	    mathparse(TOPPREC);

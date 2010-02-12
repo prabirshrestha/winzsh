@@ -1259,6 +1259,11 @@ putpromptchar(int doprint, int endchar)
 		} else
 		    stradd("()");
 		break;
+	    case 'L':
+		addbufspc(DIGBUFSIZE);
+		sprintf(bp, "%ld", (long)shlvl);
+		bp += strlen(bp);
+		break;
 	    case '?':
 		addbufspc(DIGBUFSIZE);
 		sprintf(bp, "%ld", (long)lastval);

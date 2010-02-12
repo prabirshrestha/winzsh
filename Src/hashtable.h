@@ -111,7 +111,7 @@ IPDEF2("WORDCHARS", wordcharsgetfn, wordcharssetfn, 0),
 IPDEF2("IFS", ifsgetfn, ifssetfn, PM_DONTIMPORT),
 IPDEF2("_", underscoregetfn, nullsetfn, PM_READONLY),
 
-#ifdef LC_ALL
+#ifdef USE_LOCALE
 #define LCIPDEF(A,B) {NULL,A,PM_SCALAR|PM_SPECIAL|PM_UNSET,BR(NULL),BR(lcsetfn),BR(strgetfn),0,(void *)B,NULL,NULL,NULL,0}
 IPDEF2("LANG", strgetfn, langsetfn, PM_UNSET),
 IPDEF2("LC_ALL", strgetfn, lc_allsetfn, PM_UNSET),
@@ -127,7 +127,7 @@ LCIPDEF("LC_MESSAGES", LC_MESSAGES),
 #ifdef LC_TIME
 LCIPDEF("LC_TIME", LC_TIME),
 #endif
-#endif
+#endif /* USE_LOCALE */
 
 #define IPDEF4(A,B) {NULL,A,PM_INTEGER|PM_READONLY|PM_SPECIAL,BR(NULL),BR(nullsetfn),GFN(intvargetfn),10,(void *)B,NULL,NULL,NULL,0}
 IPDEF4("!", &lastpid),
