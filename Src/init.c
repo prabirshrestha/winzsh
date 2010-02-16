@@ -37,6 +37,7 @@ int
 main(int argc, char **argv)
 {
     char **t;
+    int t0;
 #ifdef USE_LOCALE
     setlocale(LC_ALL, "");
 #endif
@@ -51,6 +52,17 @@ main(int argc, char **argv)
 #endif /* WINNT */
 
     global_permalloc();
+
+    /*
+     * Provisionally set up the type table to allow metafication.
+     * This will be done properly when we have decided if we are
+     * interactive
+     */
+    typtab['\0'] |= IMETA;
+    typtab[STOUC(Meta)  ] |= IMETA;
+    typtab[STOUC(Marker)] |= IMETA;
+    for (t0 = (int)STOUC(Pound); t0 <= (int)STOUC(Nularg); t0++)
+	typtab[t0] |= ITOK | IMETA;
 
     for (t = argv; *t; *t = metafy(*t, -1, META_ALLOC), t++);
 

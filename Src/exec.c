@@ -34,6 +34,7 @@
 
 static LinkList args INIT_ZERO;
 static int doneps4 INIT_ZERO;
+static char *STTYval;
 
 /* parse string into a list */
 
@@ -321,7 +322,6 @@ void
 execute(Cmdnam not_used_yet, int dash)
 {
     Cmdnam cn;
-    static LinkList exargs INIT_ZERO;
     char buf[MAXCMDLEN], buf2[MAXCMDLEN];
     char *s, *z, *arg0;
     char **argv, **pp;
@@ -333,20 +333,22 @@ execute(Cmdnam not_used_yet, int dash)
 #ifndef WINNT
 	/* the GETPGRP argument was added in 3.0.8, it throws a warning
 	 * in MSVC6 */
-    if (!exargs && (s = zgetenv("STTY")) && isatty(0) &&
-	(GETPGRP() == getpid())) {
+    if ((s = STTYval) && isatty(0) && (GETPGRP() == getpid())) {
 #else
-    if (!exargs && (s = zgetenv("STTY")) && isatty(0)) {
+    if ((s = STTYval) && isatty(0)) {
 #endif /* WINNT */
-	char *t;
+	LinkList exargs = args;
+	char *t = tricat("stty", " ", s);
 
-	exargs = args;	/* this prevents infinite recursion */
+	STTYval = 0;	/* this prevents infinite recursion */
+	zsfree(s);
 	args = NULL;
-	t = tricat("stty", " ", s);
 	execstring(t, 1, 0);
 	zsfree(t);
 	args = exargs;
-	exargs = NULL;
+    } else if (s) {
+	STTYval = 0;
+	zsfree(s);
     }
 
     arg0 = (char *) peekfirst(args);
@@ -748,10 +750,10 @@ execpline(Sublist l, int how, int last1)
      * stopped, the top-level execpline() didn't get the pid for the
      * sub-shell because it was overwritten. */
     if (!pline_level++) {
-	list_pipe_job = newjob;
         list_pipe_pid = 0;
 	nowait = 0;
 	simple_pline = (l->left->type == END);
+	list_pipe_job = (simple_pline ? 0 : newjob);
     }
     lastwj = lpforked = 0;
     execpline2(l->left, how, opipe[0], ipipe[1], last1);
@@ -1262,6 +1264,10 @@ addvars(LinkList l, int export)
 		if (export < 0)
 		    /* We are going to fork so do not bother freeing this */
 		    paramtab->removenode(paramtab, v->name);
+		if (strcmp(v->name, "STTY") == 0) {
+		    zsfree(STTYval);
+		    STTYval = ztrdup(val);
+		}
 		allexp = opts[ALLEXPORT];
 		opts[ALLEXPORT] = 1;
 		pm = setsparam(v->name, ztrdup(val));
@@ -1925,6 +1931,10 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
 		if (!forked)
 		    setlimits(NULL);
 #endif
+		if (how & Z_ASYNC) {
+		    zsfree(STTYval);
+		    STTYval = 0;
+		}
 		execute((Cmdnam) hn, cflags & BINF_DASH);
 	    } else {		/* ( ... ) */
 		DPUTS(cmd->vars && nonempty(cmd->vars),
@@ -1952,6 +1962,9 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
 	xtrerr = oxtrerr;
 	zclose(fil);
     }
+
+    zsfree(STTYval);
+    STTYval = 0;
 }
 #ifdef WINNT
 #pragma optimize("",on)
@@ -2116,6 +2129,7 @@ entersubsh(int how, int cl, int fake)
     if (!fake)
 	subsh = 1;
     if (SHTTY != -1) {
+	shout = NULL;
 	zclose(SHTTY);
 	SHTTY = -1;
     }

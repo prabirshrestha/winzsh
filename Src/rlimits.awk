@@ -7,7 +7,8 @@
 #
 BEGIN {limidx = 0}
 
-/^[\t ]*(#[\t ]*define[\t _]*RLIMIT_[A-Z_]*[\t ]*[0-9][0-9]*|RLIMIT_[A-Z]*,[\t ]*)/ {
+/^[\t ]*(#[\t ]*define[\t _]*RLIMIT_[A-Z_]*[\t ]*[0-9][0-9]*|RLIMIT_[A-Z_]*,[\t ]*|RLIMIT_[A-Z_]*[\t ]*=[\t ]*[0-9][0-9]*,[\t ]*)/ {
+
     limindex = index($0, "RLIMIT_")
     limtail = substr($0, limindex, 80)
     split(limtail, tmp)
@@ -15,6 +16,10 @@ BEGIN {limidx = 0}
     limnum = tmp[2]
     # in this case I assume GNU libc resourcebits.h - comment out for WINNT?
 #    if (limnum == "") {
+#	limnum = limidx++
+#	sub (",", "", limnam)
+#    }
+#    if (limnum == "=") {
 #	limnum = limidx++
 #	sub (",", "", limnam)
 #    }
@@ -40,6 +45,7 @@ BEGIN {limidx = 0}
 	    if (limnam == "AIO_MEM") { msg[limnum] = "aiomemorylocked" }
 	    if (limnam == "SBSIZE")  { msg[limnum] = "sockbufsize" }
 	    if (limnam == "PTHREAD") { msg[limnum] = "maxpthreads" }
+	    if (limnam == "LOCKS") { msg[limnum] = "maxfilelocks" }
         }
     }
 }
@@ -52,6 +58,13 @@ BEGIN {limidx = 0}
 # in case of GNU libc - comment out for WINNT?
 #/^[\t ]*RLIM_NLIMITS[\t ]*=[\t ]*RLIMIT_NLIMITS/ {
 #    nlimits = limidx
+#}
+
+#/^[\t ]*RLIMIT_NLIMITS[\t ]*=[\t ]*[0-9][0-9]*/ {
+#    limindex = index($0, "=")
+#    limtail = substr($0, limindex, 80)
+#    split(limtail, tmp)
+#    nlimits = tmp[2]
 #}
 
 END {
