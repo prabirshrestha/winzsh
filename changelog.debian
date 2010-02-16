@@ -1,0 +1,136 @@
+zsh30 (3.0.8-14) unstable; urgency=low
+
+  * Update config.sub/config.guess for GNU/k*BSD.  closes: #317337.
+
+ -- Clint Adams <schizo@debian.org>  Thu,  3 Nov 2005 19:05:14 -0500
+
+zsh30 (3.0.8-13) unstable; urgency=low
+
+  * Bump to Standards-Version 3.6.2.
+  * Move menu file to /usr/share/menu.
+
+ -- Clint Adams <schizo@debian.org>  Sat,  3 Sep 2005 21:57:17 -0400
+
+zsh30 (3.0.8-12) unstable; urgency=low
+
+  * Bump to Standards-Version 3.6.1.
+  * Stop using debhelper.
+
+ -- Clint Adams <schizo@debian.org>  Sat, 23 Apr 2005 11:29:47 -0400
+
+zsh30 (3.0.8-11) unstable; urgency=low
+
+  * Bump to Standards-Version 3.5.9.
+
+ -- Clint Adams <schizo@debian.org>  Mon, 24 Mar 2003 13:17:02 -0500
+
+zsh30 (3.0.8-10) unstable; urgency=low
+
+  * Update config.{guess,sub}.
+
+ -- Clint Adams <schizo@debian.org>  Thu, 30 Jan 2003 15:29:57 -0500
+
+zsh30 (3.0.8-9) unstable; urgency=low
+
+  * Remove period from short description.
+
+ -- Clint Adams <schizo@debian.org>  Mon,  9 Dec 2002 23:12:03 -0500
+
+zsh30 (3.0.8-8) unstable; urgency=low
+
+  * Don't install versioned binary.
+
+ -- Clint Adams <schizo@debian.org>  Fri,  6 Dec 2002 11:55:06 -0500
+
+zsh30 (3.0.8-7) unstable; urgency=low
+
+  * Update to Standards-Version 3.5.8.
+  * Support 'noopt'.
+
+ -- Clint Adams <schizo@debian.org>  Tue, 19 Nov 2002 22:03:59 -0500
+
+zsh30 (3.0.8-6) unstable; urgency=medium
+
+  * Bring /usr/bin/zsh under alternatives.  closes: bug#140870.
+  * Change build-dep from groff to groff-base.
+
+ -- Clint Adams <schizo@debian.org>  Fri, 12 Apr 2002 21:57:04 -0400
+
+zsh30 (3.0.8-5) unstable; urgency=medium
+
+  * Fix Src/rlimits.awk to contend with glibc 2.2.3 oddness.
+  * Updated to Standards-Version 3.5.3.0.
+  * Manage /bin/zsh-static via alternatives.
+  * Applied SFP#423960, fix bug with "wait" inside loop.
+
+ -- Clint Adams <schizo@debian.org>  Mon, 21 May 2001 17:12:14 -0400
+
+zsh30 (3.0.8-4) unstable; urgency=high
+
+  * Applied patch 13912, fixed string subscripting bug.
+
+ -- Clint Adams <schizo@debian.org>  Fri,  6 Apr 2001 17:55:26 -0400
+
+zsh30 (3.0.8-3) unstable; urgency=medium
+
+  * Applied SFP#403726: Fix ${1+"$@"} expansion with shwordsplit
+  * Back out shaleh's patch.  Fix rlimits.awk.  closes: bug#83818.
+  * Updated to Standards-Version 3.5.2.0.
+  * Added lintian override for static binary in zsh30-static.
+
+ -- Clint Adams <schizo@debian.org>  Mon, 26 Mar 2001 09:51:59 -0500
+
+zsh30 (3.0.8-2.1) unstable; urgency=low
+
+  * Non-Maintainer Upload.
+  * Applied patch from shaleh, fixes a build error for kernel 2.4 and
+    glibc 2.2 (closes: #83818).
+
+ -- Jordi Mallach <jordi@debian.org>  Sat, 24 Feb 2001 21:28:25 +0100
+
+
+zsh30 (3.0.8-2) unstable; urgency=medium
+
+  * Applied SFP#100530: Process 8bit chars in startup command line args
+  * Applied SFP#100675: "jobs" in precmd should not disable exit-time check
+  * Applied SFP#100721: Create array values properly in math context
+  * Applied SFP#101111: Prompts printed by subshells go to bad descriptor
+  * Applied SFP#101401: Util/helpfiles: Improve end-of-page recognition
+  * Applied SFP#101677: Parameter STTY should work as documented
+  * Changed /usr/bin/zsh in run-help to /usr/bin/zsh30.
+
+ -- Clint Adams <schizo@debian.org>  Sat,  7 Oct 2000 12:33:00 -0400
+
+zsh30 (3.0.8-1) unstable; urgency=low
+
+  * "New" upstream stable release.
+  * Made umask setting conditional upon UID == GID.
+  * Changed build dependency on man to nroff instead, reflected in
+  newly-added Build-Depends.
+
+ -- Clint Adams <schizo@debian.org>  Sat, 22 Jul 2000 12:37:04 -0400
+
+zsh30 (3.0.7-4) frozen unstable; urgency=medium
+
+  * Fixed LC_* export bug.  closes: bug#59326.
+
+ -- Clint Adams <schizo@debian.org>  Tue,  4 Apr 2000 00:10:25 -0400
+
+zsh30 (3.0.7-3) unstable; urgency=low
+
+  * manpages are no longer under alternatives.
+
+ -- Clint Adams <schizo@debian.org>  Wed,  8 Dec 1999 18:31:12 -0500
+
+zsh30 (3.0.7-2) unstable; urgency=low
+
+  * Removed info files from alternatives mechanism; they
+    are now called zsh30.info instead of zsh.info.
+
+ -- Clint Adams <schizo@debian.org>  Thu, 18 Nov 1999 12:44:32 -0500
+
+zsh30 (3.0.7-1) unstable; urgency=low
+
+  * New package
+
+ -- Clint Adams <schizo@debian.org>  Sun, 24 Oct 1999 08:56:42 -0400

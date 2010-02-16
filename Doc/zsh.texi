@@ -4,9 +4,10 @@
 @settitle    zsh
 @c %**end of header
 
+
 @ifinfo
-@c Note to RedHat: Do NOT change this to @{@}.  It really should be @'@'.
-@set dsq @'@'
+@c We're not RedHat and we're not changing it to @{@}.
+@set dsq '@:'
 @end ifinfo
 @iftex
 @c The sequence {} disappears completely in TeX, leaving only the quotes.
