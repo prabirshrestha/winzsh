@@ -1,3 +1,39 @@
+
+3.0.8deb14_NT_0.78.1
+2010-02-15  Tim Ayres  <timothy.j.ayres@gmail.com>
+
+	* Src/*: Update to zsh 3.0.8-14 from debian etch,
+	  this contains additional bug fixes beyond the
+	  version released by zsh upstream.
+
+3.0.8_NT_0.78.1
+2010-02-12  Tim Ayres  <timothy.j.ayres@gmail.com>
+
+	* Src/*: Updated to 3.0.8
+
+	* Src/exec.c: line 334 throws an exception in 
+	  MSVC6 "warning C4013: 'getpgrp' undefined;
+      assuming extern returning int" so this change was
+	  not incorporated for now.
+
+3.0.7_NT_0.78.1
+2010-02-12  Tim Ayres  <timothy.j.ayres@gmail.com>
+
+	* Src/*: Updated to 3.0.7
+
+3.0.6_NT_0.78.1
+2010-02-10  Tim Ayres  <timothy.j.ayres@gmail.com>
+
+	* Src/*: Updated to 3.0.6
+
+	* Src/winnt/console.c: Split nt_getsize function into
+	  nt_getlines, nt_getcolumns in console.c to support
+	  util.c changes.
+ 
+	* Src/exec.c: in function getoutput(), a line was changed
+	  from child_suspend(0) to waitforpid(pid), this breaks
+	  backticks in WinNT. This change was not incorporated for now.
+
 3.0.5_NT_0.78.1
 2010-02-06  Tim Ayres  <timothy.j.ayres@gmail.com>
 
