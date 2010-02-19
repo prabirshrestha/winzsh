@@ -503,7 +503,7 @@ tgetent (bp, name)
   	return bp;
   return 1;
 }
-#endif 0
+#endif /* 0 */
 
 /* Given file open on FD and buffer BUFP,
    scan the file from the beginning until a line is found
@@ -728,10 +728,10 @@ char * termstr="ansi-pc-color:\
 	:se=\\E[m:sf=^J:so=\\E[7m:st=\\EH:ta=^I:ue=\\E[m:up=\\E[A:\
 	:us=\\E[4m:";
 
-#endif 0
+#endif /* 0 */
 #if 0
 /*	:dc=g:dl=h:do=A:ho=B:kb=^H:kd=D:kh=E:kl=F:kr=G:ku=H:le=I:\ */
-#endif 0
+#endif /* 0 */
 char * termstr="ansi-pc-color:\
 	:Co#8:NC#3:pa#64:\
 	:AB=\\E[4%p1%dm:AF=\\E[3%p1%dm:\

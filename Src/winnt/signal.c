@@ -84,7 +84,7 @@ void nt_init_signals(void) {
 					0,
 					FALSE,
 					DUPLICATE_SAME_ACCESS)){
-		int err = GetLastError();
+//		int err = GetLastError(); // unused variable
 		ExitProcess(0);
 	}
 	hsigsusp = CreateEvent(NULL,TRUE,FALSE,NULL);
@@ -411,7 +411,7 @@ void CALLBACK alarm_callback( unsigned long interval) {
 	resume_main_thread();
 	LeaveCriticalSection(&sigcritter);
 
-#endif 0
+#endif /* 0 */
 }
 unsigned int alarm(unsigned int seconds) {
 
@@ -672,12 +672,12 @@ int nice(int niceness) {
     }
 
     if (!SetPriorityClass(GetCurrentProcess(),pclass)){
-        int err = GetLastError() ;
+//		int err = GetLastError(); // unused variable
         errno = EPERM;
         return -1;
     }
     if (!SetThreadPriority(GetCurrentThread(),priority)){
-        int err = GetLastError() ;
+//		int err = GetLastError(); // unused variable
         errno = EPERM;
         return -1;
     }

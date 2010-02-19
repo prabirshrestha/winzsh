@@ -320,7 +320,7 @@ int fork(void) {
 
 	object_active = WaitForMultipleObjects(2,hArray,FALSE,FORK_TIMEOUT);
 	if (object_active != WAIT_OBJECT_0) {
-		int err = GetLastError(); // For debugging purposes
+//		int err = GetLastError(); // For debugging purposes // unused variable
 		goto error;
 	}
 
@@ -430,7 +430,7 @@ void * sbrk(int delta) {
 	else {
 		retval = (u_long)VirtualAlloc((void*)((char*)__heap_top-(char*)delta), 
 				delta,MEM_DECOMMIT, PAGE_READWRITE);
-		if (retval = 0)
+		if (retval == 0)
 			abort();
 		__heap_top -= delta;
 	}

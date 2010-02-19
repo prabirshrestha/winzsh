@@ -128,4 +128,4 @@ int sigsuspend(const sigset_t *sigmask);
 int waitpid(pid_t, int*,int);
 int times(struct tms*);
   
-#endif SIGNAL_H
+#endif /* SIGNAL_H */

@@ -273,9 +273,15 @@ isident(char *s)
     if (*ss != '[')
 	return 0;
     noeval = 1;
-    (void)mathevalarg(++ss, &ss);
+	/* WINNT patch */
+	++ss;
+	(void)mathevalarg(ss, &ss);
+	/* end WINNT patch */
     if (*ss == ',')
-	(void)mathevalarg(++ss, &ss);
+	/* WINNT patch */
+	++ss;
+	(void)mathevalarg(ss, &ss);
+	/* end WINNT patch */
     noeval = ne;		/* restore the value of noeval */
     if (*ss != ']' || ss[1])
 	return 0;

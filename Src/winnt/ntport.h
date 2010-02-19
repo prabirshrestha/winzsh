@@ -254,11 +254,10 @@ extern void dprintf(char *,...);
 #else
 #define dprintf if(0)printf
 #define DBreak()
-#endif NTDBG
+#endif /* NTDBG */
 
 #define USE(a) (void)(a)
 #define pipe(a) nt_pipe(a)
-
 
 void nt_init(void);
 void gethostname(char*,int);
@@ -322,7 +321,7 @@ extern void close_copied_fds(void);
 
 #ifndef STDIO_C
 extern void *my_stdin,*my_stdout,*my_stderr;
-#endif STDIO_C
+#endif /* STDIO_C */
 
 int   gettimeofday(struct timeval *, struct timezone *) ;
 char * getlogin(void);

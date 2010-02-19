@@ -5424,7 +5424,10 @@ bin_read(char *name, char **args, char *ops, int func)
 int
 zread(void)
 {
-    char cc, retry = 0;
+    char cc;
+#ifndef WINNT
+    char retry = 0;
+#endif /* WINNT */
 
     /* use zbuf if possible */
     if (zbuf) {

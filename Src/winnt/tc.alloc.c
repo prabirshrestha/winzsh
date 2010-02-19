@@ -62,7 +62,7 @@ void *sbrk(int);
 #ifdef NOTNT
 char   *memtop = NULL;		/* PWP: top of current memory */
 char   *membot = NULL;		/* PWP: bottom of allocatable memory */
-#endif NOTNT
+#endif /* NOTNT */
 
 
 
@@ -81,7 +81,7 @@ typedef unsigned int U_int;
 typedef unsigned short U_short;
 typedef unsigned long U_long;
 
-#endif NOTNT
+#endif /* NOTNT */
 
 /*
  * The overhead on a block is at least 4 bytes.  When free, this space
@@ -142,7 +142,7 @@ static	int	findbucket	__P((union overhead *, int));
 static	void	morecore	__P((int));
 #endif
 
-#endif NOTNT
+#endif /* NOTNT */
 
 #ifdef DEBUG
 # define CHECK(a, str, p) \
@@ -349,7 +349,7 @@ fcalloc(i, j)
 /* 4 should be plenty, -1 =>'s whole list */
 static int     realloc_srchlen = 4;	
 #endif /* lint */
-#endif NOTNT
+#endif /* NOTNT */
 
 //#undef realloc
 //extern void* realloc(void*,size_t);

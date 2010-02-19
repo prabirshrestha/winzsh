@@ -668,7 +668,7 @@ char *nt_fgets(char *string,int num, FILE* stream) {
 	j = bread - i; // - 1; // leftover characters
 	
 	if(SetFilePointer((HANDLE)h1,-j,NULL,SEEK_CUR) <0){
-		int err =GetLastError();
+//		int err = GetLastError(); // unused variable
 	}
 	string[i] = 0;
 
@@ -802,4 +802,4 @@ int nt_fstat(int fd, struct stat *stbuf) {
 		return -1;
 	}
 }
-#endif 0
+#endif /* 0 */

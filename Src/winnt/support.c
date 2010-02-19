@@ -237,7 +237,8 @@ void nt_execve_wrapped(char *prog, char**args, char**envir ) {
 	char **savedargs = args;
 	unsigned int cmdsize,cmdlen;
 	char *cmdstr ,*cmdend;
-	int rc=0,retries=0;
+//	int rc=0; // unused variable
+	int retries=0;
 	int is_winnt;
 	int hasdot=0;
 	char myself[512];
@@ -417,7 +418,7 @@ void nt_execve(char *prog, char**args, char**envir ) {
 	}
 #else
 		nt_execve_wrapped(prog, args, envir);
-#endif DBG
+#endif /* DBG */
 }
 /* This function from  Mark Tucker (mtucker@fiji.sidefx.com) */
 static void quoteProtect(char *dest, char *src) {

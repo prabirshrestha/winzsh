@@ -393,7 +393,7 @@ int nt_getcolumns(int * cols) {
 }
 void nt_move_cursor(int cursor, int line) {
 
-	extern int li, co;
+//	extern int li, co; //unused variables
 //	CONSOLE_SCREEN_BUFFER_INFO scrbuf;
 
 	HANDLE hStdout =ghstdout;//GetStdHandle(STD_OUTPUT_HANDLE);

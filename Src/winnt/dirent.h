@@ -67,4 +67,4 @@ DIR *opendir(char*);
 struct dirent *readdir(DIR*);
 int closedir(DIR*);
 void rewinddir(DIR*);
-#endif DIRENT_H
+#endif /* DIRENT_H */
