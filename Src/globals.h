@@ -338,8 +338,8 @@ EXTERN char *ifs INIT_ZERO;		/* $IFS        */
 EXTERN char *pwd INIT_ZERO;		/* $PWD        */
 EXTERN char *oldpwd INIT_ZERO;		/* $OLDPWD     */
 
-EXTERN zlong columns INIT_ZERO;		/* $COLUMNS    */
-EXTERN zlong lines INIT_ZERO;		/* $LINES      */
+EXTERN zlong MAY_ALIAS columns INIT_ZERO;		/* $COLUMNS    */
+EXTERN zlong MAY_ALIAS lines INIT_ZERO;		/* $LINES      */
 
 EXTERN char *zoptarg INIT_ZERO;		/* $OPTARG     */
 EXTERN zlong zoptind INIT_ZERO;		/* $OPTIND     */

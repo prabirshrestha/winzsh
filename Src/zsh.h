@@ -260,7 +260,11 @@ typedef struct hashtable *HashTable;
 
 typedef struct reswd     *Reswd;
 typedef struct alias     *Alias;
+// param was originally defined at ntport.h
+// TJA - should this be defined for WINNT, not just MINGW?
+#ifndef MINGW
 typedef struct param     *Param;
+#endif /* MINGW */
 typedef struct cmdnam    *Cmdnam;
 typedef struct shfunc    *Shfunc;
 typedef struct builtin   *Builtin;

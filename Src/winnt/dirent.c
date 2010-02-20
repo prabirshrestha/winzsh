@@ -44,6 +44,25 @@
 #include <winnetwk.h>
 
 #pragma intrinsic("memset")
+
+/*XXX: Extra definitions
+ *
+ * Desc: We will define attribute MAY_ALIAS for variables that may break
+ *       strict-aliasing rules when compiling with -O2 level.
+ *
+ * - Gabriel de Oliveira -
+ */
+
+#ifdef MINGW
+# ifndef MAY_ALIAS
+#  define MAY_ALIAS __attribute__((may_alias))
+# endif /* !MAY_ALIAS */
+#else
+# ifndef MAY_ALIAS
+#  define MAY_ALIAS
+# endif /* !MAY_ALIAS */
+#endif /* MINGW */
+
 #define xmalloc(a) HeapAlloc(GetProcessHeap(),HEAP_ZERO_MEMORY,(a))
 #define xfree(a) HeapFree(GetProcessHeap(),0,(a))
 
@@ -315,14 +334,19 @@ int enum_next_share(DIR *dir) {
 	nethandle_t *hnet;
 	char *tmp,*p1;
 	HANDLE henum;
-	int count, breq,ret;
+	int MAY_ALIAS count;
+        int MAY_ALIAS breq;
+        int ret;
 
 	hnet = (nethandle_t*)(dir->dd_fd);
 	henum = hnet->henum;
 	count =  1;
 	breq = 1024;
 
-	ret = p_WNetEnumResource(henum, &count,hnet->netres,&breq);
+	ret = p_WNetEnumResource(henum,
+                                 (unsigned long *) &count,
+                                 hnet->netres,
+                                 (unsigned long *) &breq);
 	if (ret != NO_ERROR)
 		return -1;
 	

@@ -4847,8 +4847,11 @@ zexit(int val, int from_signal)
 		LASTALLOC_RETURN;
 	    }
 	}
-	if (in_exit++ && from_signal)
+	/* WINNT patch: add bracket */
+	if (in_exit++ && from_signal) {
 	    LASTALLOC_RETURN;
+        }
+	/* end WINNT patch */
 	if (isset(MONITOR))
 	    /* send SIGHUP to any jobs left running  */
 	    killrunjobs(from_signal);

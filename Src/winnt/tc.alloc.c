@@ -45,7 +45,7 @@
 
 #ifndef NULL
 #define NULL 0
-#endif NULL
+#endif /* NULL */
 
 /*
    typedef unsigned long memalign_t;

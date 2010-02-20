@@ -69,14 +69,15 @@ static int auxsize;
  *
  */
 int force_read(int fd, unsigned char * buf, int howmany) {
-	int numread=0,err=0;
+	int MAY_ALIAS numread=0;
+        int err=0;
 	HANDLE hRead ;
 	hRead= (HANDLE)_get_osfhandle(fd);
 	if (hRead == INVALID_HANDLE_VALUE) {
 		return 0;
 	}
 again:
-	if (!ReadFile(hRead, buf,howmany,&numread, NULL ) ){
+	if (!ReadFile(hRead, buf,howmany,(unsigned long *) &numread, NULL ) ){
 		err = GetLastError();
 		switch(err) {
 			case ERROR_IO_PENDING:
@@ -101,7 +102,8 @@ again:
 }
 int nt_read(int fd, unsigned char * buf, int howmany) {
 
-	int numread=0,err=0,i,actual;
+	int MAY_ALIAS numread=0;
+        int err=0,i,actual;
 	HANDLE hRead ;
 	DWORD ftype;
 	//
@@ -117,7 +119,7 @@ int nt_read(int fd, unsigned char * buf, int howmany) {
 		return numread;
 	}
 again:
-	if (!ReadFile(hRead, buf,howmany,&numread, NULL ) ){
+	if (!ReadFile(hRead, buf,howmany,(unsigned long *) &numread, NULL ) ){
 		err = GetLastError();
 		switch(err) {
 			case ERROR_IO_PENDING:
@@ -174,7 +176,8 @@ again:
 
 int nt_write(int fd, unsigned char * buf, int howmany) {
 
-	int bytes_rtn,err;//,bwrote;
+	int MAY_ALIAS bytes_rtn;
+        int err;//,bwrote;
 
 
 	fd = (int)_get_osfhandle(fd);
@@ -204,7 +207,7 @@ int nt_write(int fd, unsigned char * buf, int howmany) {
 
 int consoleread(HANDLE hInput, unsigned char * buf,int howmany) {
 
-	INPUT_RECORD *irec;
+	INPUT_RECORD *irec = 0;
 	DWORD numread,controlkey,i;
 	WORD vcode;
 	unsigned char ch;

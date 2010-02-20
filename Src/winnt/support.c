@@ -134,8 +134,8 @@ skippy:
 	init_plister();
 
 }
-void gethostname(char *buf, int len) {
-	GetComputerName(buf,&len);
+void gethostname(char *buf, int MAY_ALIAS len) {
+	GetComputerName(buf,(unsigned long *) &len);
 }
 void set_default_path(char **path) {
 	char temp[128];

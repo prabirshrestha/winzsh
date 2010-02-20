@@ -51,6 +51,25 @@
 #pragma data_seg(".fusrdata")
 #define INIT_ZERO =0
 #define INIT_ZERO_STRUCT ={0}
+
+/*XXX: Extra definitions
+ *
+ * Desc: We will define attribute MAY_ALIAS for variables that may break
+ *       strict-aliasing rules when compiling with -O2 level.
+ *
+ * - Gabriel de Oliveira -
+ */
+
+#ifdef MINGW
+# ifndef MAY_ALIAS
+#  define MAY_ALIAS __attribute__((may_alias))
+# endif /* !MAY_ALIAS */
+#else
+# ifndef MAY_ALIAS
+#  define MAY_ALIAS
+# endif /* !MAY_ALIAS */
+#endif /* MINGW */
+
 #define malloc fmalloc
 #define free   ffree
 #define realloc frealloc
@@ -130,6 +149,8 @@ pretty */
 #define dup2  nt_dup2
 #define fdopen nt_fdopen
 #define fgets  nt_fgets
+// fileno was originally defined at stdio.h:529
+#undef fileno
 #define fileno nt_fileno
 #define fopen  nt_fopen
 #define fread  nt_fread
@@ -161,6 +182,8 @@ pretty */
 #define L_SET   SEEK_SET
 #define L_XTND  SEEK_END
 #define L_INCR  SEEK_CUR
+// S_IXUSR was originally defined at stat.h:64
+#undef S_IXUSR
 #define S_IXUSR S_IEXEC
 #define S_IXGRP S_IEXEC
 #define S_IXOTH S_IEXEC
@@ -238,14 +261,14 @@ struct group {
 
 /* ntport.c */
 char *			ttyname(int);
-struct passwd*  getpwuid(uid_t ) ;
-struct group *  getgrgid(gid_t ) ;
-struct passwd*  getpwnam(char* ) ;
-struct group*  getgrnam(char* ) ;
-gid_t 			getuid(void) ;
-gid_t 			getgid(void) ;
-gid_t 			geteuid(void) ;
-gid_t 			getegid(void) ;
+struct passwd*  getpwuid(uid_t );
+struct group *  getgrgid(gid_t );
+struct passwd*  getpwnam(char* );
+struct group*  getgrnam(char* );
+gid_t 			getuid(void);
+gid_t 			getgid(void);
+gid_t 			geteuid(void);
+gid_t 			getegid(void);
 void			nt_free(void *);
 
 #ifdef NTDBG
@@ -260,7 +283,7 @@ extern void dprintf(char *,...);
 #define pipe(a) nt_pipe(a)
 
 void nt_init(void);
-void gethostname(char*,int);
+void gethostname(char*, int MAY_ALIAS);
 void set_default_path(char**);
 int  nt_read(int, unsigned char*,int);
 int  force_read(int, unsigned char*,int);
@@ -376,4 +399,4 @@ struct tms {
 extern int kill(int,int);
 extern int nice(int);
 
-#endif NTPORT_H
+#endif /* NTPORT_H */

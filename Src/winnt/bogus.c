@@ -59,10 +59,10 @@ gid_t getegid(void) {
 struct passwd * getpwnam(char *name) {
 
 	char *ptr;
-	int size =20;
+	int MAY_ALIAS size =20;
 
 	if (pass_bogus.pw_name == NULL) {
-		GetUserName(username,&size);
+		GetUserName(username,(unsigned long *) &size);
 		ptr = getenv("HOME");
 		if (ptr){
 			strcpy(homedir,ptr);
@@ -86,10 +86,10 @@ struct passwd * getpwnam(char *name) {
 struct passwd * getpwuid(uid_t uid) {
 
 	char *ptr;
-	int size =20;
+	int MAY_ALIAS size =20;
 
 	if (pass_bogus.pw_name == NULL) {
-		GetUserName(username,&size);
+		GetUserName(username,(unsigned long *) &size);
 		ptr = getenv("HOME");
 		if (ptr){
 			strcpy(homedir,ptr);

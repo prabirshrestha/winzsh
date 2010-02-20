@@ -49,6 +49,24 @@
 
 #pragma intrinsic("memcpy", "memset","memcmp")
 
+/*XXX: Extra definitions
+ *
+ * Desc: We will define attribute MAY_ALIAS for variables that may break
+ *       strict-aliasing rules when compiling with -O2 level.
+ *
+ * - Gabriel de Oliveira -
+ */
+
+#ifdef MINGW
+# ifndef MAY_ALIAS
+#  define MAY_ALIAS __attribute__((may_alias))
+# endif /* !MAY_ALIAS */
+#else
+# ifndef MAY_ALIAS
+#  define MAY_ALIAS
+# endif /* !MAY_ALIAS */
+#endif /* MINGW */
+
 typedef unsigned long u_long;
 typedef unsigned long memalign_t;
 typedef unsigned long caddr_t;
@@ -218,7 +236,8 @@ int fork_init(void) {
 }
 int fork(void) {
 
-	int rc,stacksize;
+	int MAY_ALIAS rc;
+        int stacksize;
 	char modname[512];
 	HANDLE  hProc,hThread, hArray[2];
 	STARTUPINFO si;
@@ -303,7 +322,8 @@ int fork(void) {
 	// Copy all the shared data
 	//
 	if (!WriteProcessMemory(hProc,&__fork_seg_begin,&__fork_seg_begin,
-			(char*)&__fork_seg_end - (char*)&__fork_seg_begin,&rc)) {
+			(char*)&__fork_seg_end - (char*)&__fork_seg_begin,
+                        (unsigned long*) &rc)) {
 		goto error;
 	}
 	__forked=0;
@@ -334,14 +354,14 @@ int fork(void) {
 	if (!WriteProcessMemory(hProc,(char *)&fork_stack_end,
 			(char *)&fork_stack_end,
 			stacksize,
-			&rc)){
+			(unsigned long *)&rc)){
 		errno = EINVAL;
 		goto error;
 	}
 	//
 	// copy heap itself
 	if (!WriteProcessMemory(hProc, (void*)__heap_base,(void*)__heap_base, 
-			__heap_top-__heap_base,&rc)){
+			__heap_top-__heap_base,(unsigned long *)&rc)){
 		goto error;
 	}
 
@@ -435,7 +455,7 @@ void * sbrk(int delta) {
 		__heap_top -= delta;
 	}
 
-	return (void*) old_top;
+        return (void*) old_top;
 }
 
 #include "tc.alloc.c"

@@ -69,14 +69,15 @@ dprintf(char *format, ...)
 
 int fork_copy_user_mem(HANDLE hproc) {
 	
-	int bytes,rc;
+	int MAY_ALIAS bytes;
+        int rc;
 	int size;
 
 	size =(char*)&bookend2 - (char*)&bookend1;
 	//dprintf("hproc 0x%08x, size %u\n",hproc,size);
 	rc =WriteProcessMemory(hproc,&bookend1,&bookend1,
 					size,
-					&bytes);
+					(unsigned long*) &bytes);
 
 	if (!rc) {
 		__asm { int 3 };

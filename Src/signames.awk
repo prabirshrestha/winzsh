@@ -1,4 +1,4 @@
-# 
+#
 # {g,n}awk script to generate signals.h
 # provided by Geoff Wing <mason@werple.apana.org.au>
 # NB: On SunOS 4.1.3 - user-functions don't work properly, also \" problems

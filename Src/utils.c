@@ -462,7 +462,7 @@ finddir_scan(HashNode hn, int flags)
 Nameddir
 finddir(char *s)
 {
-    static struct nameddir homenode = { NULL, "", 0, NULL, 0 };
+    static struct nameddir MAY_ALIAS homenode = { NULL, "", 0, NULL, 0 };
 
     /* Invalidate directory cache if argument is NULL.  This is called *
      * whenever a node is added to or removed from the hash table, and *

@@ -277,11 +277,14 @@ isident(char *s)
 	++ss;
 	(void)mathevalarg(ss, &ss);
 	/* end WINNT patch */
-    if (*ss == ',')
+	/* WINNT patch: add bracket */
+    if (*ss == ',') {
 	/* WINNT patch */
 	++ss;
 	(void)mathevalarg(ss, &ss);
 	/* end WINNT patch */
+    }
+	/* end WINNT patch: add bracket */
     noeval = ne;		/* restore the value of noeval */
     if (*ss != ']' || ss[1])
 	return 0;
