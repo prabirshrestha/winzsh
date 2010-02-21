@@ -1086,9 +1086,27 @@ clobber_open(struct redir *f)
  * register during fork(), it gets lost in the child. There is no cure
  * for this, except to turn off the optimization. -amol 5/19/99
  */
-#ifdef WINNT
+
+/*XXX: Ignored pragma optimize
+ *
+ * Desc: #pragma optimize is ignored by gcc 3.3. If I understand correctly, what
+ *       this pragma does is turn off (or on) optimization for all functions
+ *       following the pragma.
+ * Fix:  There isn't a nice way to replicate this behaviour with the current
+ *       version of gcc (v3.3) that comes with MinGW. In later versions of gcc one
+ *       can give a function the attribute optimize to overload the default
+ *       optimization level at compile time.
+ *       There is no fix for this, we will have to compile the whole program
+ *       with -O0. In the future there could be an exec.h with two different
+ *       source files (one that implements regular functions and another that
+ *       implements the unoptimized ones).
+ *
+ * - Gabriel de Oliveira -
+ */
+
+#if defined(WINNT) && !defined(MINGW)
 #pragma optimize("",off)
-#endif /* WINNT */
+#endif /* WINNT && !MINGW */
 /**/
 void
 closemn(struct multio **mfds, int fd)
@@ -1122,9 +1140,9 @@ closemn(struct multio **mfds, int fd)
     }
     _exit(0);
 }
-#ifdef WINNT
+#if defined(WINNT) && !defined(MINGW)
 #pragma optimize("",on)
-#endif /* WINNT */
+#endif /* WINNT && !MINGW */
 
 /* close all the mnodes (failure) */
 
@@ -1297,9 +1315,9 @@ addvars(LinkList l, int export)
     }
 }
 
-#ifdef WINNT
+#if defined(WINNT) && !defined(MINGW)
 #pragma optimize("",off)
-#endif /* WINNT */
+#endif /* WINNT && !MINGW */
 /**/
 void
 execcmd(Cmd cmd, int input, int output, int how, int last1)
@@ -1966,9 +1984,9 @@ execcmd(Cmd cmd, int input, int output, int how, int last1)
     zsfree(STTYval);
     STTYval = 0;
 }
-#ifdef WINNT
+#if defined(WINNT) && !defined(MINGW)
 #pragma optimize("",on)
-#endif /* WINNT */
+#endif /* WINNT && !MINGW */
 
 /* Arrange to have variables restored. */
 
@@ -2257,9 +2275,9 @@ getherestr(struct redir *fn)
 
 /* $(...) */
 
-#ifdef WINNT
+#if defined(WINNT) && !defined(MINGW)
 #pragma optimize("",off)
-#endif /* WINNT */
+#endif /* WINNT && !MINGW */
 /**/
 LinkList
 getoutput(char *cmd, int qt)
@@ -2334,9 +2352,9 @@ getoutput(char *cmd, int qt)
     kill(getpid(), SIGKILL);
     return NULL;
 }
-#ifdef WINNT
+#if defined(WINNT) && !defined(MINGW)
 #pragma optimize("",on)
-#endif /* WINNT */
+#endif /* WINNT && !MINGW */
 
 /* read output of command substitution */
 
@@ -2415,9 +2433,9 @@ parsecmd(char *cmd)
 
 /* =(...) */
 
-#ifdef WINNT
+#if defined(WINNT) && !defined(MINGW)
 #pragma optimize("",off)
-#endif /* WINNT */
+#endif /* WINNT && !MINGW */
 /**/
 char *
 getoutputfile(char *cmd)
@@ -2469,9 +2487,9 @@ getoutputfile(char *cmd)
     kill(getpid(), SIGKILL);
     return NULL;
 }
-#ifdef WINNT
+#if defined(WINNT) && !defined(MINGW)
 #pragma optimize("",on)
-#endif /* WINNT */
+#endif /* WINNT && !MINGW */
 
 #if !defined(PATH_DEV_FD) && defined(HAVE_FIFOS)
 /* get a temporary named pipe */
@@ -2494,9 +2512,9 @@ namedpipe(void)
 
 /* <(...) or >(...) */
 
-#ifdef WINNT
+#if defined(WINNT) && !defined(MINGW)
 #pragma optimize("",off)
-#endif /* WINNT */
+#endif /* WINNT && !MINGW */
 /**/
 char *
 getproc(char *cmd)
@@ -2560,15 +2578,15 @@ getproc(char *cmd)
     return NULL;
 #endif   /* HAVE_FIFOS and PATH_DEV_FD not defined */
 }
-#ifdef WINNT
+#if defined(WINNT) && !defined(MINGW)
 #pragma optimize("",on)
-#endif /* WINNT */
+#endif /* WINNT && !MINGW */
 
 /* > >(...) or < <(...) (does not use named pipes) */
 
-#ifdef WINNT
+#if defined(WINNT) && !defined(MINGW)
 #pragma optimize("",off)
-#endif /* WINNT */
+#endif /* WINNT && !MINGW */
 /**/
 int
 getpipe(char *cmd)
@@ -2590,9 +2608,9 @@ getpipe(char *cmd)
     _exit(lastval);
     return 0;
 }
-#ifdef WINNT
+#if defined(WINNT) && !defined(MINGW)
 #pragma optimize("",on)
-#endif /* WINNT */
+#endif /* WINNT && !MINGW */
 
 /* open pipes with fds >= 10 */
 

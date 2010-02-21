@@ -922,7 +922,7 @@ adjustlines(int signalled)
     if (signalled == 2)
 	userlines = lines > 0;
     
-    nt_getlines(&lines);
+    nt_getlines((int*) &lines);
 #endif /* WINNT */
     if (lines <= 0) {
 	DPUTS(signalled, "BUG: Impossible TIOCGWINSZ rows");
@@ -955,7 +955,7 @@ adjustcolumns(int signalled)
     if (signalled == 3)
 	usercols = columns > 0;
     
-    nt_getcolumns(&columns); 
+    nt_getcolumns((int*) &columns); 
 #endif /* WINNT */
     if (columns <= 0) {
 	DPUTS(signalled, "BUG: Impossible TIOCGWINSZ cols");
