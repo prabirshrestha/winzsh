@@ -42,6 +42,18 @@
 #include <ntport.h>
 #include "zsh.h"
 
+/*XXX: try-except (Microsoft specific)
+ *
+ * Desc: __try and __except are specific to Microsoft VC.
+ * Fix:  We are using part of the libseh library when compiling with MINGW to
+ *       have similar functionality.
+ *
+ * - Gabriel de Oliveira -
+ */
+#ifdef MINGW
+# include <seh.h>
+#endif /* MINGW */
+
 char start_usage[] = 
 { ":\n \
  Similar to cmd.exe's start  \n \
@@ -220,6 +232,9 @@ int bin_title (char *name, char **v, char *ops, int func) {
 			fprintf(stderr,"String too long\n");	
 			return 1;
 		}
+#ifdef MINGW
+		__end_except
+#endif /* MINGW */
 	}
 
 	if (!SetConsoleTitle(titlebuf) ) {

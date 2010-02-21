@@ -30,6 +30,18 @@
 #define GLOBALS
 #include "zsh.h"
 
+/*XXX: try-except (Microsoft specific)
+ *
+ * Desc: __try and __except are specific to Microsoft VC.
+ * Fix:  We are using part of the libseh library when compiling with MINGW to
+ *       have similar functionality.
+ *
+ * - Gabriel de Oliveira -
+ */
+#ifdef MINGW
+# include <seh.h>
+#endif /* MINGW */
+
 static int noexitct = 0;
 
 /**/
@@ -49,6 +61,9 @@ main(int argc, char **argv)
 		dprintf("damn 0x%08x\n",GetExceptionCode());
 		return 1;
 	};
+#ifdef MINGW
+	__end_except
+#endif /* MINGW */
 #endif /* WINNT */
 
     global_permalloc();

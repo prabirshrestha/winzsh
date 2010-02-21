@@ -46,6 +46,18 @@
 #define STDIO_C
 #include <ntport.h>
 
+/*XXX: try-except (Microsoft specific)
+ *
+ * Desc: __try and __except are specific to Microsoft VC.
+ * Fix:  We are using part of the libseh library when compiling with MINGW to
+ *       have similar functionality.
+ *
+ * - Gabriel de Oliveira -
+ */
+#ifdef MINGW
+# include <seh.h>
+#endif /* MINGW */
+
 #define __MAX_OPEN_FILES 64
 
 #define MY_O_APPEND 0x01
@@ -233,6 +245,9 @@ int nt_fprintf(FILE *stream,char *format,...) {
 		errno = EFAULT;
 		return -1;
 	}
+#ifdef MINGW
+	__end_except
+#endif /* MINGW */
 	return nt_write2(hwrite,putbuf,lstrlen(putbuf));
 
 }
@@ -251,6 +266,9 @@ int nt_printf(char *format,...) {
 		errno = EFAULT;
 		return -1;
 	}
+#ifdef MINGW
+	__end_except
+#endif /* MINGW */
 	return nt_write2(hwrite,putbuf,lstrlen(putbuf));
 }
 int nt_puts(char * str) {
@@ -803,5 +821,8 @@ int nt_fstat(int fd, struct stat *stbuf) {
 		errno = EINVAL;
 		return -1;
 	}
+#ifdef MINGW
+	__end_except
+#endif /* MINGW */
 }
 #endif /* 0 */

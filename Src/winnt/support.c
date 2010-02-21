@@ -42,6 +42,18 @@
 #include "ntport.h"
 #include "zsh.h"
 
+/*XXX: try-except (Microsoft specific)
+ *
+ * Desc: __try and __except are specific to Microsoft VC.
+ * Fix:  We are using part of the libseh library when compiling with MINGW to
+ *       have similar functionality.
+ *
+ * - Gabriel de Oliveira -
+ */
+#ifdef MINGW
+# include <seh.h>
+#endif /* MINGW */
+
 extern void init_stdio(void);
 extern void nt_term_init(void);
 extern void nt_init_signals(void);
@@ -416,6 +428,9 @@ void nt_execve(char *prog, char**args, char**envir ) {
 		fprintf(stderr,"Command line overflow. There is a limit, you know\n");
 		ExitProcess(0);
 	}
+#ifdef MINGW
+	__end_except
+#endif /* MINGW */
 #else
 		nt_execve_wrapped(prog, args, envir);
 #endif /* DBG */

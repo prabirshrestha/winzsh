@@ -42,7 +42,17 @@
 #include "ntport.h"
 #include "signal.h"
 
-
+/*XXX: try-except (Microsoft specific)
+ *
+ * Desc: __try and __except are specific to Microsoft VC.
+ * Fix:  We are using part of the libseh library when compiling with MINGW to
+ *       have similar functionality.
+ *
+ * - Gabriel de Oliveira -
+ */
+#ifdef MINGW
+# include <seh.h>
+#endif /* MINGW */
 
 #define SIGBAD(signo) ( (signo) <=0 || (signo) >=NSIG) 
 #define fast_sigmember(a,b) ( (*(a) & (1 << (b-1)) ) )
@@ -408,6 +418,9 @@ void CALLBACK alarm_callback( unsigned long interval) {
 	__except(1) {
 		;
 	}
+#ifdef MINGW
+	__end_except
+#endif /* MINGW */
 	resume_main_thread();
 	LeaveCriticalSection(&sigcritter);
 
@@ -481,6 +494,9 @@ void sig_child_callback(DWORD pid,DWORD exitcode) {
 	__except(1) {
 		;
 	}
+#ifdef MINGW
+	__end_except
+#endif /* MINGW */
 	resume_main_thread();
 	LeaveCriticalSection(&sigcritter);
 
