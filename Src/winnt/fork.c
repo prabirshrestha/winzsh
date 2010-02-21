@@ -47,7 +47,22 @@
 #include <setjmp.h>
 #include <errno.h>
 
-#pragma intrinsic("memcpy", "memset","memcmp")
+/*XXX: Ignored pragma intrinsic
+ *
+ * Desc: #pragma intrinsic is ignored by gcc. Apparently what this pragma does
+ *       is to force those functions to be called inlined. I haven't found
+ *       a similar construct in gcc to force this behaviour. Too bad not to
+ *       know the reason for calling those functions inline, but my guess is
+ *       that undesirable behaviour may arise from not doing so.
+ * Fix:  For the time being we will ignore the pragma. In the future those
+ *       functions should be reimplemented as inline functions.
+ *
+ * - Gabriel de Oliveira -
+ */
+#ifndef MINGW
+# pragma intrinsic("memcpy", "memset","memcmp")
+#endif /* !MINGW */
+
 
 /*XXX: Extra definitions
  *
@@ -212,7 +227,21 @@ int fork_init(void) {
 
 	__fork_stack_begin =(ULONG*)stackbase;
 
+/*XXX: Uncommenting heap_init();
+ *
+ * Desc: heap_init() was commented in the MSVC source files. I have no
+ *       idea if the program still runs with it commented, but it
+ *       certainly does not when compiling it with gcc.
+ * Fix:  If we are compiling with gcc, we will call heap_init().
+ *
+ * - Gabriel de Oliveira -
+ */
+
+#ifdef MINGW
+	heap_init();
+#else
 	//	heap_init();
+#endif /* MINGW */
 
 	if (__forked) {
 
@@ -388,7 +417,27 @@ error:
 	CloseHandle(hThread);
 	return -1;
 }
-#pragma optimize("",off)
+
+/*XXX: Ignored pragma optimize
+ *
+ * Desc: #pragma optimize is ignored by gcc 3.3. If I understand correctly, what
+ *       this pragma does is turn off (or on) optimization for all functions
+ *       following the pragma.
+ * Fix:  There isn't a nice way to replicate this behaviour with the current
+ *       version of gcc that comes with MinGW. In later versions of gcc one
+ *       can give a function the attribute optimize to overload the default
+ *       optimization level at compile time.
+ *       There is no fix for this, we will have to compile the whole program
+ *       with -O0. In the future there could be a fork.h with two different
+ *       source files (one that implements regular functions and another that
+ *       implements the unoptimized ones).
+ *
+ * - Gabriel de Oliveira -
+ */
+#ifndef MINGW
+# pragma optimize("",off)
+#endif /* !MINGW */
+
 void stack_probe (void *ptr) {
 	char buf[1000];
 	int x;
@@ -397,7 +446,11 @@ void stack_probe (void *ptr) {
 		stack_probe(ptr);
 	(void)buf;
 }
-#pragma optimize("",on)
+
+#ifndef MINGW
+# pragma optimize("",on)
+#endif /* !MINGW */
+
 //
 // This function basically reserves some heap space.
 // In the child it also commits the size committed in the parent.

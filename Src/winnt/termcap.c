@@ -322,11 +322,36 @@ struct buffer
 
 /* Forward declarations of static functions.  */
 
+/*XXX: scan_file - Unused function
+ *
+ * Desc: This function declaration issues a warning as it isn't used.
+ * Fix:  If we are compiling with MinGW, we will give this function the
+ *       'unused' attribute to avoid the warning.
+ *
+ * - Gabriel de Oliveira -
+ */
+#ifdef MINGW
+static int scan_file() __attribute__((unused));
+#else
 static int scan_file ();
+#endif /* MINGW */
+
 static char *gobble_line ();
 static int compare_contin ();
 static int name_match ();
 
+
+/*XXX: valid_filename_p - Unused function
+ *
+ * Desc: This function declaration issues a warning as it isn't used.
+ * Fix:  If we are compiling with MinGW, we will give this function the
+ *       'unused' attribute to avoid the warning.
+ *
+ * - Gabriel de Oliveira -
+ */
+#ifdef MINGW
+static int valid_filename_p() __attribute__((unused));
+#endif /* MINGW */
 
 static int
 valid_filename_p (fn)

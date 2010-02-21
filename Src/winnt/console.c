@@ -47,10 +47,29 @@ void set_attr(int ,int ) ;
 void set_console_attributes(int,int);
 int nt_scroll_old(int line1 , int line2,int howmany) ;
 
-
+/*TODO: Macro say used as function
+ *
+ * Desc: gcc is complaining of 'statement with no effect' when this macro is
+ *       used as a regular function call.
+ * Fix:  Can't make this into a real function since the real function is
+ *       already defined. The code that uses this macro should be fixed to
+ *       avoid the warning.
+ *
+ * - Gabriel de Oliveira -
+ */
 #define say
-#define make_err_str
 
+/*TODO: Macro make_err_str used as function
+ *
+ * Desc: gcc is complaining of 'statement with no effect' when this macro is
+ *       used as a regular function call.
+ * Fix:  Can't make this into a real function since the real function is
+ *       already defined. The code that uses this macro should be fixed to
+ *       avoid the warning.
+ *
+ * - Gabriel de Oliveira -
+ */
+#define make_err_str
 
 #define xmalloc(s) HeapAlloc(GetProcessHeap(),HEAP_ZERO_MEMORY,(s))
 #define xfree(p) HeapFree(GetProcessHeap(),0,(p))

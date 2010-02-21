@@ -43,7 +43,21 @@
 #include "dirent.h"
 #include <winnetwk.h>
 
-#pragma intrinsic("memset")
+/*XXX: Ignored pragma intrinsic
+ *
+ * Desc: #pragma intrinsic is ignored by gcc. Apparently what this pragma does
+ *       is to force those functions to be called inlined. I haven't found
+ *       a similar construct in gcc to force this behaviour. Too bad not to
+ *       know the reason for calling those functions inline, but my guess is
+ *       that undesirable behaviour may arise from not doing so.
+ * Fix:  For the time being we will ignore the pragma. In the future those
+ *       functions should be reimplemented as inline functions.
+ *
+ * - Gabriel de Oliveira -
+ */
+#ifndef MINGW
+# pragma intrinsic("memset")
+#endif /* !MINGW */
 
 /*XXX: Extra definitions
  *

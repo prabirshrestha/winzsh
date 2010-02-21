@@ -85,7 +85,27 @@
 #undef signal
 #define signal _nt_signal
 
+/*XXX: (Conflictive) sigset_t redefined
+ *
+ * Desc: sigset_t was originally defined at types.h:95. Furthermore, the
+ *       original definition of sigset_t is of type int (and here it is of
+ *       type unsigned long). I considered two courses of action regarding
+ *       this:
+ *
+ *       a) Defining _NO_OLDNAMES when compiling the source, thus avoiding the
+ *          original definition of sigset_t in types.h. This is not viable
+ *          because the source also relies on other OLDNAMES definitions from
+ *          this file.
+ *       b) Disregarding this definition when compiling with gcc and 'hoping'
+ *          no errors will arise from it.
+ * Fix:  Option b.
+ *
+ * - Gabriel de Oliveira -
+ */
+#ifndef MINGW
 typedef unsigned long sigset_t;
+#endif /* !MINGW */
+
 typedef void Sigfunc (int);
 
 struct sigaction {

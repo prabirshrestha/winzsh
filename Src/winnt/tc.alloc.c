@@ -39,7 +39,31 @@
  */
 
 #define CGETS(b,c,d) d
-#define xprintf 
+
+/*XXX: Replacing xprintf
+ *
+ * Desc: gcc is complaining of 'statement with no effect' when this macro is
+ *       used as a regular function call.
+ * Fix:  Making it a real function.
+ *
+ * - Gabriel de Oliveira -
+ */
+
+#ifdef MINGW
+/*
+ * xprintf declaration.
+ */
+inline void xprintf(const char *a, ...) __attribute__((always_inline));
+
+/*
+ * xprintf definition.
+ */
+void xprintf(const char *a, ...) {};
+
+#else
+# define xprintf
+#endif /* MINGW */
+
 #define __P(a) a
 
 

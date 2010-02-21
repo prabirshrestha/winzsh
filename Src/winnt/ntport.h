@@ -48,7 +48,23 @@
 #include <memory.h>
 #include "dirent.h"
 
-#pragma data_seg(".fusrdata")
+/*XXX: Ignored pragma data_seg
+ *
+ * Desc: #pragma data_seg is ignored by gcc. All variables declared in this
+ *       file should go to segment '.fusrdata', and in link time that segment
+ *       is given read-write permision.
+ * Fix:  We define SHARED to place those attributes directly by each variable
+ *       declaration.
+ *
+ * - Gabriel de Oliveira -
+ */
+#ifndef MINGW
+# define SHARED
+# pragma data_seg(".fusrdata")
+#else
+# define SHARED __attribute__((section(".fusrdata"), shared))
+#endif /* !MINGW */
+
 #define INIT_ZERO =0
 #define INIT_ZERO_STRUCT ={0}
 #define INIT_ZERO_STRUCT_ARRAY ={{0}}
@@ -80,7 +96,17 @@
 #define heap_free(p) HeapFree(GetProcessHeap(),0,(p))
 #define heap_realloc(p,s) HeapReAlloc(GetProcessHeap(),HEAP_ZERO_MEMORY,(p),(s))
 
-#pragma warning(disable:4018)
+/*XXX: Ignored pragma warning
+ *
+ * Desc: #pragma warning is ignored by gcc.
+ * Fix:  Avoiding it when compiling with gcc.
+ *
+ * - Gabriel de Oliveira -
+ */
+#ifndef MINGW
+# pragma warning(disable:4018)
+#endif /* !MINGW */
+
 #define HAVENOUTMP
 #define HAVENOLIMIT
 #define FUNCPROTO
@@ -165,6 +191,17 @@ pretty */
 #define fstat(a,b)  nt_fstat((a),(b))
 #define stat(a,b)  nt_stat((a),(b))
 #define setvbuf(a,b,c,d) 
+
+/*TODO: Macro setpgrp used as function
+ *
+ * Desc: gcc is complaining of 'statement with no effect' when this macro is
+ *       used as a regular function call.
+ * Fix:  Can't make this into a real function since the real function is
+ *       already defined. The code that uses this macro should be fixed to
+ *       avoid the warning.
+ *
+ * - Gabriel de Oliveira -
+ */
 #define setpgrp(a,b) (-1)
 
 #undef stdin
@@ -212,8 +249,40 @@ mode Value	Checks File For
 #define IS_WINDOWS_9x() (gdwPlatform != VER_PLATFORM_WIN32_NT)
 typedef int uid_t;
 typedef int gid_t;
+
+/*XXX: pid_t redefined
+ *
+ * Desc: pid_t was originally defined at types.h:75.
+ * Fix:  avoiding this definition for gcc.
+ *
+ * - Gabriel de Oliveira -
+ */
+
+#ifndef MINGW
 typedef int pid_t;
+#endif /* !MINGW */
+
+/*XXX: (Conflictive) mode_t redefined
+ *
+ * Desc: mode_t was originally defined at types.h:85. Furthermore, the original
+ *       definition of mode_t is of type unsigned short int (and here it is of
+ *       type int). I considered two courses of action regarding this:
+ *
+ *       a) Defining _NO_OLDNAMES when compiling the source, thus avoiding the
+ *          original definition of mode_t in types.h. This is not viable
+ *          because the source also relies on other OLDNAMES definitions from
+ *          this file.
+ *       b) Disregarding this definition when compiling with gcc and 'hoping'
+ *          no errors will arise from it.
+ * Fix:  Option b.
+ *
+ * - Gabriel de Oliveira -
+ */
+
+#ifndef MINGW
 typedef int mode_t;
+#endif /* !MINGW */
+
 typedef void sigret_t;
 typedef long rlim_t;
 typedef unsigned char u_char;
@@ -344,7 +413,9 @@ extern void start_sigchild_thread(HANDLE,DWORD);
 extern void close_copied_fds(void);
 
 #ifndef STDIO_C
-extern void *my_stdin,*my_stdout,*my_stderr;
+extern void *my_stdin SHARED;
+extern void *my_stdout SHARED;
+extern void *my_stderr SHARED;
 #endif /* STDIO_C */
 
 int   gettimeofday(struct timeval *, struct timezone *) ;
@@ -381,12 +452,13 @@ extern void try_shell_ex(char**,int);
 
 extern void init_plister(void);
 // global vars
-extern unsigned short __nt_want_vcode;
-extern unsigned int oldcp, dontmuckwithmycodepage;
-extern int ntvirtualbind[];
-extern DWORD gdwPlatform;
-extern OSVERSIONINFO gosver;
-extern int gisWin95;
+extern unsigned short __nt_want_vcode SHARED;
+extern unsigned int oldcp SHARED;
+extern unsigned int dontmuckwithmycodepage SHARED;
+extern int ntvirtualbind[] SHARED;
+extern DWORD gdwPlatform SHARED;
+extern OSVERSIONINFO gosver SHARED;
+extern int gisWin95 SHARED;
 // bogus
 #define STRUCT_UTMP long
 #define getppid() 0
@@ -399,5 +471,7 @@ struct tms {
 };
 extern int kill(int,int);
 extern int nice(int);
+
+#undef SHARED
 
 #endif /* NTPORT_H */

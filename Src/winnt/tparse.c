@@ -43,7 +43,21 @@
 #define DL 'h'
 #define DO 'A'
 #define HO 'B'
-#define KB '\008'
+
+/*XXX: Riskful change
+ *
+ * Desc: There is no octal number 8.
+ * Fix:  Replacing it for octal 10 (8 decimal) when compiling with gcc. This
+ *       is not a real fix but a wild guess really.
+ *
+ * - Gabriel de Oliveira -
+ */
+#ifdef MINGW
+# define KB '\010'
+#else
+# define KB '\008'
+# endif /* MINGW */
+
 #define KD 'D'
 #define KH 'E'
 #define KF 'F'

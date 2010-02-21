@@ -55,7 +55,22 @@ main(int argc, char **argv)
 #endif
 #ifdef WINNT
 	__try {
+
+/*XXX: Uncommenting nt_init();
+ *
+ * Desc: nt_init() was commented in the MSVC source files. I have no
+ *       idea if the program still runs with it commented, but it
+ *       certainly does not when compiling it with gcc.
+ * Fix:  If we are compiling with gcc, we will call nt_init().
+ *
+ * - Gabriel de Oliveira -
+ */
+#ifdef MINGW
+	nt_init();
+#else
 	//nt_init();
+#endif /* MINGW */
+
 	fork_init();
 	}__except(1) {
 		dprintf("damn 0x%08x\n",GetExceptionCode());

@@ -80,7 +80,25 @@ int fork_copy_user_mem(HANDLE hproc) {
 					(unsigned long*) &bytes);
 
 	if (!rc) {
+
+/*XXX: __asm (Microsoft specific)
+ *
+ * Desc: __asm is specific to Microsoft VC.
+ * Fix:  Changing this to code compatible with gcc.
+ *
+ * - Gabriel de Oliveira -
+ */
+
+#ifdef MINGW
+		__asm(
+			".intel_syntax noprefix\n"
+			"int 3\n"
+			".att_syntax\n"
+			);
+#else
 		__asm { int 3 };
+#endif /* MINGW */
+
 		rc = GetLastError();
 		return -1;
 	}
