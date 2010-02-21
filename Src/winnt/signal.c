@@ -607,8 +607,8 @@ Niceness    Base    Priority class/thread priority
 ****************************************************************************/
 int nice(int niceness) {
 
-    DWORD pclass;
-    int priority;
+    DWORD pclass = 0;
+    int priority = 0;
 
     if (niceness < -6 || niceness > 7) {
         errno = EPERM;

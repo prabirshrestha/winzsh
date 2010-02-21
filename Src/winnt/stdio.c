@@ -59,8 +59,8 @@ typedef struct _myfile {
 typedef unsigned long u_long;
 #define INVHL (DWORD)(INVALID_HANDLE_VALUE)
 
-MY_FILE __gOpenFiles[__MAX_OPEN_FILES]={0};
-MY_FILE __gOpenFilesCopy[__MAX_OPEN_FILES]={0};
+MY_FILE __gOpenFiles[__MAX_OPEN_FILES]={{0}};
+MY_FILE __gOpenFilesCopy[__MAX_OPEN_FILES]={{0}};
 
 MY_FILE *my_stdin=0, *my_stdout=0, *my_stderr=0;
 
@@ -523,14 +523,15 @@ int nt_isatty(int fd) {
 int nt_fread(void *buffer, size_t size, size_t count,FILE*stream) {
 
 	u_long h1;
-	int read=0;
+	int MAY_ALIAS read=0;
 
 	if (size == 0 || count == 0)
 		return 0;
 	
 	h1 = ((MY_FILE*)stream)->handle;
 
-	if (!ReadFile((HANDLE)h1,buffer,size*count,&read,NULL) ) {
+	if (!ReadFile((HANDLE)h1,buffer,size*count,
+                      (unsigned long *) &read,NULL) ) {
 		errno = EBADF;
 		return -1;
 	}
@@ -544,7 +545,7 @@ int nt_fread(void *buffer, size_t size, size_t count,FILE*stream) {
 int nt_fwrite(void *buffer, size_t size, size_t count,FILE*stream) {
 
 	u_long h1;
-	int wrote=0;
+	int MAY_ALIAS wrote=0;
 
 	if (size == 0 || count == 0)
 		return 0;
@@ -558,7 +559,8 @@ int nt_fwrite(void *buffer, size_t size, size_t count,FILE*stream) {
 			(GetFileType((HANDLE)h1) == FILE_TYPE_CHAR) ) {
 		CharToOemBuff(buffer,buffer,size*count);
 	}
-	if (!WriteFile((HANDLE)h1,buffer,size*count,&wrote,NULL) ) {
+	if (!WriteFile((HANDLE)h1,buffer,size*count,
+                       (unsigned long *)&wrote,NULL) ) {
 		errno = EBADF;
 		return -1;
 	}

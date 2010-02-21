@@ -51,6 +51,7 @@
 #pragma data_seg(".fusrdata")
 #define INIT_ZERO =0
 #define INIT_ZERO_STRUCT ={0}
+#define INIT_ZERO_STRUCT_ARRAY ={{0}}
 
 /*XXX: Extra definitions
  *
@@ -149,7 +150,7 @@ pretty */
 #define dup2  nt_dup2
 #define fdopen nt_fdopen
 #define fgets  nt_fgets
-// fileno was originally defined at stdio.h:529
+// fileno was originally defined at stdio.h
 #undef fileno
 #define fileno nt_fileno
 #define fopen  nt_fopen

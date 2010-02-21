@@ -37,8 +37,10 @@
 #ifndef ZLEGLOBALS
 #undef INIT_ZERO
 #undef INIT_ZERO_STRUCT
+#undef INIT_ZERO_STRUCT_ARRAY
 #define INIT_ZERO
 #define INIT_ZERO_STRUCT
+#define INIT_ZERO_STRUCT_ARRAY
 #endif /* ZLEGLOBALS */
 #endif /* WINNT */
 
@@ -220,7 +222,7 @@ struct undoent {
 
 #define UNDOCT 64
 
-ZLEXTERN struct undoent undos[UNDOCT] INIT_ZERO_STRUCT;
+ZLEXTERN struct undoent undos[UNDOCT] INIT_ZERO_STRUCT_ARRAY;
 
 /* the line before last mod (for undo purposes) */
 ZLEXTERN unsigned char *lastline INIT_ZERO;
@@ -270,13 +272,13 @@ ZLEXTERN struct cutbuffer cutbuf INIT_ZERO_STRUCT;
 /* Emacs-style kill buffer ring */
 
 #define KRINGCT 8
-ZLEXTERN struct cutbuffer kring[KRINGCT] INIT_ZERO_STRUCT;
+ZLEXTERN struct cutbuffer kring[KRINGCT] INIT_ZERO_STRUCT_ARRAY;
 ZLEXTERN int kringnum INIT_ZERO;
 
 /* Vi named cut buffers.  0-25 are the named buffers "a to "z, and *
  * 26-34 are the numbered buffer stack "1 to "9.                   */
 
-ZLEXTERN struct cutbuffer vibuf[35] INIT_ZERO_STRUCT;
+ZLEXTERN struct cutbuffer vibuf[35] INIT_ZERO_STRUCT_ARRAY;
 
 /* ZLE command table indices */
 
@@ -452,7 +454,9 @@ extern struct zlecmd zlecmds[] ;
 #ifndef ZLEGLOBALS
 #undef INIT_ZERO
 #undef INIT_ZERO_STRUCT
+#undef INIT_ZERO_STRUCT_ARRAY
 #define INIT_ZERO =0
 #define INIT_ZERO_STRUCT ={0}
+#define INIT_ZERO_STRUCT_ARRAY ={{0}}
 #endif /* ZLEGLOBALS */
 #endif /* WINNT */

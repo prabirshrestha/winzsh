@@ -42,8 +42,10 @@
 #ifndef GLOBALS
 #undef INIT_ZERO
 #undef INIT_ZERO_STRUCT
+#undef INIT_ZERO_STRUCT_ARRAY
 #define INIT_ZERO
 #define INIT_ZERO_STRUCT
+#define INIT_ZERO_STRUCT_ARRAY
 #endif /* GLOBALS */
 #endif /* WINNT */
  
@@ -304,7 +306,7 @@ EXTERN struct compctl cc_compos INIT_ZERO_STRUCT,
  
 /* the job table */
  
-EXTERN struct job jobtab[MAXJOB]  INIT_ZERO_STRUCT;
+EXTERN struct job jobtab[MAXJOB] INIT_ZERO_STRUCT_ARRAY;
  
 /* shell timings */
  
@@ -834,7 +836,9 @@ EXTERN short int typtab[256] INIT_ZERO_STRUCT;
 #ifndef GLOBALS
 #undef INIT_ZERO
 #undef INIT_ZERO_STRUCT
+#undef INIT_ZERO_STRUCT_ARRAY
 #define INIT_ZERO =0
 #define INIT_ZERO_STRUCT ={0}
+#define INIT_ZERO_STRUCT_ARRAY ={{0}}
 #endif /* GLOBALS */
 #endif /* WINNT */
