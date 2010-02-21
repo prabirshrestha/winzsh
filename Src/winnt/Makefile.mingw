@@ -1,0 +1,203 @@
+# Makefile for Src subdirectory
+#
+# Copyright (c) 2010 Gabriel de Oliveira
+#
+# Permission is hereby granted, without written agreement and without
+# license or royalty fees, to use, copy, modify, and distribute this
+# software and its documentation for any purpose, provided that the
+# above copyright notice and the following two paragraphs appear in
+# all copies of this software.
+#
+# In no event shall Gabriel de Oliveira or the Zsh Development Group be liable
+# to any party for direct, indirect, special, incidental, or consequential
+# damages arising out of the use of this software and its documentation,
+# even if Gabriel de Oliveira and the Zsh Development Group have been advised
+# of the possibility of such damage.
+#
+# Gabriel de Oliveira and the Zsh Development Group specifically disclaim any
+# warranties, including, but not limited to, the implied warranties of
+# merchantability and fitness for a particular purpose.  The software
+# provided hereunder is on an "as is" basis, and Gabriel de Oliveira and the
+# Zsh Development Group have no obligation to provide maintenance,
+# support, updates, enhancements, or modifications.
+
+
+
+# ===== MACRO DEFINITIONS =====
+
+# Zsh version
+VERSION = 3.0.5
+
+# Target
+TARGET = zsh.exe
+
+# Assembler compiler
+AC = gcc
+
+# Resource compiler
+RC = windres
+
+# C compiler
+CC = gcc
+
+# Linker
+LD = gcc
+
+# Other needed tools (can be found in MSYS)
+AWK = gawk
+SED = sed
+RM = rm -f
+
+# Precompiler definitions
+DEFS = -DHAVE_CONFIG_H -DHAVE_DIRENT_H -DWINNT -DMINGW
+
+# Resource compiler flags
+RCFLAGS = -v -r
+
+# C flags
+# '-Wno-unused-value' should not go after fixing some source files.
+# '-O0' is currently the most stable optimization level supported, although
+# the program is far from being stable under MinGW yet.
+CFLAGS = -Wall -Werror -Wno-unused-value -mthreads -funsigned-char -O0
+
+# Linker flags
+LDFLAGS = -nodefaultlibs -Xlinker -Map=zsh.map
+
+# Libraries for linking
+LIBS = -lmingw32 -lgcc -lkernel32 -luser32 -lmsvcrt -lcoldname -ladvapi32
+
+# Included directories
+INCLUDES = -I. -Iwinnt -Ilibseh
+
+# This header file is parsed to generate signal names (signames.h)
+SIGNAL_H = winnt/signal.h
+
+ASSEMBLE = $(AC) -o$@ -c
+RES_COMP = $(RC) $(RCFLAGS)
+COMPILE = $(CC) $(INCLUDES) $(DEFS) $(CFLAGS) -o$@ -c
+LINK = $(LD) $(LDFLAGS) -o$@
+
+# --- HEADER FILES ---
+
+SEH_HDRS = libseh/seh.h libseh/os/windows/seh-support.h \
+           libseh/common/stddefs.h libseh/common/sehpp.h
+
+NT_HDRS = winnt/ntport.h winnt/signal.h
+
+# Zsh headers
+ZSH_HDRS = version.h globals.h hashtable.h prototypes.h signals.h \
+           system.h zle.h zsh.h ztype.h
+
+GEN_HDRS = signames.h ../config.h
+
+HDRS = $(ZSH_HDRS) $(GEN_HDRS) $(NT_HDRS) $(SEH_HDRS)
+
+# --- RESOURCE FILES ---
+
+NTRES = winnt/zshlogo.rc
+
+# --- SOURCE FILES ---
+
+SEH_SRC = libseh/os/windows/seh-support.c libseh/common/common.c \
+          libseh/os/windows/arch/ix86/seh.s
+
+NT_SRC = winnt/support.c winnt/bogus.c winnt/dirent.c winnt/io.c winnt/fork.c \
+         winnt/globals.c winnt/ntb1.c winnt/ntb2.c winnt/signal.c \
+         winnt/termcap.c winnt/tparam.c winnt/console.c winnt/tparse.c \
+         winnt/stdio.c winnt/zsh_nt.c winnt/ntfunc.c winnt/ps.c
+
+# Zsh C source
+ZSH_SRC = builtin.c compat.c cond.c exec.c glob.c hashtable.c hist.c init.c \
+          input.c jobs.c lex.c linklist.c loop.c math.c mem.c params.c parse.c \
+          signals.c subst.c text.c utils.c watch.c zle_bindings.c zle_hist.c \
+          zle_main.c zle_misc.c zle_move.c zle_refresh.c zle_tricky.c \
+          zle_utils.c zle_vi.c zle_word.c
+
+SRCS = $(SRC) $(NT_SRC) $(SEH_SRC)
+
+# --- PROTOTYPES ---
+
+PROTO = builtin.pro compat.pro cond.pro exec.pro glob.pro hashtable.pro \
+        hist.pro init.pro input.pro jobs.pro lex.pro linklist.pro loop.pro \
+        math.pro mem.pro params.pro parse.pro signals.pro subst.pro text.pro \
+        utils.pro watch.pro zle_bindings.pro zle_hist.pro zle_main.pro \
+        zle_misc.pro zle_move.pro zle_refresh.pro zle_tricky.pro zle_utils.pro \
+        zle_vi.pro zle_word.pro
+
+# --- OBJECT FILES ---
+
+SEH_OBJ = seh-support.o common.o seh.o
+
+NT_OBJ = support.o bogus.o dirent.o io.o fork.o globals.o signal.o termcap.o \
+         tparam.o console.o tparse.o stdio.o zsh_nt.o ntfunc.o ps.o zshlogo.o
+
+NT_BOOKEND1 = ntb1.o
+
+NT_BOOKEND2 = ntb2.o
+
+# Zsh object files
+ZSH_OBJ = builtin.o compat.o cond.o exec.o glob.o hashtable.o hist.o init.o \
+          input.o jobs.o lex.o linklist.o loop.o math.o mem.o params.o parse.o \
+          signals.o subst.o text.o utils.o watch.o zle_bindings.o zle_hist.o \
+          zle_main.o zle_misc.o zle_move.o zle_refresh.o zle_tricky.o \
+          zle_utils.o zle_vi.o zle_word.o
+
+OBJS = $(ZSH_OBJ) $(NT_OBJ) $(SEH_OBJ)
+
+# --- AUXILIARY FILES ---
+
+AUX = Makefile.mingw signames.awk makepro.sed
+
+# --- DISTRIBUTION FILES ---
+
+DIST = $(DIST_HDRS) $(SRCS) $(AUX)
+
+
+
+# ===== DEPENDENCIES FOR BUILDING =====
+
+all: $(TARGET)
+
+$(TARGET): $(PROTO) $(OBJS) $(NT_BOOKEND1) $(NT_BOOKEND2)
+	$(LINK) $(NT_BOOKEND1) $(OBJS) $(NT_BOOKEND2) $(LIBS)
+
+$(PROTO): makepro.sed
+
+$(OBJS): $(HDRS)
+
+signames.h: signames.awk
+	$(AWK) -f signames.awk $(SIGNAL_H) > signames.h
+
+seh.o: libseh/os/windows/arch/ix86/seh.s
+	$(ASSEMBLE) $<
+
+zshlogo.o: winnt/zshlogo.rc
+	$(RES_COMP) $< $@
+
+%.pro: %.c
+	$(SED) -n -f makepro.sed $< > $@
+
+%.o: %.c
+	$(COMPILE) $<
+
+%.o: winnt/%.c
+	$(COMPILE) $<
+
+%.o: libseh/os/windows/%.c
+	$(COMPILE) $<
+
+%.o: libseh/common/%.c
+	$(COMPILE) $<
+
+
+
+# ===== DEPENDENCIES FOR CLEANUP =====
+
+mostlyclean:
+	$(RM) *.o
+
+clean: mostlyclean
+	$(RM) signames.h *.pro
+
+cleanall: clean
+	$(RM) *.map build/*.exe

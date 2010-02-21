@@ -378,4 +378,4 @@
 /* #undef HAVE_LIBNSL */
 #ifdef WINNT
 #include <ntport.h>
-#endif WINNT
+#endif /* WINNT */
