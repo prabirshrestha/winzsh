@@ -84,10 +84,10 @@ NT_SRC = winnt/support.c winnt/bogus.c winnt/dirent.c \
 	 winnt/io.c winnt/fork.c winnt/globals.c winnt/ntb1.c \
 	 winnt/ntb2.c winnt/signal.c winnt/termcap.c winnt/tparam.c \
 	 winnt/console.c winnt/tparse.c winnt/stdio.c winnt/zsh_nt.c\
-	 winnt/ntfunc.c winnt/ps.c
+	 winnt/ntfunc.c
 
 NT_OBJ = support.o bogus.o dirent.o io.o fork.o globals.o signal.o \
-	termcap.o tparam.o console.o tparse.o stdio.o zsh_nt.o ntfunc.o ps.o
+	termcap.o tparam.o console.o tparse.o stdio.o zsh_nt.o ntfunc.o
 NT_BOOKEND1 = ntb1.o
 NT_BOOKEND2 = ntb2.o
 NT_HDRS = winnt/ntport.h winnt/signal.h
@@ -213,8 +213,6 @@ stdio.o: winnt/stdio.c
 zsh_nt.o: winnt/zsh_nt.c
 	$(COMPILE) -Fo$*.o winnt/$*.c
 ntfunc.o: winnt/ntfunc.c
-	$(COMPILE) -Fo$*.o winnt/$*.c
-ps.o: winnt/ps.c
 	$(COMPILE) -Fo$*.o winnt/$*.c
 ntb1.o: winnt/ntb1.c
 	$(COMPILE) -Fo$*.o winnt/$*.c

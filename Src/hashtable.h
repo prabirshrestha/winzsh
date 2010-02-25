@@ -321,9 +321,6 @@ struct builtin builtins[] =
 
     {NULL, "popd", 0, bin_cd, 0, 2, BIN_POPD, NULL, NULL},
     {NULL, "print", BINF_PRINTOPTS, bin_print, 0, -1, BIN_PRINT, "RDPnrslzNu0123456789pioOcm-", NULL},
-#ifdef WINNT
-    {NULL, "ps", 0, bin_ps, 0, -1, 0, NULL, NULL},
-#endif /* WINNT */
     {NULL, "pushd", 0, bin_cd, 0, 2, BIN_PUSHD, NULL, NULL},
     {NULL, "pushln", BINF_PRINTOPTS, bin_print, 0, -1, BIN_PRINT, NULL, "-nz"},
     {NULL, "pwd", 0, bin_pwd, 0, 0, 0, "r", NULL},
@@ -336,9 +333,6 @@ struct builtin builtins[] =
     {NULL, "set", BINF_PSPECIAL, bin_set, 0, -1, 0, NULL, NULL},
     {NULL, "setopt", 0, bin_setopt, 0, -1, BIN_SETOPT, NULL, NULL},
     {NULL, "shift", BINF_PSPECIAL, bin_shift, 0, -1, 0, NULL, NULL},
-#ifdef WINNT
-    {NULL, "shutdown", 0, bin_shutdown, 0, -1, 0, NULL, NULL},
-#endif /* WINNT */
     {NULL, "source", BINF_PSPECIAL, bin_dot, 1, -1, 0, NULL, NULL},
 #ifdef WINNT
     {NULL, "start", 0, bin_start, 0, -1, 0, NULL, NULL},

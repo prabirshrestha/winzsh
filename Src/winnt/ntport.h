@@ -433,9 +433,6 @@ extern void *fcalloc(int,int);
 int bin_start (char *name, char **argv, char *ops, int func) ;
 int bin_title (char *name, char **argv, char *ops, int func) ;
 int bin_cls (char *name, char **argv, char *ops, int func) ;
-/* ps.c */
-int bin_ps (char *name, char **argv, char *ops, int func) ;
-int bin_shutdown(char *name, char **argv, char *ops, int func) ;
 
 /*globals.c*/
 int is_gui(char*);
@@ -450,7 +447,6 @@ void semicolonarrsetfn (Param pm, char *x);
 extern void init_shell_dll(void);
 extern void try_shell_ex(char**,int);
 
-extern void init_plister(void);
 // global vars
 extern unsigned short __nt_want_vcode SHARED;
 extern unsigned int oldcp SHARED;

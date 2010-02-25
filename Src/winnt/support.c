@@ -143,7 +143,6 @@ skippy:
 	nt_term_init();
 	nt_init_signals();
 	init_shell_dll();
-	init_plister();
 
 }
 void gethostname(char *buf, int MAY_ALIAS len) {
