@@ -67,7 +67,7 @@ LDFLAGS = -nodefaultlibs -Xlinker -Map=zsh.map
 LIBS = -lmingw32 -lgcc -lkernel32 -luser32 -lmsvcrt -lcoldname -ladvapi32
 
 # Included directories
-INCLUDES = -I. -Iwinnt -Ilibseh
+INCLUDES = -I.. -I. -Iwinnt -Ilibseh
 
 # This header file is parsed to generate signal names (signames.h)
 SIGNAL_H = winnt/signal.h
