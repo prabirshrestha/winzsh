@@ -58,7 +58,8 @@ RCFLAGS = -v -r
 # '-Wno-unused-value' should not go after fixing some source files.
 # '-O0' is currently the most stable optimization level supported, although
 # the program is far from being stable under MinGW yet.
-CFLAGS = -Wall -Werror -Wno-unused-value -mthreads -funsigned-char -O0
+# -Werror
+CFLAGS = -Wall -Wno-unused-value -mthreads -funsigned-char -O0
 
 # Linker flags
 LDFLAGS = -nodefaultlibs -Xlinker -Map=zsh.map
@@ -104,7 +105,7 @@ SEH_SRC = libseh/os/windows/seh-support.c libseh/common/common.c \
 NT_SRC = winnt/support.c winnt/bogus.c winnt/dirent.c winnt/io.c winnt/fork.c \
          winnt/globals.c winnt/ntb1.c winnt/ntb2.c winnt/signal.c \
          winnt/termcap.c winnt/tparam.c winnt/console.c winnt/tparse.c \
-         winnt/stdio.c winnt/zsh_nt.c winnt/ntfunc.c winnt/ps.c
+         winnt/stdio.c winnt/zsh_nt.c winnt/ntfunc.c
 
 # Zsh C source
 ZSH_SRC = builtin.c compat.c cond.c exec.c glob.c hashtable.c hist.c init.c \
@@ -129,7 +130,7 @@ PROTO = builtin.pro compat.pro cond.pro exec.pro glob.pro hashtable.pro \
 SEH_OBJ = seh-support.o common.o seh.o
 
 NT_OBJ = support.o bogus.o dirent.o io.o fork.o globals.o signal.o termcap.o \
-         tparam.o console.o tparse.o stdio.o zsh_nt.o ntfunc.o ps.o zshlogo.o
+         tparam.o console.o tparse.o stdio.o zsh_nt.o ntfunc.o zshlogo.o
 
 NT_BOOKEND1 = ntb1.o
 
@@ -200,4 +201,4 @@ clean: mostlyclean
 	$(RM) signames.h *.pro
 
 cleanall: clean
-	$(RM) *.map build/*.exe
+	$(RM) *.map *.exe
