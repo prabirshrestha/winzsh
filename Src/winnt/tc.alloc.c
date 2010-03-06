@@ -427,8 +427,8 @@ frealloc(cp, nbytes)
 #endif
 		return ((memalign_t) cp);
 	}
-	if (((unsigned long)res = fmalloc(nbytes)) == 0)
-		return ((memalign_t) NULL);
+        if ((res = (ptr_t)fmalloc(nbytes)) == 0)
+                return ((memalign_t) NULL);
 	if (cp != res) {		/* common optimization */
 		/* 
 		 * christos: this used to copy nbytes! It should copy the 

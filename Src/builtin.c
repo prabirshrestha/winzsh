@@ -1267,7 +1267,7 @@ cd_try_chdir(char *pfix, char *dest)
 		sprintf(buf2,"%c:%s",drive,buf3);
 	}
     }
-    if ( (buf2[0] == '/')||(buf2[0] == '\\')||(buf2[1] == ':'))
+    if ( (buf2[0] == '/')||(buf2[0] == '\\')||(buf2[1] == ':'))*/
 	/*if (buf2[1] && buf[2])
 	    return (chdir(unmeta(buf)) == -1) ? NULL : ztrdup(buf2);
 	else if (buf2[1] == ':' && buf2[2] == 0)*/ {
