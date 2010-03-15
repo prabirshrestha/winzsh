@@ -380,7 +380,7 @@ extern int is_pathext(char *);
 /* stdio.c */
 int  nt_fgetc(FILE*);
 int	 nt_dup(int);
-int  nt_fputs(char*,FILE*);
+int  nt_fputs(const char*,FILE*);
 int  nt_putc(char,FILE*);
 int  nt_fflush(FILE*);
 int  nt_fputc(char, FILE*);
@@ -388,7 +388,7 @@ int  nt_fprintf(FILE*,char*,...);
 int  nt_puts(char*);
 int  nt_putchar(char);
 int  nt_fclose(FILE*);
-int  nt_fputs(char *, FILE*);
+int  nt_fputs(const char *, FILE*);
 unsigned long  __nt_get_osfhandle(int);
 int __nt_open_osfhandle(long, int);
 int nt_clearerr(FILE*);

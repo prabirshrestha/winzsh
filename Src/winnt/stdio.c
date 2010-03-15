@@ -312,9 +312,35 @@ int nt_fgetc(FILE *instream) {
 	return (int)ch;
 
 }
-int nt_fputs(char *str, FILE*outstream) {
-	
-	return nt_write2(((MY_FILE*)outstream)->handle,str,lstrlen(str));
+
+/*
+ * This function was replaced from its original definition:
+ *
+ * int nt_fputs(char *str, FILE*outstream)
+ *
+ * The reason for this being that some other functions called this one passing
+ * a constant character pointer as the 'str' argument, and this function
+ * provided that variable as a buffer to nt_write2. This raised an exception
+ * (attempting to write to a constant location).
+ * To avoid this we receive a constant character pointer as an argument, and
+ * copy its contents to a temp variable, use it and then discard it before
+ * returning.
+ *
+ * - Gabriel de Oliveira -
+ */
+int nt_fputs(const char *c_str, FILE*outstream) {
+
+        char *str = malloc(lstrlen(c_str) + 1);
+        if(str == NULL) {
+            abort(); /* Please replace this with something meaningful, like a
+                      * real out of memory handler. */
+        };
+        lstrcpy(str, c_str);
+
+        int retval = nt_write2(((MY_FILE*)outstream)->handle,str,lstrlen(str));
+
+        free(str);
+        return retval;
 }
 int nt_putc(char ch, FILE*outstream) {
 	
