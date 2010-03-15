@@ -30,56 +30,44 @@
 #define GLOBALS
 #include "zsh.h"
 
-/*XXX: try-except (Microsoft specific)
- *
- * Desc: __try and __except are specific to Microsoft VC.
- * Fix:  We are using part of the libseh library when compiling with MINGW to
- *       have similar functionality.
- *
- * - Gabriel de Oliveira -
- */
-#ifdef MINGW
-# include <seh.h>
-#endif /* MINGW */
-
 static int noexitct = 0;
 
 /**/
 int
 main(int argc, char **argv)
 {
-    char **t;
-    int t0;
 #ifdef USE_LOCALE
     setlocale(LC_ALL, "");
 #endif
-#ifdef WINNT
-	__try {
 
-/*XXX: Uncommenting nt_init();
- *
- * Desc: nt_init() was commented in the MSVC source files. I have no
- *       idea if the program still runs with it commented, but it
- *       certainly does not when compiling it with gcc.
- * Fix:  If we are compiling with gcc, we will call nt_init().
- *
- * - Gabriel de Oliveira -
- */
-#ifdef MINGW
+#ifdef WINNT
+
+/* Do not use __try if compiling with MinGW */
+# ifndef MINGW
+	__try {
+# endif /* MINGW */
+
+/* Start NT if we are compiling with MinGW, don't otherwise */
+# ifdef MINGW
 	nt_init();
-#else
+# else
 	//nt_init();
-#endif /* MINGW */
+# endif /* MINGW */
 
 	fork_init();
+
+/* Do not use __except if compiling with MinGW */
+# ifndef MINGW
 	}__except(1) {
 		dprintf("damn 0x%08x\n",GetExceptionCode());
 		return 1;
-	};
-#ifdef MINGW
-	__end_except
-#endif /* MINGW */
+        };
+# endif /* MINGW */
+
 #endif /* WINNT */
+
+    char **t;
+    int t0;
 
     global_permalloc();
 
