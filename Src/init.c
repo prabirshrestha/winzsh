@@ -36,6 +36,8 @@ static int noexitct = 0;
 int
 main(int argc, char **argv)
 {
+    char **t;
+    int t0;
 #ifdef USE_LOCALE
     setlocale(LC_ALL, "");
 #endif
@@ -43,31 +45,27 @@ main(int argc, char **argv)
 #ifdef WINNT
 
 /* Do not use __try if compiling with MinGW */
-# ifndef MINGW
+#ifndef MINGW
 	__try {
-# endif /* MINGW */
+#endif /* MINGW */
 
 /* Start NT if we are compiling with MinGW, don't otherwise */
-# ifdef MINGW
+#ifdef MINGW
 	nt_init();
-# else
+#else
 	//nt_init();
-# endif /* MINGW */
+#endif /* MINGW */
 
 	fork_init();
 
 /* Do not use __except if compiling with MinGW */
-# ifndef MINGW
+#ifndef MINGW
 	}__except(1) {
 		dprintf("damn 0x%08x\n",GetExceptionCode());
 		return 1;
-        };
-# endif /* MINGW */
-
+	};
+#endif /* MINGW */
 #endif /* WINNT */
-
-    char **t;
-    int t0;
 
     global_permalloc();
 

@@ -330,6 +330,7 @@ int nt_fgetc(FILE *instream) {
  */
 int nt_fputs(const char *c_str, FILE*outstream) {
 
+        int retval;
         char *str = malloc(lstrlen(c_str) + 1);
         if(str == NULL) {
             abort(); /* Please replace this with something meaningful, like a
@@ -337,7 +338,7 @@ int nt_fputs(const char *c_str, FILE*outstream) {
         };
         lstrcpy(str, c_str);
 
-        int retval = nt_write2(((MY_FILE*)outstream)->handle,str,lstrlen(str));
+        retval = nt_write2(((MY_FILE*)outstream)->handle,str,lstrlen(str));
 
         free(str);
         return retval;
