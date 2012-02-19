@@ -28,7 +28,7 @@
 #
 
 # zsh version
-VERSION = 3.0.5
+VERSION = 3.0.8deb14_NT_0.78.1
 
 #SHELL = /bin/sh
 
@@ -49,12 +49,12 @@ CFLAGS   =   -W3 -WX -MT -YX -J -nologo -O2
 #CFLAGS   =  -Wall -Wno-implicit -Wmissing-prototypes -O2
 LDFLAGS  =  -nologo -pdb:none -entry:silly_entry
 !else
-!if "$(MSVC)" == "9"
+!if "$(MSVC)" == "10"
 DEFS     = -DHAVE_CONFIG_H -DHAVE_DIRENT_H -DWINNT
-CFLAGS   =   -W3 -MT -J -nologo -O2
+CFLAGS   =   -W3 -MT -J -nologo -O2 -D_CRT_SECURE_NO_WARNINGS
 LDFLAGS  =  -nologo -pdb:none -entry:silly_entry
 !else
-!error "usage: nmake MSVC=(6|9) [DBG=(0|1)]"
+!error "usage: nmake MSVC=(6|10) [DBG=(0|1)]"
 !endif
 !endif
 
@@ -70,7 +70,7 @@ DEFS = $(DEFS) -DNTDBG -DDBG -DDEBUG -DZSH_HASH_DEBUG
 CFLAGS = $(CFLAGS) -Zi -Od
 LDFLAGS = $(LDFLAGS) -debug:full
 !else
-!if "$(MSVC)" == "9"
+!if "$(MSVC)" == "10"
 CFLAGS = $(CFLAGS) -Zi -Od
 LDFLAGS = $(LDFLAGS) -debug
 !endif
@@ -195,7 +195,7 @@ dirent.o: winnt/dirent.c
 io.o: winnt/io.c
 	$(COMPILE) -Fo$*.o winnt/$*.c
 fork.o: winnt/fork.c
-	$(COMPILE) -Fo$*.o winnt/$*.c
+	$(COMPILE) -GS- -Fo$*.o winnt/$*.c
 globals.o: winnt/globals.c
 	$(COMPILE) -Fo$*.o winnt/$*.c
 signal.o: winnt/signal.c
