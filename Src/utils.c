@@ -2378,6 +2378,8 @@ dupnode(int type, void *a, int argnum)
     default:
 	abort();
     }
+
+return NULL;
 }
 
 /* Free a syntax tree node of given type, argument number */
