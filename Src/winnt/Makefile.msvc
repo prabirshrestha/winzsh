@@ -43,20 +43,18 @@ CC       = cl
 CPPFLAGS = 
 
 !if "$(MSVC)" == "6"
-#DEFS     = -DHAVE_CONFIG_H -DHAVE_DIRENT_H -DWINNT -DNTDBG -DDBG
 DEFS     = -DHAVE_CONFIG_H -DHAVE_DIRENT_H -DWINNT
 CFLAGS   =   -W3 -WX -MT -YX -J -nologo -O2
 #CFLAGS   =  -Wall -Wno-implicit -Wmissing-prototypes -O2
 LDFLAGS  =  -nologo -pdb:none -entry:silly_entry
 !else
-!if "$(MSVC)" == "10"
-DEFS     = -DHAVE_CONFIG_H -DHAVE_DIRENT_H -DWINNT
-CFLAGS   =   -W3 -MT -J -nologo -O2 -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS -D_USE_32BIT_TIME_T
+#Assume MSVC=10, should also work for MVSC=9
+DEFS     = -DHAVE_CONFIG_H -DHAVE_DIRENT_H -DWINNT -D_USE_32BIT_TIME_T \
+           -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
+CFLAGS   =   -W3 -MT -J -nologo -O2
 LDFLAGS  =  -nologo -pdb:none -entry:silly_entry
-!else
-!error "usage: nmake MSVC=(6|10) [DBG=(0|1)]"
 !endif
-!endif
+#!error "usage: nmake [MSVC=6] [DBG=(0|1)]"
 
 LINK     = link
 LIBS     =  -nodefaultlib kernel32.lib user32.lib libcmt.lib oldnames.lib \
@@ -66,14 +64,12 @@ LIBS     =  -nodefaultlib kernel32.lib user32.lib libcmt.lib oldnames.lib \
 !if "$(DBG)" != ""
 DEFS = $(DEFS) -DNTDBG -DDBG -DDEBUG -DZSH_HASH_DEBUG
 #DEFS = $(DEFS) -DZSH_MEM_DEBUG -DZSH_MEM_WARNING
-!if "$(MSVC)" == "6"
 CFLAGS = $(CFLAGS) -Zi -Od
+!if "$(MSVC)" == "6"
 LDFLAGS = $(LDFLAGS) -debug:full
 !else
-!if "$(MSVC)" == "10"
-CFLAGS = $(CFLAGS) -Zi -Od
+#Assume MSVC=10
 LDFLAGS = $(LDFLAGS) -debug
-!endif
 !endif
 !endif
 
@@ -185,7 +181,7 @@ $(OBJS): $(HDRS)
 $(PROTO): makepro.sed
 
 exec.o: exec.c
-        $(COMPILE) -GS- -Fo$*.o $*.c
+	$(COMPILE) -GS- -Fo$*.o $*.c
 
 # ========= DEPENDENCIES FOR NT ==========
 
