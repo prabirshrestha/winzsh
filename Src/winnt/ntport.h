@@ -59,10 +59,10 @@
  * - Gabriel de Oliveira -
  */
 #ifndef MINGW
-# define SHARED
-# pragma data_seg(".fusrdata")
+#define SHARED
+#pragma data_seg(".fusrdata")
 #else
-# define SHARED __attribute__((section(".fusrdata"), shared))
+#define SHARED __attribute__((section(".fusrdata"), shared))
 #endif /* !MINGW */
 
 #define INIT_ZERO =0
@@ -104,7 +104,7 @@
  * - Gabriel de Oliveira -
  */
 #ifndef MINGW
-# pragma warning(disable:4018)
+#pragma warning(disable:4018)
 #endif /* !MINGW */
 
 #define HAVENOUTMP
@@ -424,10 +424,10 @@ char * getlogin(void);
 /* fork.c */
 extern int fork_init(void);
 extern int fork(void);
-extern void *fmalloc(int);
+extern void *fmalloc(size_t);
 extern void ffree(void *);
-extern void *frealloc(void*,int);
-extern void *fcalloc(int,int);
+extern void *frealloc(void*,size_t);
+extern void *fcalloc(size_t,size_t);
 
 /* ntfunc.c */
 int bin_start (char *name, char **argv, char *ops, int func) ;
@@ -447,6 +447,7 @@ void semicolonarrsetfn (Param pm, char *x);
 extern void init_shell_dll(void);
 extern void try_shell_ex(char**,int);
 
+extern void init_plister(void);
 // global vars
 extern unsigned short __nt_want_vcode SHARED;
 extern unsigned int oldcp SHARED;

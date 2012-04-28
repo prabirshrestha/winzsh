@@ -41,6 +41,7 @@
 #include <fcntl.h>
 #include "ntport.h"
 #include "zsh.h"
+#include "forkdata.h"
 
 /*XXX: try-except (Microsoft specific)
  *
@@ -63,7 +64,6 @@ DWORD gdwPlatform = 0;
 OSVERSIONINFO gosver;
 int gisWin95; // if detection fails
 
-extern unsigned long __forked;
 
 void nt_init(void) {
 
@@ -788,4 +788,30 @@ char * fmt_pwd_for_prompt(char *dir) {
 		*ptr = 0;
 	}
 	return &xtractbuf[0];
+}
+extern BOOL CreateWow64Events(DWORD,HANDLE*,HANDLE*,BOOL);
+// load kernel32 and look for iswow64. if not found, assume FALSE
+BOOL bIsWow64Process = FALSE;
+void init_wow64(void) {
+	HMODULE hlib;
+	//BOOL (WINAPI *pfnIsWow64)(HANDLE,BOOL*);
+	FARPROC pfnIsWow64;
+
+	bIsWow64Process = FALSE;
+
+	hlib = LoadLibrary("kernel32.dll");
+	if (!hlib) {
+		return;
+	}
+	pfnIsWow64 = GetProcAddress(hlib,"IsWow64Process");
+	if (!pfnIsWow64) {
+		FreeLibrary(hlib);
+		return;
+	}
+	if (!pfnIsWow64(GetCurrentProcess(),&bIsWow64Process) )
+		bIsWow64Process = FALSE;
+
+	FreeLibrary(hlib);
+	return;
+
 }

@@ -1,4 +1,4 @@
-/* $Header: /u/christos/src/tcsh-6.06/RCS/tc.alloc.c,v 3.29 1995/04/16 19:15:53 christos Exp $ */
+/* $Header: /p/tcsh/cvsroot/tcsh/tc.alloc.c,v 3.46 2006/03/02 18:46:44 christos Exp $ */
 /*
  * tc.alloc.c (Caltech) 2/21/82
  * Chris Kingsley, kingsley@cit-20.
@@ -10,7 +10,8 @@
  * This is designed for use in a program that uses vast quantities of memory,
  * but bombs when it runs out.
  */
-/* Copyright (c) 1980, 1991 The Regents of the University of California.
+/*-
+ * Copyright (c) 1980, 1991 The Regents of the University of California.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,8 +38,21 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+/*#include "sh.h"*/
 
-#define CGETS(b,c,d) d
+
+
+static char   *memtop = NULL;		/* PWP: top of current memory */
+static char   *membot = NULL;		/* PWP: bottom of allocatable memory */
+
+int dont_free = 0;
+
+#ifdef WINNT_NATIVE
+# define malloc		fmalloc
+# define free		ffree
+# define calloc		fcalloc
+# define realloc	frealloc
+#endif /* WINNT_NATIVE */
 
 /*XXX: Replacing xprintf
  *
@@ -61,37 +75,30 @@ inline void xprintf(const char *a, ...) __attribute__((always_inline));
 void xprintf(const char *a, ...) {};
 
 #else
-# define xprintf
+#define xprintf
 #endif /* MINGW */
 
-#define __P(a) a
+#define CGETS
+typedef ptr_t memalign_t;
 
+#if !defined(DEBUG) || defined(SYSMALLOC)
+static void
+out_of_memory (void)
+{
+    static const char msg[] = "Out of memory\n";
+    extern int didfds; // T.A.
+    int SHDIAG; // T.A.
 
-#ifndef NULL
-#define NULL 0
-#endif /* NULL */
+    write(didfds ? 2 : SHDIAG, msg, strlen(msg));
+    _exit(1);
+}
+#endif
 
-/*
-   typedef unsigned long memalign_t;
-//typedef unsigned long size_t;
-typedef unsigned long caddr_t;
-typedef void *ptr_t;
- */
+#ifndef SYSMALLOC
 
-void showall(void*,void*);
-void *sbrk(int);
-
-//RCSID("$Id: tc.alloc.c,v 3.29 1995/04/16 19:15:53 christos Exp $")
-
-#ifdef NOTNT
-char   *memtop = NULL;		/* PWP: top of current memory */
-char   *membot = NULL;		/* PWP: bottom of allocatable memory */
-#endif /* NOTNT */
-
-
-
-
-
+#ifdef SX
+extern void* sbrk();
+#endif
 /*
  * Lots of os routines are busted and try to free invalid pointers. 
  * Although our free routine is smart enough and it will pick bad 
@@ -99,13 +106,15 @@ char   *membot = NULL;		/* PWP: bottom of allocatable memory */
  * a bad pointer, we'd rather leak.
  */
 
-#ifdef NOTNT
+#ifndef NULL
+#define	NULL 0
+#endif
+
 typedef unsigned char U_char;	/* we don't really have signed chars */
 typedef unsigned int U_int;
 typedef unsigned short U_short;
 typedef unsigned long U_long;
 
-#endif /* NOTNT */
 
 /*
  * The overhead on a block is at least 4 bytes.  When free, this space
@@ -117,19 +126,19 @@ typedef unsigned long U_long;
  * plus the range checking words, and the header word MINUS ONE.
  */
 
-#if NOTNT
+
 #define MEMALIGN(a) (((a) + ROUNDUP) & ~ROUNDUP)
 
 union overhead {
-	union overhead *ov_next;	/* when free */
-	struct {
-		U_char  ovu_magic;	/* magic number */
-		U_char  ovu_index;	/* bucket # */
+    union overhead *ov_next;	/* when free */
+    struct {
+	U_char  ovu_magic;	/* magic number */
+	U_char  ovu_index;	/* bucket # */
 #ifdef RCHECK
-		U_short ovu_size;	/* actual block size */
-		U_int   ovu_rmagic;	/* range magic number */
+	U_short ovu_size;	/* actual block size */
+	U_int   ovu_rmagic;	/* range magic number */
 #endif
-	}       ovu;
+    }       ovu;
 #define	ov_magic	ovu.ovu_magic
 #define	ov_index	ovu.ovu_index
 #define	ov_size		ovu.ovu_size
@@ -153,208 +162,216 @@ union overhead {
  * precedes the data area returned to the user.
  */
 #define	NBUCKETS ((sizeof(long) << 3) - 3)
-union overhead *nextf[NBUCKETS] = {0};
+static union overhead *nextf[NBUCKETS] INIT_ZERO_STRUCT;
 
 /*
  * nmalloc[i] is the difference between the number of mallocs and frees
  * for a given block size.
  */
-U_int nmalloc[NBUCKETS];
+static U_int nmalloc[NBUCKETS] INIT_ZERO_STRUCT;
 
 #ifndef lint
-static	int	findbucket	__P((union overhead *, int));
-static	void	morecore	__P((int));
+static	int	findbucket	(union overhead *, int);
+static	void	morecore	(int);
 #endif
 
-#endif /* NOTNT */
 
 #ifdef DEBUG
 # define CHECK(a, str, p) \
-if (a) { \
+    if (a) { \
 	xprintf(str, p);	\
-		xprintf(" (memtop = %lx __membot = %lx)\n", __memtop, __membot);	\
-		abort(); \
-}
+	xprintf(" (memtop = %p membot = %p)\n", memtop, membot);	\
+	abort(); \
+    }
 #else
 # define CHECK(a, str, p) \
-if (a) { \
+    if (a) { \
 	xprintf(str, p);	\
-		xprintf(" (__memtop = %lx __membot = %lx)\n", __memtop, __membot);	\
-		return; \
-}
+	xprintf(" (memtop = %p membot = %p)\n", memtop, membot);	\
+	return; \
+    }
 #endif
 
 memalign_t
-fmalloc(nbytes)
-	register size_t nbytes;
+malloc(size_t nbytes)
 {
-	register union overhead *p;
-	register int bucket = 0;
-	register unsigned shiftr;
+#ifndef lint
+    union overhead *p;
+    int bucket = 0;
+    unsigned shiftr;
 
-	/*
-	 * Convert amount of memory requested into closest block size stored in
-	 * hash buckets which satisfies request.  Account for space used per block
-	 * for accounting.
-	 */
+    /*
+     * Convert amount of memory requested into closest block size stored in
+     * hash buckets which satisfies request.  Account for space used per block
+     * for accounting.
+     */
 #ifdef SUNOS4
-	/*
-	 * SunOS localtime() overwrites the 9th byte on an 8 byte malloc()....
-	 * so we get one more...
-	 * From Michael Schroeder: This is not true. It depends on the 
-	 * timezone string. In Europe it can overwrite the 13th byte on a
-	 * 12 byte malloc.
-	 * So we punt and we always allocate an extra byte.
-	 */
-	nbytes++;
+    /*
+     * SunOS localtime() overwrites the 9th byte on an 8 byte malloc()....
+     * so we get one more...
+     * From Michael Schroeder: This is not true. It depends on the 
+     * timezone string. In Europe it can overwrite the 13th byte on a
+     * 12 byte malloc.
+     * So we punt and we always allocate an extra byte.
+     */
+    nbytes++;
 #endif
 
-	nbytes = MEMALIGN(MEMALIGN(sizeof(union overhead)) + nbytes + RSLOP);
-	shiftr = (nbytes - 1) >> 2;
+    nbytes = MEMALIGN(MEMALIGN(sizeof(union overhead)) + nbytes + RSLOP);
+    shiftr = (nbytes - 1) >> 2;
 
-	/* apart from this loop, this is O(1) */
-	while ((shiftr >>= 1) != 0)
-		bucket++;
-	/*
-	 * If nothing in hash bucket right now, request more memory from the
-	 * system.
-	 */
-	if (__nextf[bucket] == NULL)
-		morecore(bucket);
-	if ((p = (union overhead *) __nextf[bucket]) == NULL) {
-		showall(NULL, NULL);
-		xprintf(CGETS(19, 1, "nbytes=%d: Out of memory\n"), nbytes);
-		abort();
-	}
-	/* remove from linked list */
-	__nextf[bucket] = __nextf[bucket]->ov_next;
-	p->ov_magic = MAGIC;
-	p->ov_index = bucket;
-	__nmalloc[bucket]++;
+    /* apart from this loop, this is O(1) */
+    while ((shiftr >>= 1) != 0)
+	bucket++;
+    /*
+     * If nothing in hash bucket right now, request more memory from the
+     * system.
+     */
+    if (nextf[bucket] == NULL)
+	morecore(bucket);
+    if ((p = nextf[bucket]) == NULL) {
+	/* fool lint */
+	return ((memalign_t) 0);
+    }
+    /* remove from linked list */
+    nextf[bucket] = nextf[bucket]->ov_next;
+    p->ov_magic = MAGIC;
+    p->ov_index = bucket;
+    nmalloc[bucket]++;
 #ifdef RCHECK
-	/*
-	 * Record allocated size of block and bound space with magic numbers.
-	 */
-	p->ov_size = (p->ov_index <= 13) ? nbytes - 1 : 0;
-	p->ov_rmagic = RMAGIC;
-	*((U_int *) (((caddr_t) p) + nbytes - RSLOP)) = RMAGIC;
+    /*
+     * Record allocated size of block and bound space with magic numbers.
+     */
+    p->ov_size = (p->ov_index <= 13) ? nbytes - 1 : 0;
+    p->ov_rmagic = RMAGIC;
+    *((U_int *) (((caddr_t) p) + nbytes - RSLOP)) = RMAGIC;
 #endif
-	return ((memalign_t) (((caddr_t) p) + MEMALIGN(sizeof(union overhead))));
+    return ((memalign_t) (((caddr_t) p) + MEMALIGN(sizeof(union overhead))));
+#else
+    if (nbytes)
+	return ((memalign_t) 0);
+    else
+	return ((memalign_t) 0);
+#endif /* !lint */
 }
 
 #ifndef lint
 /*
  * Allocate more memory to the indicated bucket.
  */
-	static void
-morecore(bucket)
-	register int bucket;
+static void
+morecore(int bucket)
 {
-	register union overhead *op;
-	register int rnu;		/* 2^rnu bytes will be requested */
-	register int nblks;		/* become nblks blocks of the desired size */
-	register int siz;
+    union overhead *op;
+    int rnu;		/* 2^rnu bytes will be requested */
+    int nblks;		/* become nblks blocks of the desired size */
+    int siz;
 
-	if (__nextf[bucket])
-		return;
-	/*
-	 * Insure memory is allocated on a page boundary.  Should make getpageize
-	 * call?
-	 */
-	op = (union overhead *) sbrk(0);
-	__memtop = (char *) op;
-	if (__membot == NULL)
-		__membot = __memtop;
-	if ((long) op & 0x3ff) {
-		__memtop = (char *) sbrk(1024 - ((long) op & 0x3ff));
-		__memtop += (long) (1024 - ((long) op & 0x3ff));
-	}
+    if (nextf[bucket])
+	return;
+    /*
+     * Insure memory is allocated on a page boundary.  Should make getpageize
+     * call?
+     */
+    op = (union overhead *) sbrk(0);
+    memtop = (char *) op;
+    if (membot == NULL)
+	membot = memtop;
+    if ((long) op & 0x3ff) {
+	memtop = sbrk((int) (1024 - ((long) op & 0x3ff)));
+	memtop += (long) (1024 - ((long) op & 0x3ff));
+    }
 
-	/* take 2k unless the block is bigger than that */
-	rnu = (bucket <= 8) ? 11 : bucket + 3;
-	nblks = 1 << (rnu - (bucket + 3));	/* how many blocks to get */
-	__memtop = (char *) sbrk(1 << rnu);	/* PWP */
-	op = (union overhead *) __memtop;
-	/* no more room! */
-	if ((long) op == -1)
-		return;
-	__memtop += (long) (1 << rnu);
-	/*
-	 * Round up to minimum allocation size boundary and deduct from block count
-	 * to reflect.
-	 */
-	if (((U_long) op) & ROUNDUP) {
-		op = (union overhead *) (((U_long) op + (ROUNDUP + 1)) & ~ROUNDUP);
-		nblks--;
-	}
-	/*
-	 * Add new memory allocated to that on free list for this hash bucket.
-	 */
-	__nextf[bucket] = op;
-	siz = 1 << (bucket + 3);
-	while (--nblks > 0) {
-		op->ov_next = (union overhead *) (((caddr_t) op) + siz);
-		op = (union overhead *) (((caddr_t) op) + siz);
-	}
-	op->ov_next = NULL;
+    /* take 2k unless the block is bigger than that */
+    rnu = (bucket <= 8) ? 11 : bucket + 3;
+    nblks = 1 << (rnu - (bucket + 3));	/* how many blocks to get */
+    memtop = sbrk(1 << rnu);	/* PWP */
+    op = (union overhead *) memtop;
+    /* no more room! */
+    if ((long) op == -1)
+	return;
+    memtop += (long) (1 << rnu);
+    /*
+     * Round up to minimum allocation size boundary and deduct from block count
+     * to reflect.
+     */
+    if (((U_long) op) & ROUNDUP) {
+	op = (union overhead *) (((U_long) op + (ROUNDUP + 1)) & ~ROUNDUP);
+	nblks--;
+    }
+    /*
+     * Add new memory allocated to that on free list for this hash bucket.
+     */
+    nextf[bucket] = op;
+    siz = 1 << (bucket + 3);
+    while (--nblks > 0) {
+	op->ov_next = (union overhead *) (((caddr_t) op) + siz);
+	op = (union overhead *) (((caddr_t) op) + siz);
+    }
+    op->ov_next = NULL;
 }
 
 #endif
 
-	void
-ffree(cp)
-	ptr_t   cp;
+void
+free(ptr_t cp)
 {
-	register int size;
-	register union overhead *op;
+#ifndef lint
+    int size;
+    union overhead *op;
 
-	/*
-	 * the don't free flag is there so that we avoid os bugs in routines
-	 * that free invalid pointers!
-	 */
-	if (cp == 0 )
-		return;
-	CHECK(!__memtop || !__membot,
-			CGETS(19, 2, "free(%lx) called before any allocations."), cp);
-	CHECK(cp > (ptr_t) __memtop,
-			CGETS(19, 3, "free(%lx) above top of memory."), cp);
-	CHECK(cp < (ptr_t) __membot,
-			CGETS(19, 4, "free(%lx) below bottom of memory."), cp);
-	op = (union overhead *) (((caddr_t) cp) - MEMALIGN(sizeof(union overhead)));
-	CHECK(op->ov_magic != MAGIC,
-			CGETS(19, 5, "free(%lx) bad block."), cp);
+    /*
+     * the don't free flag is there so that we avoid os bugs in routines
+     * that free invalid pointers!
+     */
+    if (cp == NULL || dont_free)
+	return;
+    CHECK(!memtop || !membot,
+	  CGETS( "free(%p) called before any allocations."), cp);  // T.A. CGETS was dprintf
+    CHECK(cp > (ptr_t) memtop,
+	  CGETS("free(%p) above top of memory."), cp);  // T.A. CGETS was dprintf
+    CHECK(cp < (ptr_t) membot,
+	  CGETS("free(%p) below bottom of memory."), cp);  // T.A. CGETS was dprintf
+    op = (union overhead *) (((caddr_t) cp) - MEMALIGN(sizeof(union overhead)));
+    CHECK(op->ov_magic != MAGIC,
+	  CGETS("free(%p) bad block."), cp);  // T.A. CGETS was dprintf
 
 #ifdef RCHECK
-	if (op->ov_index <= 13)
-		CHECK(*(U_int *) ((caddr_t) op + op->ov_size + 1 - RSLOP) != RMAGIC,
-				CGETS(19, 6, "free(%lx) bad range check."), cp);
+    if (op->ov_index <= 13)
+	CHECK(*(U_int *) ((caddr_t) op + op->ov_size + 1 - RSLOP) != RMAGIC,
+	      CGETS("free(%p) bad range check."), cp);
 #endif
-	CHECK(op->ov_index >= NBUCKETS,
-			CGETS(19, 7, "free(%lx) bad block index."), cp);
-	size = op->ov_index;
-	op->ov_next = __nextf[size];
-	__nextf[size] = op;
+    CHECK(op->ov_index >= NBUCKETS,
+	  CGETS("free(%p) bad block index."), cp);
+    size = op->ov_index;
+    op->ov_next = nextf[size];
+    nextf[size] = op;
 
-	__nmalloc[size]--;
+    nmalloc[size]--;
 
+#else
+    if (cp == NULL)
+	return;
+#endif
 }
 
-	memalign_t
-fcalloc(i, j)
-	size_t  i, j;
+memalign_t
+calloc(size_t i, size_t j)
 {
-	register char *cp, *scp;
+#ifndef lint
+    char *cp;
 
-	i *= j;
-	scp = cp = (char *) fmalloc((size_t) i);
-	/*
-	   if (i != 0)
-	   do
-	 *cp++ = 0;
-	 while (--i);
-	 */
+    i *= j;
+    cp = malloc(i);
+    memset(cp, 0, i);
 
-	return ((memalign_t) scp);
+    return ((memalign_t) cp);
+#else
+    if (i && j)
+	return ((memalign_t) 0);
+    else
+	return ((memalign_t) 0);
+#endif
 }
 
 /*
@@ -368,79 +385,75 @@ fcalloc(i, j)
  * is extern so the caller can modify it).  If that fails we just copy
  * however many bytes was given to realloc() and hope it's not huge.
  */
-#ifdef NOTNT
 #ifndef lint
 /* 4 should be plenty, -1 =>'s whole list */
 static int     realloc_srchlen = 4;	
 #endif /* lint */
-#endif /* NOTNT */
 
-//#undef realloc
-//extern void* realloc(void*,size_t);
-
-	memalign_t
-frealloc(cp, nbytes)
-	ptr_t   cp;
-	size_t  nbytes;
+memalign_t
+realloc(ptr_t cp, size_t nbytes)
 {
-	register U_int onb;
-	union overhead *op;
-	ptr_t res;
-	register int i;
-	int     was_alloced = 0;
+#ifndef lint
+    U_int onb;
+    union overhead *op;
+    ptr_t res;
+    int i;
+    int     was_alloced = 0;
 
-	if (cp == 0)
-		return (fmalloc(nbytes));
-	if ( (unsigned long)cp < __heap_base || (unsigned long)cp > __heap_top ){
-		return (unsigned long)realloc(cp,nbytes);
-	}
-	op = (union overhead *) (((caddr_t) cp) - MEMALIGN(sizeof(union overhead)));
-	if (op->ov_magic == MAGIC) {
-		was_alloced++;
-		i = op->ov_index;
-	}
-	else
-		/*
-		 * Already free, doing "compaction".
-		 * 
-		 * Search for the old block of memory on the free list.  First, check the
-		 * most common case (last element free'd), then (this failing) the last
-		 * ``realloc_srchlen'' items free'd. If all lookups fail, then assume
-		 * the size of the memory block being realloc'd is the smallest
-		 * possible.
-		 */
-		if ((i = findbucket(op, 1)) < 0 &&
-				(i = findbucket(op, __realloc_srchlen)) < 0)
-			i = 0;
+    if (cp == NULL)
+	return (malloc(nbytes));
+    op = (union overhead *) (((caddr_t) cp) - MEMALIGN(sizeof(union overhead)));
+    if (op->ov_magic == MAGIC) {
+	was_alloced++;
+	i = op->ov_index;
+    }
+    else
+	/*
+	 * Already free, doing "compaction".
+	 * 
+	 * Search for the old block of memory on the free list.  First, check the
+	 * most common case (last element free'd), then (this failing) the last
+	 * ``realloc_srchlen'' items free'd. If all lookups fail, then assume
+	 * the size of the memory block being realloc'd is the smallest
+	 * possible.
+	 */
+	if ((i = findbucket(op, 1)) < 0 &&
+	    (i = findbucket(op, realloc_srchlen)) < 0)
+	    i = 0;
 
-	onb = MEMALIGN(nbytes + MEMALIGN(sizeof(union overhead)) + RSLOP);
+    onb = MEMALIGN(nbytes + MEMALIGN(sizeof(union overhead)) + RSLOP);
 
-	/* avoid the copy if same size block */
-	if (was_alloced && (onb <= (U_int) (1 << (i + 3))) && 
-			(onb > (U_int) (1 << (i + 2)))) {
+    /* avoid the copy if same size block */
+    if (was_alloced && (onb <= (U_int) (1 << (i + 3))) && 
+	(onb > (U_int) (1 << (i + 2)))) {
 #ifdef RCHECK
-		/* JMR: formerly this wasn't updated ! */
-		nbytes = MEMALIGN(MEMALIGN(sizeof(union overhead))+nbytes+RSLOP);
-		*((U_int *) (((caddr_t) op) + nbytes - RSLOP)) = RMAGIC;
-		op->ov_rmagic = RMAGIC;
-		op->ov_size = (op->ov_index <= 13) ? nbytes - 1 : 0;
+	/* JMR: formerly this wasn't updated ! */
+	nbytes = MEMALIGN(MEMALIGN(sizeof(union overhead))+nbytes+RSLOP);
+	*((U_int *) (((caddr_t) op) + nbytes - RSLOP)) = RMAGIC;
+	op->ov_rmagic = RMAGIC;
+	op->ov_size = (op->ov_index <= 13) ? nbytes - 1 : 0;
 #endif
-		return ((memalign_t) cp);
-	}
-        if ((res = (ptr_t)fmalloc(nbytes)) == 0)
-                return ((memalign_t) NULL);
-	if (cp != res) {		/* common optimization */
-		/* 
-		 * christos: this used to copy nbytes! It should copy the 
-		 * smaller of the old and new size
-		 */
-		onb = (1 << (i + 3)) - MEMALIGN(sizeof(union overhead)) - RSLOP;
-		(void) memmove((ptr_t) res, (ptr_t) cp, 
-					   (size_t) (onb < nbytes ? onb : nbytes));
-	}
-	if (was_alloced)
-		ffree(cp);
-	return ((memalign_t) res);
+	return ((memalign_t) cp);
+    }
+    if ((res = malloc(nbytes)) == NULL)
+	return ((memalign_t) NULL);
+    if (cp != res) {		/* common optimization */
+	/* 
+	 * christos: this used to copy nbytes! It should copy the 
+	 * smaller of the old and new size
+	 */
+	onb = (1 << (i + 3)) - MEMALIGN(sizeof(union overhead)) - RSLOP;
+	(void) memmove(res, cp, onb < nbytes ? onb : nbytes);
+    }
+    if (was_alloced)
+	free(cp);
+    return ((memalign_t) res);
+#else
+    if (cp && nbytes)
+	return ((memalign_t) 0);
+    else
+	return ((memalign_t) 0);
+#endif /* !lint */
 }
 
 
@@ -451,61 +464,121 @@ frealloc(cp, nbytes)
  * header starts at ``freep''.  If srchlen is -1 search the whole list.
  * Return bucket number, or -1 if not found.
  */
-	static int
-findbucket(freep, srchlen)
-	union overhead *freep;
-	int     srchlen;
+static int
+findbucket(union overhead *freep, int srchlen)
 {
-	register union overhead *p;
-	register int i, j;
+    union overhead *p;
+    size_t i;
+    int j;
 
-	for (i = 0; i < NBUCKETS; i++) {
-		j = 0;
-		for (p = __nextf[i]; p && j != srchlen; p = p->ov_next) {
-			if (p == freep)
-				return (i);
-			j++;
-		}
+    for (i = 0; i < NBUCKETS; i++) {
+	j = 0;
+	for (p = nextf[i]; p && j != srchlen; p = p->ov_next) {
+	    if (p == freep)
+		return (i);
+	    j++;
 	}
-	return (-1);
+    }
+    return (-1);
 }
 
 #endif
 
-/*
- * mstats - print out statistics about malloc
- *
- * Prints two lines of numbers, one showing the length of the free list
- * for each size category, the second showing the number of mallocs -
- * frees for each size category.
- */
-/*ARGSUSED*/
-	void
-showall(v, c)
-	void *v;
-	void *c;
-{
-	register int i, j;
-	register union overhead *p;
-	int     totfree = 0, totused = 0;
 
-	xprintf(CGETS(19, 8, "current memory allocation:\nfree:\t"));
-	for (i = 0; i < NBUCKETS; i++) {
-		for (j = 0, p = __nextf[i]; p; p = p->ov_next, j++)
-			continue;
-		xprintf(" %4d", j);
-		totfree += j * (1 << (i + 3));
-	}
-	xprintf(CGETS(19, 9, "\nused:\t"));
-	for (i = 0; i < NBUCKETS; i++) {
-		xprintf(" %4u", __nmalloc[i]);
-		totused += __nmalloc[i] * (1 << (i + 3));
-	}
-	xprintf(CGETS(19, 10, "\n\tTotal in use: %d, total free: %d\n"),
-			totused, totfree);
-	xprintf(CGETS(19, 11,
-			"\tAllocated memory from 0x%lx to 0x%lx.  Real top at 0x%lx\n"),
-			(unsigned long) __membot, (unsigned long) __memtop,
-			(unsigned long) sbrk(0));
+#else				/* SYSMALLOC */
+
+/**
+ ** ``Protected versions'' of malloc, realloc, calloc, and free
+ **
+ ** On many systems:
+ **
+ ** 1. malloc(0) is bad
+ ** 2. free(0) is bad
+ ** 3. realloc(0, n) is bad
+ ** 4. realloc(n, 0) is bad
+ **
+ ** Also we call our error routine if we run out of memory.
+ **/
+memalign_t
+smalloc(size_t n)
+{
+    ptr_t   ptr;
+
+    n = n ? n : 1;
+
+#ifdef HAVE_SBRK
+    if (membot == NULL)
+	membot = sbrk(0);
+#endif /* HAVE_SBRK */
+
+    if ((ptr = malloc(n)) == NULL)
+	out_of_memory();
+#ifndef HAVE_SBRK
+    if (memtop < ((char *) ptr) + n)
+	memtop = ((char *) ptr) + n;
+    if (membot == NULL)
+	membot = ptr;
+#endif /* !HAVE_SBRK */
+    return ((memalign_t) ptr);
 }
+
+memalign_t
+srealloc(ptr_t p, size_t n)
+{
+    ptr_t   ptr;
+
+    n = n ? n : 1;
+
+#ifdef HAVE_SBRK
+    if (membot == NULL)
+	membot = sbrk(0);
+#endif /* HAVE_SBRK */
+
+    if ((ptr = (p ? realloc(p, n) : malloc(n))) == NULL)
+	out_of_memory();
+#ifndef HAVE_SBRK
+    if (memtop < ((char *) ptr) + n)
+	memtop = ((char *) ptr) + n;
+    if (membot == NULL)
+	membot = ptr;
+#endif /* !HAVE_SBRK */
+    return ((memalign_t) ptr);
+}
+
+memalign_t
+scalloc(size_t s, size_t n)
+{
+    ptr_t   ptr;
+
+    n *= s;
+    n = n ? n : 1;
+
+#ifdef HAVE_SBRK
+    if (membot == NULL)
+	membot = sbrk(0);
+#endif /* HAVE_SBRK */
+
+    if ((ptr = malloc(n)) == NULL)
+	out_of_memory();
+
+    memset (ptr, 0, n);
+
+#ifndef HAVE_SBRK
+    if (memtop < ((char *) ptr) + n)
+	memtop = ((char *) ptr) + n;
+    if (membot == NULL)
+	membot = ptr;
+#endif /* !HAVE_SBRK */
+
+    return ((memalign_t) ptr);
+}
+
+void
+sfree(ptr_t p)
+{
+    if (p && !dont_free)
+	free(p);
+}
+
+#endif /* SYSMALLOC */
 
