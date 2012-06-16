@@ -44,14 +44,16 @@ CPPFLAGS =
 
 !if "$(MSVC)" == "6"
 DEFS     = -DHAVE_CONFIG_H -DHAVE_DIRENT_H -DWINNT
-CFLAGS   =   -W3 -WX -MT -YX -J -nologo -O2
+CFLAGS   =   -W3 -WX -MT -YX -J -nologo
+OPTFLAGS = -O2
 #CFLAGS   =  -Wall -Wno-implicit -Wmissing-prototypes -O2
 LDFLAGS  =  -nologo -pdb:none -entry:silly_entry
 !else
 #Assume MSVC=10, should also work for MVSC=9
 DEFS     = -DHAVE_CONFIG_H -DHAVE_DIRENT_H -DWINNT -D_USE_32BIT_TIME_T \
            -D_CRT_NONSTDC_NO_DEPRECATE -D_CRT_SECURE_NO_WARNINGS
-CFLAGS   =   -W3 -MT -J -nologo -O2
+CFLAGS   =   -W3 -MT -J -nologo
+OPTFLAGS = -O2
 LDFLAGS  =  -nologo -pdb:none -entry:silly_entry
 !endif
 #!error "usage: nmake [MSVC=6] [DBG=(0|1)]"
@@ -64,7 +66,8 @@ LIBS     =  -nodefaultlib kernel32.lib user32.lib libcmt.lib oldnames.lib \
 !if "$(DBG)" != ""
 DEFS = $(DEFS) -DNTDBG -DDBG -DDEBUG -DZSH_HASH_DEBUG
 #DEFS = $(DEFS) -DZSH_MEM_DEBUG -DZSH_MEM_WARNING
-CFLAGS = $(CFLAGS) -Zi -Od
+CFLAGS = $(CFLAGS) -Zi
+OPTFLAGS = -Od
 !if "$(MSVC)" == "6"
 LDFLAGS = $(LDFLAGS) -debug:full
 !else
@@ -88,7 +91,7 @@ NT_BOOKEND1 = ntb1.o
 NT_BOOKEND2 = ntb2.o
 NT_HDRS = winnt/ntport.h winnt/signal.h
 
-COMPILE = $(CC) -c $(INCLUDES) $(CPPFLAGS) $(DEFS) $(CFLAGS)
+COMPILE = $(CC) -c $(INCLUDES) $(CPPFLAGS) $(DEFS) $(CFLAGS) $(OPTFLAGS)
 LINK    = $(LINK) $(LDFLAGS) -out:$@
 
 #INSTALL         = /usr/bin/ginstall -c
