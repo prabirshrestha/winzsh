@@ -85,7 +85,7 @@ typedef ptr_t memalign_t;
 static void
 out_of_memory (void)
 {
-    static const char msg[] = "Out of memory\n";
+    static char msg[] = "Out of memory\n";
     extern int didfds; // T.A.
     int SHDIAG; // T.A.
 
